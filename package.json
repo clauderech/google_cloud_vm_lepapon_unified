@@ -1,0 +1,45 @@
+{
+  "name": "google-cloud-vm-lepapon-unified",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Unified project - Backend (WhatsApp API) + Frontend (React/Vite)",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "install:all": "npm install && cd backend && npm install --legacy-peer-deps && cd ../frontend && npm install",
+    "dev": "pm2 start backend/ecosystem.config.js --env development",
+    "prod": "pm2 start backend/ecosystem.config.js --env production",
+    "stop": "pm2 stop all",
+    "restart": "pm2 restart all --update-env",
+    "logs": "pm2 logs",
+    "monit": "pm2 monit",
+    "build:frontend": "cd frontend && npm run build",
+    "build:all": "npm run build:frontend",
+    "start": "npm run install:all && npm run dev"
+  },
+  "dependencies": {
+    "@google/genai": "^1.30.0",
+    "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.1",
+    "knex": "^3.1.0",
+    "lucide-react": "^0.454.0",
+    "mysql2": "^3.13.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "recharts": "^3.4.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.17",
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "autoprefixer": "^10.4.22",
+    "postcss": "^8.5.6",
+    "pm2": "^5.3.0",
+    "tailwindcss": "^4.1.17",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}
