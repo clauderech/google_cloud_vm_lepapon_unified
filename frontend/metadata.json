@@ -1,0 +1,5 @@
+{
+  "name": "Lanchonete AI Manager",
+  "description": "Sistema completo de gestão para lanchonetes com controle de estoque, vendas (PDV), compras e fornecedores. Inclui assistente de negócios IA.",
+  "requestFramePermissions": []
+}
