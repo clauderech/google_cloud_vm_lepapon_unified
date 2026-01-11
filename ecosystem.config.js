@@ -68,6 +68,9 @@ module.exports = {
       out_file: path.join(__dirname, 'backend/logs/frontend-dev.out.log'),
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
       env: {
+        NODE_ENV: 'production',
+      },
+      env_development: {
         NODE_ENV: 'development',
       },
     },
