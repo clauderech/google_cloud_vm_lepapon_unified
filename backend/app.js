@@ -9,6 +9,10 @@ const knex = require('knex');
 
 // Importar config
 const { buildKnexConfig } = require('./config/knex');
+const { validateEnvironment } = require('./config/validateEnv');
+
+// Validar variáveis de ambiente na inicialização
+validateEnvironment();
 
 // Inicializar Express
 const app = express();
