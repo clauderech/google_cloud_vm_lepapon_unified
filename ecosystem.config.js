@@ -55,7 +55,7 @@ module.exports = {
     {
       name: 'frontend-dev',
       script: 'npm',
-      args: 'run dev',
+      args: 'run vite',
       cwd: path.join(__dirname, 'frontend'),
       exec_mode: 'fork',
       instances: 1,
