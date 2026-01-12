@@ -12,6 +12,47 @@ class WhatsAppFlowProcessor {
   constructor(options = {}) {
     this.privateKeyPath = options.privateKeyPath || process.env.WHATSAPP_FLOW_PRIVATE_KEY_PATH;
     this.appSecret = options.appSecret || process.env.WHATSAPP_APP_SECRET;
+    
+    // Validar configuração na inicialização
+    this._validateConfiguration();
+  }
+
+  /**
+   * Valida se a configuração está correta
+   */
+  _validateConfiguration() {
+    // Validar chave privada
+    if (!this.privateKeyPath) {
+      console.error('[Flow] ❌ ERRO: WHATSAPP_FLOW_PRIVATE_KEY_PATH não está configurado');
+      console.error('[Flow]    Configure a variável de ambiente WHATSAPP_FLOW_PRIVATE_KEY_PATH');
+      throw new Error('WHATSAPP_FLOW_PRIVATE_KEY_PATH não configurado');
+    }
+
+    let keyPath = this.privateKeyPath;
+    if (!path.isAbsolute(keyPath)) {
+      keyPath = path.resolve(__dirname, keyPath);
+    }
+
+    if (!fs.existsSync(keyPath)) {
+      console.error('[Flow] ❌ ERRO: Arquivo de chave privada não encontrado');
+      console.error(`[Flow]    Procurando em: ${keyPath}`);
+      console.error('[Flow]    Verifique se:');
+      console.error('[Flow]      1. O arquivo existe naquele caminho');
+      console.error('[Flow]      2. O caminho está correto em WHATSAPP_FLOW_PRIVATE_KEY_PATH');
+      console.error('[Flow]      3. As permissões do arquivo estão corretas (chmod 644)');
+      throw new Error(`Arquivo de chave privada não encontrado: ${keyPath}`);
+    }
+
+    // Validar app secret
+    if (!this.appSecret) {
+      console.error('[Flow] ❌ ERRO: WHATSAPP_APP_SECRET não está configurado');
+      console.error('[Flow]    Configure a variável de ambiente WHATSAPP_APP_SECRET');
+      throw new Error('WHATSAPP_APP_SECRET não configurado');
+    }
+
+    console.log('[Flow] ✅ Configuração validada com sucesso');
+    console.log(`[Flow]    Chave privada: ${keyPath}`);
+    console.log('[Flow]    App Secret: ***');
   }
 
   /**
@@ -141,7 +182,10 @@ class WhatsAppFlowProcessor {
    */
   getDecryptedAesKey(encryptedAesKey) {
     if (!this.privateKeyPath) {
-      throw new Error('WHATSAPP_FLOW_PRIVATE_KEY_PATH não configurado');
+      const error = 'WHATSAPP_FLOW_PRIVATE_KEY_PATH não configurado';
+      console.error('[Flow] ❌ ERRO:', error);
+      console.error('[Flow]    Verifique o arquivo .env e as variáveis de ambiente');
+      throw new Error(error);
     }
 
     let keyPath = this.privateKeyPath;
@@ -150,7 +194,12 @@ class WhatsAppFlowProcessor {
     }
 
     if (!fs.existsSync(keyPath)) {
-      throw new Error(`Arquivo de chave privada não encontrado: ${keyPath}`);
+      const error = `Arquivo de chave privada não encontrado: ${keyPath}`;
+      console.error('[Flow] ❌ ERRO:', error);
+      console.error('[Flow]    Caminho procurado:', keyPath);
+      console.error('[Flow]    Variável configurada:', this.privateKeyPath);
+      console.error('[Flow]    Verifique se o arquivo existe e tem permissões de leitura');
+      throw new Error(error);
     }
 
     try {

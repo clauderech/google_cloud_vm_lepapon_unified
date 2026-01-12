@@ -9,8 +9,9 @@
   "scripts": {
     "install:all": "npm install && cd backend && npm install --legacy-peer-deps && cd ../frontend && npm install",
     "check:env": "node backend/scripts/check-env.js",
-    "dev": "npm run check:env && pm2 start backend/ecosystem.config.js --env development",
-    "prod": "npm run check:env && pm2 start backend/ecosystem.config.js --env production",
+    "diagnose:flow": "node backend/scripts/diagnose-flow.js",
+    "dev": "npm run check:env && npm run diagnose:flow && pm2 start backend/ecosystem.config.js --env development",
+    "prod": "npm run check:env && npm run diagnose:flow && pm2 start backend/ecosystem.config.js --env production",
     "stop": "pm2 stop all",
     "restart": "pm2 restart all --update-env",
     "logs": "pm2 logs",
