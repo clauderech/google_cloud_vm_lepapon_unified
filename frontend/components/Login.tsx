@@ -130,24 +130,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </button>
           </form>
 
-          {/* Demo Info */}
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <p className="text-xs font-bold text-gray-600 mb-3">Usuários de demonstração:</p>
-            <div className="space-y-2 text-xs">
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <p className="font-bold text-gray-800">Admin: <span className="font-mono text-blue-600">admin / admin123</span></p>
-                <p className="text-gray-600 mt-1">Acesso total ao sistema</p>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <p className="font-bold text-gray-800">Operador: <span className="font-mono text-green-600">operador / op123</span></p>
-                <p className="text-gray-600 mt-1">PDV, estoque e compras</p>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <p className="font-bold text-gray-800">Caixa: <span className="font-mono text-purple-600">caixa / caixa123</span></p>
-                <p className="text-gray-600 mt-1">PDV e controle de caixa</p>
-              </div>
-            </div>
-          </div>
+
         </div>
       </div>
     </div>
