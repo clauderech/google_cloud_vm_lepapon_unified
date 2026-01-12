@@ -2,6 +2,9 @@
 
 const path = require('path');
 
+// Carregar variáveis de ambiente
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+
 module.exports = {
   apps: [
     {
@@ -22,10 +25,40 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: process.env.PORT || 3000,
+        // Passar todas as variáveis de ambiente
+        DB_CLIENT: process.env.DB_CLIENT,
+        DB_HOST: process.env.DB_HOST,
+        DB_PORT: process.env.DB_PORT,
+        DB_USER: process.env.DB_USER,
+        DB_PASSWORD: process.env.DB_PASSWORD,
+        DB_NAME: process.env.DB_NAME,
+        WHATSAPP_FLOW_PRIVATE_KEY_PATH: process.env.WHATSAPP_FLOW_PRIVATE_KEY_PATH,
+        WHATSAPP_APP_SECRET: process.env.WHATSAPP_APP_SECRET,
+        WHATSAPP_ACCESS_TOKEN: process.env.WHATSAPP_ACCESS_TOKEN,
+        WHATSAPP_PHONE_NUMBER_ID: process.env.WHATSAPP_PHONE_NUMBER_ID,
+        WHATSAPP_VERIFY_TOKEN: process.env.WHATSAPP_VERIFY_TOKEN,
+        WHATSAPP_GRAPH_VERSION: process.env.WHATSAPP_GRAPH_VERSION,
+        WHATSAPP_TEMPLATE_NAME: process.env.WHATSAPP_TEMPLATE_NAME,
+        WHATSAPP_TEMPLATE_LANG: process.env.WHATSAPP_TEMPLATE_LANG,
       },
       env_development: {
         NODE_ENV: 'development',
         PORT: 3000,
+        // Passar todas as variáveis de ambiente
+        DB_CLIENT: process.env.DB_CLIENT,
+        DB_HOST: process.env.DB_HOST,
+        DB_PORT: process.env.DB_PORT,
+        DB_USER: process.env.DB_USER,
+        DB_PASSWORD: process.env.DB_PASSWORD,
+        DB_NAME: process.env.DB_NAME,
+        WHATSAPP_FLOW_PRIVATE_KEY_PATH: process.env.WHATSAPP_FLOW_PRIVATE_KEY_PATH,
+        WHATSAPP_APP_SECRET: process.env.WHATSAPP_APP_SECRET,
+        WHATSAPP_ACCESS_TOKEN: process.env.WHATSAPP_ACCESS_TOKEN,
+        WHATSAPP_PHONE_NUMBER_ID: process.env.WHATSAPP_PHONE_NUMBER_ID,
+        WHATSAPP_VERIFY_TOKEN: process.env.WHATSAPP_VERIFY_TOKEN,
+        WHATSAPP_GRAPH_VERSION: process.env.WHATSAPP_GRAPH_VERSION,
+        WHATSAPP_TEMPLATE_NAME: process.env.WHATSAPP_TEMPLATE_NAME,
+        WHATSAPP_TEMPLATE_LANG: process.env.WHATSAPP_TEMPLATE_LANG,
       },
     },
     {
@@ -46,10 +79,40 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: process.env.PORT || 3001,
+        // Passar todas as variáveis de ambiente
+        DB_CLIENT: process.env.DB_CLIENT,
+        DB_HOST: process.env.DB_HOST,
+        DB_PORT: process.env.DB_PORT,
+        DB_USER: process.env.DB_USER,
+        DB_PASSWORD: process.env.DB_PASSWORD,
+        DB_NAME: process.env.DB_NAME,
+        WHATSAPP_FLOW_PRIVATE_KEY_PATH: process.env.WHATSAPP_FLOW_PRIVATE_KEY_PATH,
+        WHATSAPP_APP_SECRET: process.env.WHATSAPP_APP_SECRET,
+        WHATSAPP_ACCESS_TOKEN: process.env.WHATSAPP_ACCESS_TOKEN,
+        WHATSAPP_PHONE_NUMBER_ID: process.env.WHATSAPP_PHONE_NUMBER_ID,
+        WHATSAPP_VERIFY_TOKEN: process.env.WHATSAPP_VERIFY_TOKEN,
+        WHATSAPP_GRAPH_VERSION: process.env.WHATSAPP_GRAPH_VERSION,
+        WHATSAPP_TEMPLATE_NAME: process.env.WHATSAPP_TEMPLATE_NAME,
+        WHATSAPP_TEMPLATE_LANG: process.env.WHATSAPP_TEMPLATE_LANG,
       },
       env_development: {
         NODE_ENV: 'development',
         PORT: 3001,
+        // Passar todas as variáveis de ambiente
+        DB_CLIENT: process.env.DB_CLIENT,
+        DB_HOST: process.env.DB_HOST,
+        DB_PORT: process.env.DB_PORT,
+        DB_USER: process.env.DB_USER,
+        DB_PASSWORD: process.env.DB_PASSWORD,
+        DB_NAME: process.env.DB_NAME,
+        WHATSAPP_FLOW_PRIVATE_KEY_PATH: process.env.WHATSAPP_FLOW_PRIVATE_KEY_PATH,
+        WHATSAPP_APP_SECRET: process.env.WHATSAPP_APP_SECRET,
+        WHATSAPP_ACCESS_TOKEN: process.env.WHATSAPP_ACCESS_TOKEN,
+        WHATSAPP_PHONE_NUMBER_ID: process.env.WHATSAPP_PHONE_NUMBER_ID,
+        WHATSAPP_VERIFY_TOKEN: process.env.WHATSAPP_VERIFY_TOKEN,
+        WHATSAPP_GRAPH_VERSION: process.env.WHATSAPP_GRAPH_VERSION,
+        WHATSAPP_TEMPLATE_NAME: process.env.WHATSAPP_TEMPLATE_NAME,
+        WHATSAPP_TEMPLATE_LANG: process.env.WHATSAPP_TEMPLATE_LANG,
       },
     },
     {
