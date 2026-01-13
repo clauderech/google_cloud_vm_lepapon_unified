@@ -100,6 +100,7 @@ export interface Sale {
 
 export type ComandaStatus = 'open' | 'closed' | 'cancelled';
 export type ComandaItemStatus = 'pending' | 'preparing' | 'ready' | 'delivered';
+export type ComandaSource = 'pos' | 'lepapon';
 
 export interface ComandaItem extends CartItem {
   status?: ComandaItemStatus;
@@ -117,6 +118,14 @@ export interface Comanda {
   status: ComandaStatus;
   paymentMethod?: PaymentMethod;
   notes?: string;
+  
+  // Campos LePapon (opcionais)
+  source?: ComandaSource;                  // 'pos' ou 'lepapon'
+  lepapon_session_id?: string;             // Session ID do cliente LePapon
+  lepapon_order_id?: number;               // ID do pedido no LePapon
+  order_status?: string;                   // Status do pedido (pending, confirmed, etc)
+  payment_status?: string;                 // Status do pagamento
+  
   created_at?: string;
   updated_at?: string;
 }

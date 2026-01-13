@@ -48,6 +48,7 @@ import CustomersManager from './components/CustomersManager';
 import LoyaltyProgram from './components/LoyaltyProgram';
 import CrediarioManager from './components/CrediarioManager';
 import HelpMenu from './components/HelpMenu';
+import LepaponOrdersTab from './components/LepaponOrdersTab';
 import Login from './components/Login';
 import { useAuth } from './hooks/useAuth';
 
@@ -633,7 +634,7 @@ const App = () => {
   const POS = () => {
     const [cart, setCart] = useState<CartItem[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [activeTab, setActiveTab] = useState<'quick' | 'comandas'>('comandas');
+    const [activeTab, setActiveTab] = useState<'quick' | 'comandas' | 'lepapon'>('comandas');
     
     // Comanda State
     const [selectedComandaId, setSelectedComandaId] = useState<string | null>(null);
@@ -650,6 +651,10 @@ const App = () => {
         if (comanda) setCart(comanda.items);
         else setCart([]);
       } else if (activeTab === 'quick') {
+        setCart([]);
+        setSelectedComandaId(null);
+      } else if (activeTab === 'lepapon') {
+        // LePapon: handled by LepaponOrdersTab component
         setCart([]);
         setSelectedComandaId(null);
       }
@@ -726,6 +731,19 @@ const App = () => {
         alert("Conta fechada e estoque atualizado!");
         setSelectedComandaId(null);
       }
+    };
+
+    const handleSelectLepaponOrder = (lepaponComanda: Comanda) => {
+      // Seleciona pedido LePapon para processamento
+      // Passa o pedido como comanda para reutilizar lógica de checkout
+      setCart(lepaponComanda.items || []);
+      setSelectedComandaId(lepaponComanda.id);
+      setActiveTab('comandas'); // Muda para visualizar cart atualizado
+    };
+
+    const handleUpdateLepaponOrder = (orderId: number, status: string) => {
+      // Callback após atualizar pedido LePapon na API
+      console.log(`[POS] Pedido LePapon ${orderId} atualizado para ${status}`);
     };
 
     const cartSubtotal = cart.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
@@ -805,6 +823,12 @@ const App = () => {
               className={`flex-1 py-4 font-bold text-sm flex items-center justify-center gap-2 ${activeTab === 'quick' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50' : 'text-gray-500 hover:bg-gray-50'}`}
             >
               <ShoppingCart className="w-4 h-4" /> Venda Rápida
+            </button>
+            <button 
+              onClick={() => setActiveTab('lepapon')}
+              className={`flex-1 py-4 font-bold text-sm flex items-center justify-center gap-2 ${activeTab === 'lepapon' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50' : 'text-gray-500 hover:bg-gray-50'}`}
+            >
+              <Package className="w-4 h-4" /> LePapon
             </button>
           </div>
 
@@ -922,6 +946,14 @@ const App = () => {
                     )}
                  </div>
               </div>
+            )}
+
+            {/* LepaponOrdersTab */}
+            {activeTab === 'lepapon' && (
+              <LepaponOrdersTab
+                onSelectOrder={handleSelectLepaponOrder}
+                onUpdateOrder={handleUpdateLepaponOrder}
+              />
             )}
 
           </div>

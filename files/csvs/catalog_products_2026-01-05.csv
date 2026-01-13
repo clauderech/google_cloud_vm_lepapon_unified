@@ -1,0 +1,101 @@
+id,name,type,category,price
+411002,Pizza Muçarela,prato,pizza,27.00
+411003,Pizza Portuguesa,prato,pizza,34.00
+411004,Pizza Frango Catupiry,prato,pizza,38.00
+411005,Pizza Frango Cheddar,prato,pizza,35.00
+411006,Pizza Calabresa,prato,pizza,31.00
+411007,Pizza Coração,prato,pizza,35.00
+411008,Pizza Bacon,prato,pizza,35.00
+411009,Pizza Atum,prato,pizza,45.00
+411000,Pizza 4 Queijos,prato,pizza,37.00
+411011,Pizza Marguerita,prato,pizza,28.00
+411012,Pizza Bacon Milho,prato,pizza,36.00
+411017,Pizza Calabresa Cheddar,prato,pizza,35.00
+411018,Pizza Frango Bacon,prato,pizza,35.00
+411013,dois_sabores,prato,pizza,5.00
+411014,Pizza_Alho_Oleo,prato,pizza,33.00
+411015,Pizza_Brocolis_Bacon,prato,pizza,39.00
+411016,Pizza_Americana,prato,pizza,40.00
+411001,Pizza_Presunto,prato,pizza,31.00
+410100,Xis_Bacon_Coracao,prato,xis,35.00
+410101,Xis_Salada,prato,xis,22.00
+410102,Xis_Frango,prato,xis,19.00
+410103,Xis_Bacon,prato,xis,29.00
+410104,Xis_Calabreza,prato,xis,27.00
+410105,Xis_Coracao,prato,xis,28.00
+410106,Xis_Frango_Bacon,prato,xis,26.00
+410107,Xis_Duplo_Burguer,prato,xis,36.00
+410108,Xis_Dois_Hamburguers,prato,xis,31.00
+410109,Xis_Calabresa_Coracao,prato,xis,32.00
+410111,Xis_Duplo_Bacon,prato,xis,42.00
+410112,Xis_Magrao,prato,xis,14.00
+410113,Xis_Hambuguer_Ovo,prato,xis,14.00
+410114,Hamburguer,prato,xis,8.00
+410115,Xis_Tudo,prato,xis,39.00
+410116,Xis_Frango_Coracao,prato,xis,24.00
+410117,Xis_Frango_Calabresa,prato,xis,23.00
+410118,Xis_egg,prato,xis,14.00
+410119,Xis_Bacon_Calabresa,prato,xis,33.00
+410120,Xis_Frango_Cheddar,prato,xis,23.00
+410121,Xis_Frango_Catupiry,prato,xis,26.00
+410122,Xis_Frango_Acebolado,prato,xis,19.00
+410200,Cachorro_Bacon_Coracao,prato,dogs,23.00
+410201,Cachorro_Simples,prato,dogs,11.00
+410202,Cachorro_Duplo,prato,dogs,12.00
+410203,Cachorro_Especial,prato,dogs,17.00
+410204,Cachorro_Duplo_Especial,prato,dogs,18.00
+410205,Cachorro_Coracao,prato,dogs,18.00
+410206,Cachorro_Frango,prato,dogs,16.00
+410207,Cachorro_2Queijos,prato,dogs,20.00
+410208,Cachorro_Coracao_Frango,prato,dogs,22.00
+410209,Cachorro_Frango_Calabresa,prato,dogs,20.00
+410211,Cachorro_Calabresa,prato,dogs,16.00
+410212,Cachorro_frango_bacon,prato,dogs,22.00
+410213,Cachorro_Bacon,prato,dogs,18.00
+410214,Cachorro_Calabresa_Coração,prato,dogs,23.00
+410215,Cachorro_Queijo_Bacon_Ovo,prato,dogs,24.00
+410216,Cachorro_3Queijos,prato,dogs,21.00
+410217,Cachorro_4_Queijos,prato,dogs,23.00
+410301,Torrada_Simples,prato,torradas,10.00
+410302,Torrada_Americana,prato,torradas,13.00
+410303,Torrada_Americana_Hamb,prato,torradas,21.00
+410304,Torrada_Americana_Bacon,prato,torradas,19.00
+410305,Torrada_Americana_Coracao,prato,torradas,18.00
+410306,Torrada_Americana_Calabresa,prato,torradas,17.00
+410307,Torrada_Americana_Frango,prato,torradas,18.00
+410308,Torrada_Dupla,prato,torradas,13.00
+410309,Torrada_Frango,prato,torradas,14.00
+410400,Pastel_Calabresa,prato,pasteis,3.00
+410401,Pastel_Frango,prato,pasteis,3.00
+410402,Pastel_Carne,prato,pasteis,4.00
+410403,Pastel_Queijo_Presunto,prato,pasteis,3.00
+410404,Pastel_Queijo_Coracao,prato,pasteis,6.00
+410405,Pastel_Queijo_Milho,prato,pasteis,3.00
+410406,Pastel_Queijo_Frango,prato,pasteis,4.00
+410407,Pastel_Queijo,prato,pasteis,4.00
+410408,Pastel_Frango_Calabresa,prato,pasteis,3.00
+410409,Enroladinho_Salsicha,prato,outros,2.00
+410411,Pastel_Queijo_Calabresa,prato,pasteis,4.00
+410412,Pastel_Queijo_Bacon,prato,pasteis,5.00
+410413,Pastel_Carne_Bacon,prato,pasteis,6.00
+410414,Pastel_Coracao,prato,pasteis,4.00
+410415,Pastel_Carne_Queijo,prato,pasteis,5.00
+410416,Pastel_Baton,prato,pasteis,5.00
+410417,Pastel_Queijo_Palmito,prato,pasteis,6.00
+410418,Pastel_Frango_Coração,prato,pasteis,4.00
+410501,Sanduiche_Especial,prato,outros,15.00
+410601,Picado_Pequeno,prato,outros,34.00
+410602,Picado_Medio,prato,outros,56.00
+410603,Picado_Medio_Especial,prato,outros,81.00
+410700,Porcao_Ovos_Codorna_100g,prato,porcoes,9.00
+410701,Porcao_Fritas_500g,prato,porcoes,14.00
+410702,Porcao_Coracao_300g,prato,porcoes,18.00
+410703,Porcao_Calabresa_300g,prato,porcoes,15.00
+410704,Porcao_Frango_300g,prato,porcoes,11.00
+410705,Porcao_Bacon_200g,prato,porcoes,15.00
+410706,Porcao_Anel_De_Cebola,prato,porcoes,10.00
+410707,Porcao_Queijo_100G,prato,porcoes,7.00
+410708,Porcao_Pepino_100g,prato,porcoes,3.00
+410709,Porcao_Azeitonas_100g,prato,porcoes,7.00
+410711,Porcao_Salame_100g,prato,porcoes,8.00
+410712,Porcao_Palmito_100g,prato,porcoes,12.00

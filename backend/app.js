@@ -11,6 +11,16 @@ const knex = require('knex');
 const { buildKnexConfig } = require('./config/knex');
 const { validateEnvironment } = require('./config/validateEnv');
 
+// Importar WebSocket e LePapon
+const FrontendBroadcaster = require('./websocket/frontendBroadcaster');
+const LePaponWebSocketClient = require('./websocket/lepaponWebSocketClient');
+const TokenManager = require('./websocket/tokenManager');
+const OrderProcessor = require('./websocket/orderProcessor');
+const { createAsyncQueue } = require('./models/asyncQueue');
+
+// Importar rotas
+const lepaponOrdersRoutes = require('./routes/lepapon-orders');
+
 // Validar variáveis de ambiente na inicialização
 validateEnvironment();
 
@@ -63,6 +73,25 @@ app.get('/api/sync/status', (req, res) => {
   res.json({ status: 'ok', module: 'sync' });
 });
 
+// Rotas LePapon Orders
+app.use(lepaponOrdersRoutes);
+
+// Rota de status do WebSocket Broadcaster (para monitoramento)
+app.get('/api/websocket/status', (req, res) => {
+  if (global.frontendBroadcaster) {
+    res.json({
+      success: true,
+      broadcaster: global.frontendBroadcaster.getStatus(),
+      lepaponClient: global.lepaponWebSocketClient ? global.lepaponWebSocketClient.getStatus() : null
+    });
+  } else {
+    res.json({
+      success: false,
+      error: 'WebSocket broadcaster não inicializado'
+    });
+  }
+});
+
 // Error handling
 app.use((err, req, res, next) => {
   console.error('[ERROR]', err);
@@ -72,10 +101,76 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Iniciar servidor
-app.listen(PORT, () => {
+// Iniciar servidor e WebSocket
+const server = app.listen(PORT, async () => {
   console.log(`[SERVER] Iniciado em porta ${PORT}`);
   console.log(`[SERVER] Ambiente: ${process.env.NODE_ENV || 'development'}`);
+
+  // Inicializar Frontend Broadcaster (WebSocket para notificar frontend)
+  try {
+    const broadcasterPort = process.env.BROADCASTER_PORT || 3002;
+    const frontendBroadcaster = new FrontendBroadcaster({
+      port: broadcasterPort,
+      logger: console
+    });
+
+    await frontendBroadcaster.start();
+    global.frontendBroadcaster = frontendBroadcaster;
+    console.log(`[Broadcaster] WebSocket iniciado na porta ${broadcasterPort}`);
+  } catch (error) {
+    console.error('[Broadcaster] Erro ao iniciar:', error.message);
+  }
+
+  // Inicializar LePapon WebSocket Client
+  try {
+    const tokenManager = new TokenManager({
+      logger: console
+    });
+
+    const lepaponQueue = createAsyncQueue({
+      concurrency: 2,
+      maxSize: 500,
+      logger: console
+    });
+
+    const orderProcessor = new OrderProcessor({
+      db,
+      broadcaster: global.frontendBroadcaster,
+      asyncQueue: lepaponQueue,
+      logger: console
+    });
+
+    const lepaponWebSocketClient = new LePaponWebSocketClient({
+      wsUrl: process.env.WS_URL || 'ws://lepapon.com.br:3001',
+      tokenManager,
+      orderProcessor,
+      logger: console
+    });
+
+    await lepaponWebSocketClient.connect();
+    global.lepaponWebSocketClient = lepaponWebSocketClient;
+    console.log('[LePapon] Cliente WebSocket inicializado');
+  } catch (error) {
+    console.error('[LePapon] Erro ao inicializar cliente WebSocket:', error.message);
+  }
+});
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('[SERVER] SIGTERM recebido, encerrando gracefully...');
+  
+  if (global.lepaponWebSocketClient) {
+    global.lepaponWebSocketClient.close();
+  }
+
+  if (global.frontendBroadcaster) {
+    await global.frontendBroadcaster.stop();
+  }
+
+  server.close(() => {
+    console.log('[SERVER] Servidor encerrado');
+    process.exit(0);
+  });
 });
 
 module.exports = app;
