@@ -11,7 +11,7 @@ exports.up = async function up(knex) {
   if (!hasTable) {
     await knex.schema.createTable('whatsapp_user_identification_map', (table) => {
       table.bigIncrements('id').primary();
-      table.bigInteger('user_id').unsigned().notNullable();
+      table.string('user_id', 255).notNullable();
       
       // IDs históricos e atuais
       table.string('phone_number', 20).nullable();
