@@ -10,7 +10,7 @@ exports.up = async function up(knex) {
   
   if (!hasColumn) {
     await knex.schema.table('whatsapp_messages', (table) => {
-      table.bigInteger('user_id').unsigned().nullable();
+      table.string('user_id', 255).nullable();
       table.enum('delivery_status', [
         'sent',
         'delivered',

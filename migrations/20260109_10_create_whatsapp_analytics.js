@@ -10,7 +10,7 @@ exports.up = async function up(knex) {
   if (!hasTable) {
     await knex.schema.createTable('whatsapp_analytics', (table) => {
       table.bigIncrements('id').primary();
-      table.bigInteger('user_id').unsigned().nullable();
+      table.string('user_id', 255).nullable();
       
       // RFM Metrics
       table.integer('recency_days').nullable();

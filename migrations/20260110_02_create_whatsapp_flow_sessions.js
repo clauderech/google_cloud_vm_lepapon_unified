@@ -17,7 +17,7 @@ exports.up = async function up(knex) {
       table.string('flow_session_id', 100).nullable();
       
       // Relacionamentos
-      table.bigInteger('user_id').unsigned().notNullable();
+      table.string('user_id', 255).notNullable();
       table.bigInteger('order_id').unsigned().nullable();
       
       // Status

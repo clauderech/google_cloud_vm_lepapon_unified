@@ -11,7 +11,7 @@ exports.up = async function up(knex) {
   if (!hasTable) {
     await knex.schema.createTable('whatsapp_contacts', (table) => {
       table.bigIncrements('id').primary();
-      table.bigInteger('user_id').unsigned().unique().notNullable();
+      table.string('user_id', 255).unique().notNullable();
       
       // Informações Pessoais
       table.string('full_name', 255).nullable();

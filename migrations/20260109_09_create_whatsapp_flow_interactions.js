@@ -10,7 +10,7 @@ exports.up = async function up(knex) {
   if (!hasTable) {
     await knex.schema.createTable('whatsapp_flow_interactions', (table) => {
       table.bigIncrements('id').primary();
-      table.bigInteger('user_id').unsigned().notNullable();
+      table.string('user_id', 255).notNullable();
       
       // Flow Info
       table.string('flow_id', 100).nullable();

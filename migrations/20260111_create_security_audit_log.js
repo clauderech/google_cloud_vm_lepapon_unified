@@ -23,7 +23,7 @@ exports.up = async function up(knex) {
       ]).notNullable();
       
       // Usuário envolvido
-      table.bigInteger('user_id').unsigned().nullable();
+      table.string('user_id', 255).nullable();
       table.string('phone_number', 20).nullable();
       
       // Detalhes do evento (JSON)
