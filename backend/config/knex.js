@@ -50,7 +50,7 @@ function buildKnexConfig() {
     },
     migrations: {
       tableName: process.env.DB_MIGRATIONS_TABLE || 'knex_migrations',
-      directory: process.env.DB_MIGRATIONS_DIR || './migrations',
+      directory: process.env.DB_MIGRATIONS_DIR || '../migrations',
     },
   };
 }
