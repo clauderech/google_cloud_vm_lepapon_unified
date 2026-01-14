@@ -46,5 +46,10 @@ exports.up = async function up(knex) {
 };
 
 exports.down = async function down(knex) {
-  await knex.schema.dropTableIfExists('whatsapp_order_items');
+  await knex.raw('SET FOREIGN_KEY_CHECKS = 0');
+  try {
+    await knex.schema.dropTableIfExists('whatsapp_order_items');
+  } finally {
+    await knex.raw('SET FOREIGN_KEY_CHECKS = 1');
+  }
 };
