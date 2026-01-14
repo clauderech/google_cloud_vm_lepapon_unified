@@ -10,7 +10,7 @@ exports.up = async function up(knex) {
   if (!hasTable) {
     await knex.schema.createTable('whatsapp_order_items', (table) => {
       table.bigIncrements('id').primary();
-      table.bigInteger('order_id').unsigned().notNullable();
+      table.string('order_id', 255).notNullable();
       
       // Produto
       table.string('product_retailer_id', 100);
