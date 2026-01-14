@@ -16,7 +16,7 @@ const FrontendBroadcaster = require('./websocket/frontendBroadcaster');
 const LePaponWebSocketClient = require('./websocket/lepaponWebSocketClient');
 const TokenManager = require('./websocket/tokenManager');
 const OrderProcessor = require('./websocket/orderProcessor');
-const { createAsyncQueue } = require('./models/asyncQueue');
+const { createQueue } = require('./models/asyncQueue');
 
 // Importar rotas
 const lepaponOrdersRoutes = require('./routes/lepapon-orders');
@@ -131,7 +131,7 @@ const server = app.listen(PORT, async () => {
       logger: console
     });
 
-    const lepaponQueue = createAsyncQueue({
+    const lepaponQueue = createQueue({
       concurrency: 2,
       maxSize: 500,
       logger: console
