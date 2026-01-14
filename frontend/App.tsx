@@ -1144,6 +1144,7 @@ const App = () => {
     });
     const [showForm, setShowForm] = useState(false);
     const [editingProductId, setEditingProductId] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
     
     // Recipe Builder States
     const [recipeIngId, setRecipeIngId] = useState('');
@@ -1223,16 +1224,28 @@ const App = () => {
       <div className="p-6 max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Cadastro & Estoque</h2>
-          <button 
-            onClick={() => {
-              setEditingProductId(null);
-              setShowForm(!showForm);
-              if (showForm) setNewProd({ category: 'Geral', minStock: 10, unit: 'un', recipe: [] });
-            }}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium"
-          >
-            <Plus className="w-4 h-4" /> {editingProductId ? 'Cancelar' : 'Novo Item'}
-          </button>
+          <div className="flex gap-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
+              <input 
+                type="text"
+                placeholder="Buscar produto..."
+                className="pl-10 pr-4 py-2 rounded-lg border border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black bg-white placeholder-gray-600 w-48"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <button 
+              onClick={() => {
+                setEditingProductId(null);
+                setShowForm(!showForm);
+                if (showForm) setNewProd({ category: 'Geral', minStock: 10, unit: 'un', recipe: [] });
+              }}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium"
+            >
+              <Plus className="w-4 h-4" /> {editingProductId ? 'Cancelar' : 'Novo Item'}
+            </button>
+          </div>
         </div>
 
         {showForm && (
@@ -1354,7 +1367,9 @@ const App = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {state.products.filter(p => p.type === 'insumo').map(p => (
+                    {state.products
+                      .filter(p => p.type === 'insumo' && p.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                      .map(p => (
                       <tr key={p.id} className="hover:bg-gray-50 text-gray-900">
                         <td className="p-3 font-medium">{p.name}</td>
                         <td className="p-3 text-right font-mono font-bold">{p.stock}</td>
@@ -1394,7 +1409,9 @@ const App = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {state.products.filter(p => p.type === 'prato' || p.type === 'revenda').map(p => {
+                    {state.products
+                      .filter(p => (p.type === 'prato' || p.type === 'revenda') && p.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                      .map(p => {
                       const maxProd = calculateMaxProduciable(p, state.products);
                       return (
                         <tr key={p.id} className="hover:bg-gray-50 text-gray-900">
