@@ -8,7 +8,6 @@ exports.up = function(knex) {
     table.string('category', 100).nullable();
     table.timestamp('created_at').defaultTo(knex.fn.now());
     
-    table.foreign('register_id').references('id').inTable('cash_registers').onDelete('cascade');
     table.index('register_id');
     table.index('type');
   });
