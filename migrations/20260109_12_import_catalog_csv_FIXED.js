@@ -108,35 +108,22 @@ exports.up = async function up(knex) {
     
     console.log(`[Migration] Parsing completo: ${records.length} válidos, ${skippedCount} pulados, ${errorCount} erros`);
     
-    // Preparar dados para inserção
+    // Preparar dados para inserção (apenas colunas que existem)
     const products = records.map((record) => {
       // Normalizar nome (underscores → espaços)
       const normalizedName = record.csv_name.replace(/_/g, ' ');
       
       return {
-        product_retailer_id: String(record.csv_id).trim(),
-        catalog_id: process.env.WHATSAPP_CATALOG_ID || '857531673917870',
+        id: String(record.csv_id).trim(),
         name: normalizedName,
         description: generateDescription(normalizedName),
-        category: normalizeCategory(record.csv_category), // Usar categoria do CSV
-        price: record.csv_price > 0 ? record.csv_price : null, // Usar preço real do CSV
-        currency: 'BRL',
-        is_available: true,
-        stock_quantity: 999,
-        image_urls: null, // Não disponível no CSV
-        meta_data: JSON.stringify({
-          source: 'csv_import_v2',
-          imported_at: new Date().toISOString(),
-          original_name: record.csv_name,
-          original_category: record.csv_category,
-          original_price: record.csv_price,
-          product_type: record.csv_type, // Armazenar type em meta_data
-        }),
-        last_synced: knex.fn.now(),
+        price: record.csv_price > 0 ? record.csv_price : null,
+        image_url: null, // Não disponível no CSV
+        availability: true,
         created_at: knex.fn.now(),
         updated_at: knex.fn.now(),
       };
-    }).filter(p => p.product_retailer_id && p.name);
+    }).filter(p => p.id && p.name);
     
     // Detecção de duplicatas
     const idSet = new Set();
@@ -162,7 +149,6 @@ exports.up = async function up(knex) {
     }
     
     console.log(`[Migration] ✅ ${products.length} produtos importados com sucesso`);
-    console.log(`[Migration] Distribuição por categoria:`, getCategoryStats(products));
     
   } catch (error) {
     console.error('[Migration] ❌ Erro ao importar catálogo:', error.message);
@@ -185,33 +171,4 @@ function generateDescription(name) {
     .split(' ')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
-}
-
-/**
- * Normaliza categoria (padroniza format do CSV)
- * Mantém categoria original, apenas padroniza case
- */
-function normalizeCategory(category) {
-  if (!category) return 'Outros';
-  
-  return category
-    .toLowerCase()
-    .trim()
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
-
-/**
- * Gera estatísticas de categorias
- */
-function getCategoryStats(products) {
-  const stats = {};
-  
-  products.forEach(p => {
-    const cat = p.category || 'Sem Categoria';
-    stats[cat] = (stats[cat] || 0) + 1;
-  });
-  
-  return stats;
 }
