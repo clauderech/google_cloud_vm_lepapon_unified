@@ -634,7 +634,7 @@ const App = () => {
   const POS = () => {
     const [cart, setCart] = useState<CartItem[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [activeTab, setActiveTab] = useState<'quick' | 'comandas' | 'lepapon'>('comandas');
+    const [activeTab, setActiveTab] = useState<'quick' | 'comandas' | 'lepapon'>('quick');
     
     // Comanda State
     const [selectedComandaId, setSelectedComandaId] = useState<string | null>(null);
