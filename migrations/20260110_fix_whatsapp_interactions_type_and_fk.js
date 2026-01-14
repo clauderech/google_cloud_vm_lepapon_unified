@@ -28,7 +28,7 @@ exports.up = async function up(knex) {
       });
       
       // Alterar coluna de INT para VARCHAR(255)
-      await knex.raw('ALTER TABLE whatsapp_interactions MODIFY COLUMN user_id VARCHAR(255) NULLABLE');
+      await knex.raw('ALTER TABLE whatsapp_interactions MODIFY COLUMN user_id VARCHAR(255)');
       console.log('[Migration] ✅ Coluna user_id alterada para VARCHAR(255)');
       
       // Recriar foreign key com tipo correto
@@ -69,7 +69,7 @@ exports.down = async function down(knex) {
       });
       
       // Reverter para INT
-      await knex.raw('ALTER TABLE whatsapp_interactions MODIFY COLUMN user_id INT NULLABLE');
+      await knex.raw('ALTER TABLE whatsapp_interactions MODIFY COLUMN user_id INT');
       console.log('[Migration] ✅ user_id revertido para INTEGER');
       
       await knex.raw('SET FOREIGN_KEY_CHECKS = 1');
