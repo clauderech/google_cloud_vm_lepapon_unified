@@ -644,6 +644,11 @@ const App = () => {
     const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
     const [appliedDiscount, setAppliedDiscount] = useState<{ percent: number; pointsUsed: number } | null>(null);
 
+    // Modal para observações de prato
+    const [showObservationModal, setShowObservationModal] = useState(false);
+    const [pendingProduct, setPendingProduct] = useState<Product | null>(null);
+    const [observation, setObservation] = useState('');
+
     // Reset cart when switching modes or comandas
     useEffect(() => {
       if (activeTab === 'comandas' && selectedComandaId) {
@@ -679,6 +684,49 @@ const App = () => {
         if (maxStock <= 0) return prev;
         return [...prev, { productId: product.id, productName: product.name, quantity: 1, unitPrice: product.price }];
       });
+    };
+
+    const handleAddProductWithObservation = (product: Product, maxStock: number) => {
+      // Se for prato, abre modal para observações
+      if (product.type === 'prato') {
+        setPendingProduct(product);
+        setObservation('');
+        setShowObservationModal(true);
+      } else {
+        // Se for revenda, adiciona direto
+        addToCart(product, maxStock);
+      }
+    };
+
+    const handleConfirmProductWithObservation = () => {
+      if (pendingProduct) {
+        // Adiciona ao carrinho com observação no nome do produto
+        setCart(prev => {
+          const existing = prev.find(item => item.productId === pendingProduct.id);
+          const displayName = observation 
+            ? `${pendingProduct.name} (${observation})`
+            : pendingProduct.name;
+          
+          if (existing) {
+            return prev.map(item => 
+              item.productId === pendingProduct.id 
+                ? { ...item, quantity: item.quantity + 1, productName: displayName }
+                : item
+            );
+          }
+          return [...prev, { 
+            productId: pendingProduct.id, 
+            productName: displayName, 
+            quantity: 1, 
+            unitPrice: pendingProduct.price 
+          }];
+        });
+        
+        // Fecha modal
+        setShowObservationModal(false);
+        setPendingProduct(null);
+        setObservation('');
+      }
     };
 
     const removeFromCart = (productId: string) => {
@@ -783,7 +831,7 @@ const App = () => {
               return (
                 <button
                   key={product.id}
-                  onClick={() => addToCart(product, maxStock)}
+                  onClick={() => handleAddProductWithObservation(product, maxStock)}
                   disabled={available <= 0 || (activeTab === 'comandas' && !selectedComandaId)}
                   className={`p-4 rounded-xl border text-left transition-all ${
                     available <= 0 || (activeTab === 'comandas' && !selectedComandaId)
@@ -1054,6 +1102,7 @@ const App = () => {
       recipe: [] 
     });
     const [showForm, setShowForm] = useState(false);
+    const [editingProductId, setEditingProductId] = useState<string | null>(null);
     
     // Recipe Builder States
     const [recipeIngId, setRecipeIngId] = useState('');
@@ -1071,20 +1120,60 @@ const App = () => {
       }
     };
 
+    const handleEditProduct = (product: Product) => {
+      setEditingProductId(product.id);
+      setMode(product.type as 'insumo' | 'prato');
+      setNewProd(product);
+      setShowForm(true);
+    };
+
     const handleSave = () => {
       if (!newProd.name) return alert("Nome é obrigatório");
       
-      const productToSave: Product = {
-        ...newProd,
-        id: Date.now().toString(),
-        type: mode,
-        stock: mode === 'prato' ? 0 : (newProd.stock || 0), // Prato has 0 stock always
-        price: Number(newProd.price || 0),
-        cost: Number(newProd.cost || 0),
-        supplierId: newProd.supplierId || '',
-      } as Product;
+      if (editingProductId) {
+        // Atualizar produto existente
+        setState(prev => ({
+          ...prev,
+          products: prev.products.map(p => 
+            p.id === editingProductId 
+              ? {
+                  ...p,
+                  name: newProd.name || p.name,
+                  category: newProd.category || p.category,
+                  price: Number(newProd.price) || p.price,
+                  cost: Number(newProd.cost) || p.cost,
+                  stock: mode === 'prato' ? 0 : (Number(newProd.stock) !== undefined ? Number(newProd.stock) : p.stock),
+                  minStock: Number(newProd.minStock) || p.minStock,
+                  unit: newProd.unit || p.unit,
+                  supplierId: newProd.supplierId || p.supplierId,
+                  recipe: newProd.recipe || p.recipe,
+                  updated_at: new Date().toISOString()
+                }
+              : p
+          )
+        }));
+        setEditingProductId(null);
+      } else {
+        // Criar novo produto
+        const productToSave: Product = {
+          ...newProd,
+          id: Date.now().toString(),
+          type: mode,
+          stock: mode === 'prato' ? 0 : (newProd.stock || 0),
+          price: Number(newProd.price || 0),
+          cost: Number(newProd.cost || 0),
+          supplierId: newProd.supplierId || '',
+        } as Product;
 
-      addProduct(productToSave);
+        addProduct(productToSave);
+      }
+      
+      setShowForm(false);
+      setNewProd({ category: 'Geral', minStock: 10, unit: 'un', recipe: [] });
+    };
+
+    const handleCancelEdit = () => {
+      setEditingProductId(null);
       setShowForm(false);
       setNewProd({ category: 'Geral', minStock: 10, unit: 'un', recipe: [] });
     };
@@ -1094,25 +1183,36 @@ const App = () => {
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Cadastro & Estoque</h2>
           <button 
-            onClick={() => setShowForm(!showForm)}
+            onClick={() => {
+              setEditingProductId(null);
+              setShowForm(!showForm);
+              if (showForm) setNewProd({ category: 'Geral', minStock: 10, unit: 'un', recipe: [] });
+            }}
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium"
           >
-            <Plus className="w-4 h-4" /> Novo Item
+            <Plus className="w-4 h-4" /> {editingProductId ? 'Cancelar' : 'Novo Item'}
           </button>
         </div>
 
         {showForm && (
           <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200 mb-6 animate-in fade-in slide-in-from-top-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-gray-900">{editingProductId ? '✏️ Editar' : '➕ Novo'} Produto</h3>
+              <button onClick={handleCancelEdit} className="text-gray-500 hover:text-gray-700 text-2xl">✕</button>
+            </div>
+
             <div className="flex gap-4 mb-4 border-b pb-4">
               <button 
                 onClick={() => setMode('insumo')} 
                 className={`px-4 py-2 rounded-lg font-bold ${mode === 'insumo' ? 'bg-blue-100 text-blue-800' : 'text-gray-600'}`}
+                disabled={!!editingProductId}
               >
                 Insumo (Compra)
               </button>
               <button 
                 onClick={() => setMode('prato')} 
                 className={`px-4 py-2 rounded-lg font-bold ${mode === 'prato' ? 'bg-blue-100 text-blue-800' : 'text-gray-600'}`}
+                disabled={!!editingProductId}
               >
                 Prato (Venda / Receita)
               </button>
@@ -1131,8 +1231,8 @@ const App = () => {
                     <option value="l">Litros</option>
                     <option value="ml">Ml</option>
                   </select>
-                  <input type="number" placeholder="Custo de Compra" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" onChange={e => setNewProd({...newProd, cost: Number(e.target.value)})} />
-                  <input type="number" placeholder="Estoque Inicial" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" onChange={e => setNewProd({...newProd, stock: Number(e.target.value)})} />
+                  <input type="number" placeholder="Custo de Compra" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.cost || ''} onChange={e => setNewProd({...newProd, cost: Number(e.target.value)})} />
+                  <input type="number" placeholder="Estoque Atual" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.stock || ''} onChange={e => setNewProd({...newProd, stock: Number(e.target.value)})} />
                   <input type="number" placeholder="Estoque Mínimo" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.minStock} onChange={e => setNewProd({...newProd, minStock: Number(e.target.value)})} />
                   <select className="border border-gray-400 p-2 rounded text-black bg-white" value={newProd.supplierId || ''} onChange={e => setNewProd({...newProd, supplierId: e.target.value})}>
                     <option value="">Fornecedor</option>
@@ -1143,7 +1243,7 @@ const App = () => {
 
               {mode === 'prato' && (
                 <>
-                  <input type="number" placeholder="Preço de Venda" className="border border-gray-400 p-2 rounded font-bold text-black bg-white placeholder-gray-600" onChange={e => setNewProd({...newProd, price: Number(e.target.value)})} />
+                  <input type="number" placeholder="Preço de Venda" className="border border-gray-400 p-2 rounded font-bold text-black bg-white placeholder-gray-600" value={newProd.price || ''} onChange={e => setNewProd({...newProd, price: Number(e.target.value)})} />
                 </>
               )}
             </div>
@@ -1185,9 +1285,14 @@ const App = () => {
               </div>
             )}
 
-            <button onClick={handleSave} className="w-full bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700">
-              Salvar {mode === 'insumo' ? 'Insumo' : 'Prato'}
-            </button>
+            <div className="flex gap-3">
+              <button onClick={handleSave} className="flex-1 bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700">
+                {editingProductId ? '💾 Atualizar' : '✅ Criar'} {mode === 'insumo' ? 'Insumo' : 'Prato'}
+              </button>
+              <button onClick={handleCancelEdit} className="px-6 bg-gray-300 text-gray-800 py-3 rounded-lg font-bold hover:bg-gray-400">
+                Cancelar
+              </button>
+            </div>
           </div>
         )}
 
@@ -1204,6 +1309,7 @@ const App = () => {
                       <th className="p-3">Unidade</th>
                       <th className="p-3 text-right">Custo</th>
                       <th className="p-3">Status</th>
+                      <th className="p-3 text-center">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -1217,6 +1323,14 @@ const App = () => {
                           {p.stock <= p.minStock ? 
                             <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">Baixo</span> : 
                             <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold">OK</span>}
+                        </td>
+                        <td className="p-3 text-center">
+                          <button 
+                            onClick={() => handleEditProduct(p)}
+                            className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1 rounded text-xs font-bold"
+                          >
+                            ✏️ Editar
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -1235,6 +1349,7 @@ const App = () => {
                       <th className="p-3 text-right">Preço Venda</th>
                       <th className="p-3 text-right">Produção Max. Est.</th>
                       <th className="p-3">Ingredientes</th>
+                      <th className="p-3 text-center">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -1251,6 +1366,14 @@ const App = () => {
                           </td>
                           <td className="p-3 text-sm text-gray-700 font-medium max-w-xs truncate">
                             {p.recipe?.map(r => state.products.find(i => i.id === r.ingredientId)?.name).join(', ')}
+                          </td>
+                          <td className="p-3 text-center">
+                            <button 
+                              onClick={() => handleEditProduct(p)}
+                              className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1 rounded text-xs font-bold"
+                            >
+                              ✏️ Editar
+                            </button>
                           </td>
                         </tr>
                       );
@@ -1512,6 +1635,47 @@ const App = () => {
 
       {/* Help Menu */}
       <HelpMenu isOpen={showHelp} onClose={() => setShowHelp(false)} />
+
+      {/* Modal de Observações para Prato */}
+      {showObservationModal && pendingProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 animate-in fade-in slide-in-from-bottom-4">
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              🍽️ {pendingProduct.name}
+            </h3>
+            <p className="text-gray-600 text-sm mb-4">
+              Adicione observações do cliente (ex: sem milho, sem ervilha, bem feito, etc)
+            </p>
+            
+            <textarea
+              value={observation}
+              onChange={e => setObservation(e.target.value)}
+              placeholder="Ex: Sem milho, sem cebola, bem temperado..."
+              className="w-full border-2 border-gray-300 rounded-lg p-3 text-black bg-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 min-h-24 resize-none font-medium"
+              autoFocus
+            />
+            
+            <div className="mt-6 space-y-3">
+              <button
+                onClick={handleConfirmProductWithObservation}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition-colors text-lg"
+              >
+                ✅ Adicionar ao Carrinho
+              </button>
+              <button
+                onClick={() => {
+                  setShowObservationModal(false);
+                  setPendingProduct(null);
+                  setObservation('');
+                }}
+                className="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 rounded-lg transition-colors"
+              >
+                ✕ Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
