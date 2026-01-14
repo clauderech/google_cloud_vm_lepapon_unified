@@ -20,6 +20,7 @@ const { createAsyncQueue } = require('./models/asyncQueue');
 
 // Importar rotas
 const lepaponOrdersRoutes = require('./routes/lepapon-orders');
+const apiRoutes = require('./routes/api');
 
 // Validar variáveis de ambiente na inicialização
 validateEnvironment();
@@ -75,6 +76,9 @@ app.get('/api/sync/status', (req, res) => {
 
 // Rotas LePapon Orders
 app.use(lepaponOrdersRoutes);
+
+// Rotas de API (Produtos, Estado Inicial)
+app.use(apiRoutes);
 
 // Rota de status do WebSocket Broadcaster (para monitoramento)
 app.get('/api/websocket/status', (req, res) => {

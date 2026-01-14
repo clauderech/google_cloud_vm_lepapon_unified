@@ -20,7 +20,7 @@ import type {
 const USE_API = process.env.NODE_ENV === 'production';
 const API_URL = process.env.NODE_ENV === 'production' 
   ? '/api' 
-  : 'http://localhost:3001/api';
+  : 'http://localhost:3000/api';
 
 const LOCAL_STORAGE_KEY = 'lanchonete_app_state_v5';
 
