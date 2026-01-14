@@ -660,7 +660,7 @@ const App = () => {
       }
     }, [activeTab, selectedComandaId, state.activeComandas]);
 
-    const pratos = state.products.filter(p => p.type === 'prato');
+    const pratos = state.products.filter(p => p.type === 'prato' || p.type === 'revenda');
     const filteredProducts = pratos.filter(p => 
       p.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -1238,7 +1238,7 @@ const App = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {state.products.filter(p => p.type === 'prato').map(p => {
+                    {state.products.filter(p => p.type === 'prato' || p.type === 'revenda').map(p => {
                       const maxProd = calculateMaxProduciable(p, state.products);
                       return (
                         <tr key={p.id} className="hover:bg-gray-50 text-gray-900">
