@@ -1089,6 +1089,47 @@ const App = () => {
             </div>
           )}
         </div>
+
+        {/* Modal de Observações para Prato */}
+        {showObservationModal && pendingProduct && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 animate-in fade-in slide-in-from-bottom-4">
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                🍽️ {pendingProduct.name}
+              </h3>
+              <p className="text-gray-600 text-sm mb-4">
+                Adicione observações do cliente (ex: sem milho, sem ervilha, bem feito, etc)
+              </p>
+              
+              <textarea
+                value={observation}
+                onChange={e => setObservation(e.target.value)}
+                placeholder="Ex: Sem milho, sem cebola, bem temperado..."
+                className="w-full border-2 border-gray-300 rounded-lg p-3 text-black bg-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 min-h-24 resize-none font-medium"
+                autoFocus
+              />
+              
+              <div className="mt-6 space-y-3">
+                <button
+                  onClick={handleConfirmProductWithObservation}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition-colors text-lg"
+                >
+                  ✅ Adicionar ao Carrinho
+                </button>
+                <button
+                  onClick={() => {
+                    setShowObservationModal(false);
+                    setPendingProduct(null);
+                    setObservation('');
+                  }}
+                  className="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 rounded-lg transition-colors"
+                >
+                  ✕ Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -1635,47 +1676,6 @@ const App = () => {
 
       {/* Help Menu */}
       <HelpMenu isOpen={showHelp} onClose={() => setShowHelp(false)} />
-
-      {/* Modal de Observações para Prato */}
-      {showObservationModal && pendingProduct && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 animate-in fade-in slide-in-from-bottom-4">
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">
-              🍽️ {pendingProduct.name}
-            </h3>
-            <p className="text-gray-600 text-sm mb-4">
-              Adicione observações do cliente (ex: sem milho, sem ervilha, bem feito, etc)
-            </p>
-            
-            <textarea
-              value={observation}
-              onChange={e => setObservation(e.target.value)}
-              placeholder="Ex: Sem milho, sem cebola, bem temperado..."
-              className="w-full border-2 border-gray-300 rounded-lg p-3 text-black bg-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 min-h-24 resize-none font-medium"
-              autoFocus
-            />
-            
-            <div className="mt-6 space-y-3">
-              <button
-                onClick={handleConfirmProductWithObservation}
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition-colors text-lg"
-              >
-                ✅ Adicionar ao Carrinho
-              </button>
-              <button
-                onClick={() => {
-                  setShowObservationModal(false);
-                  setPendingProduct(null);
-                  setObservation('');
-                }}
-                className="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 rounded-lg transition-colors"
-              >
-                ✕ Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
