@@ -31,11 +31,9 @@ router.get('/api/lepapon-orders', async (req, res) => {
         'whatsapp_orders.order_number',
         'whatsapp_orders.lepapon_order_id',
         'whatsapp_orders.lepapon_session_id',
-        'whatsapp_orders.order_status',
-        'whatsapp_orders.payment_status',
-        'whatsapp_orders.subtotal',
-        'whatsapp_orders.discount',
-        'whatsapp_orders.total',
+        'whatsapp_orders.status as order_status',
+        'whatsapp_orders.payment_type as payment_status',
+        'whatsapp_orders.total_amount as total',
         'whatsapp_orders.created_at',
         'whatsapp_orders.updated_at'
       )
@@ -43,7 +41,7 @@ router.get('/api/lepapon-orders', async (req, res) => {
 
     // Filtrar por status se especificado
     if (status && status !== 'all') {
-      query = query.where('whatsapp_orders.order_status', status);
+      query = query.where('whatsapp_orders.status', status);
     }
 
     // Filtrar por data (apenas pedidos recentes)
@@ -78,8 +76,8 @@ router.get('/api/lepapon-orders', async (req, res) => {
             unitPrice: item.unit_price,
             totalPrice: item.total_price
           })),
-          subtotal: order.subtotal,
-          discount: order.discount || 0,
+          subtotal: 0,
+          discount: 0,
           total: order.total,
           status: 'open', // Comanda sempre em "open" quando não confirmada
           paymentStatus: order.payment_status,
@@ -149,11 +147,11 @@ router.put('/api/lepapon-orders/:orderId', async (req, res) => {
     };
 
     if (status) {
-      updateData.order_status = status;
+      updateData.status = status;
     }
 
     if (payment_status) {
-      updateData.payment_status = payment_status;
+      updateData.payment_type = payment_status;
     }
 
     if (payment_type) {
@@ -182,8 +180,8 @@ router.put('/api/lepapon-orders/:orderId', async (req, res) => {
       message: 'Pedido atualizado com sucesso',
       data: {
         id: updatedOrder.id,
-        order_status: updatedOrder.order_status,
-        payment_status: updatedOrder.payment_status,
+        order_status: updatedOrder.status,
+        payment_status: updatedOrder.payment_type,
         payment_type: updatedOrder.payment_type,
         updated_at: updatedOrder.updated_at
       }
