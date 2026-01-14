@@ -72,7 +72,8 @@ export function useLepaponOrders(options: UseLepaponOrdersOptions = {}) {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
-        }
+        },
+        credentials: 'same-origin'
       });
 
       if (!response.ok) {
@@ -103,9 +104,21 @@ export function useLepaponOrders(options: UseLepaponOrdersOptions = {}) {
         setLastFetchTime(Date.now());
       }
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Erro desconhecido';
+      let errorMsg = 'Erro desconhecido';
+      
+      if (err instanceof TypeError) {
+        errorMsg = `NetworkError: ${err.message}`;
+      } else if (err instanceof Error) {
+        errorMsg = err.message;
+      }
+      
       setError(errorMsg);
-      console.error('[useLepaponOrders] Erro ao buscar pedidos:', errorMsg);
+      console.error('[useLepaponOrders] Erro ao buscar pedidos:', {
+        error: err,
+        errorMsg,
+        apiBaseUrl,
+        timestamp: new Date().toISOString()
+      });
     } finally {
       setIsLoading(false);
     }
