@@ -38,7 +38,7 @@ interface UseLepaponOrdersOptions {
  */
 export function useLepaponOrders(options: UseLepaponOrdersOptions = {}) {
   const {
-    wsUrl = `ws://${window.location.hostname}:3002`,
+    wsUrl = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:3002`,
     apiBaseUrl = '/api',
     autoConnect = true,
     pollInterval = 5000
