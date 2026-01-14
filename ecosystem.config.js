@@ -21,11 +21,11 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
       env: {
         NODE_ENV: 'production',
-        PORT: process.env.PORT || 3000,
+        PORT: process.env.PORT || 3001,
       },
       env_development: {
         NODE_ENV: 'development',
-        PORT: 3000,
+        PORT: 3001,
       },
     },
     {
@@ -45,11 +45,11 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
       env: {
         NODE_ENV: 'production',
-        PORT: process.env.PORT || 3001,
+        PORT: process.env.PORT || 3000,
       },
       env_development: {
         NODE_ENV: 'development',
-        PORT: 3001,
+        PORT: 3000,
       },
     },
     {

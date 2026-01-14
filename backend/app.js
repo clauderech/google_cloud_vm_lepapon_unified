@@ -108,7 +108,7 @@ const server = app.listen(PORT, async () => {
 
   // Inicializar Frontend Broadcaster (WebSocket para notificar frontend)
   try {
-    const broadcasterPort = process.env.BROADCASTER_PORT || 3002;
+    const broadcasterPort = process.env.WS_PORT || 3003;
     const frontendBroadcaster = new FrontendBroadcaster({
       port: broadcasterPort,
       logger: console

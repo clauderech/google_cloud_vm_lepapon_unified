@@ -24,7 +24,8 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
       env: {
         NODE_ENV: 'production',
-        PORT: process.env.PORT || 3000,
+        PORT: process.env.PORT || 3001,
+        WS_PORT: process.env.WS_PORT || 3003,
         // Passar todas as variáveis de ambiente
         DB_CLIENT: process.env.DB_CLIENT,
         DB_HOST: process.env.DB_HOST,
@@ -43,7 +44,8 @@ module.exports = {
       },
       env_development: {
         NODE_ENV: 'development',
-        PORT: 3000,
+        PORT: 3001,
+        WS_PORT: 3003,
         // Passar todas as variáveis de ambiente
         DB_CLIENT: process.env.DB_CLIENT,
         DB_HOST: process.env.DB_HOST,
@@ -78,7 +80,8 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
       env: {
         NODE_ENV: 'production',
-        PORT: process.env.PORT || 3001,
+        PORT: process.env.PORT || 3000,
+        WS_PORT: process.env.WS_PORT || 3003,
         // Passar todas as variáveis de ambiente
         DB_CLIENT: process.env.DB_CLIENT,
         DB_HOST: process.env.DB_HOST,
@@ -97,7 +100,8 @@ module.exports = {
       },
       env_development: {
         NODE_ENV: 'development',
-        PORT: 3001,
+        PORT: 3000,
+        WS_PORT: 3003,
         // Passar todas as variáveis de ambiente
         DB_CLIENT: process.env.DB_CLIENT,
         DB_HOST: process.env.DB_HOST,
