@@ -4,42 +4,47 @@
  * Corrige tipo de dado e foreign key em whatsapp_interactions
  * 
  * Mudanças:
- * - Altera user_id de INTEGER para BIGINT UNSIGNED para alinhamento com whatsapp_users.id
+ * - Altera user_id de INTEGER para VARCHAR(255) para alinhamento com whatsapp_users.id
  * - Recria foreign key com tipo correto
- * - Garante referencial integrity com CASCADE delete
+ * - Garante referencial integrity com SET NULL
  */
 
 exports.up = async function up(knex) {
   const hasTable = await knex.schema.hasTable('whatsapp_interactions');
   
   if (hasTable) {
-    console.log('[Migration] Corrigindo tipo de user_id em whatsapp_interactions (int → bigint unsigned)');
+    console.log('[Migration] Corrigindo tipo de user_id em whatsapp_interactions');
     
     try {
-      // Usar SQL raw para ALTER TABLE (Knex não suporta .change() diretamente)
-      await knex.raw('ALTER TABLE whatsapp_interactions MODIFY COLUMN user_id BIGINT UNSIGNED NOT NULL');
-      console.log('[Migration] ✅ Coluna user_id corrigida para BIGINT UNSIGNED');
+      // Desabilitar constraints temporariamente
+      await knex.raw('SET FOREIGN_KEY_CHECKS = 0');
       
-      // Adicionar foreign key após alteração de tipo
-      const hasForeignKey = await knex.raw(`
-        SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE 
-        WHERE TABLE_NAME = 'whatsapp_interactions' 
-        AND COLUMN_NAME = 'user_id' 
-        AND CONSTRAINT_NAME LIKE '%foreign%'
+      // Droppar foreign key existente se houver
+      await knex.raw(`
+        ALTER TABLE whatsapp_interactions 
+        DROP FOREIGN KEY whatsapp_interactions_user_id_foreign
+      `).catch(() => {
+        console.log('[Migration] ℹ️ Foreign key não existia (OK)');
+      });
+      
+      // Alterar coluna de INT para VARCHAR(255)
+      await knex.raw('ALTER TABLE whatsapp_interactions MODIFY COLUMN user_id VARCHAR(255) NULLABLE');
+      console.log('[Migration] ✅ Coluna user_id alterada para VARCHAR(255)');
+      
+      // Recriar foreign key com tipo correto
+      await knex.raw(`
+        ALTER TABLE whatsapp_interactions 
+        ADD CONSTRAINT whatsapp_interactions_user_id_foreign 
+        FOREIGN KEY (user_id) REFERENCES whatsapp_users(id) 
+        ON DELETE SET NULL
       `);
+      console.log('[Migration] ✅ Foreign key criada para whatsapp_interactions.user_id');
       
-      if (hasForeignKey && hasForeignKey[0] && hasForeignKey[0].length === 0) {
-        await knex.raw(`
-          ALTER TABLE whatsapp_interactions 
-          ADD CONSTRAINT whatsapp_interactions_user_id_foreign 
-          FOREIGN KEY (user_id) REFERENCES whatsapp_users(id) 
-          ON DELETE CASCADE
-        `);
-        console.log('[Migration] ✅ Foreign key criada para whatsapp_interactions.user_id');
-      } else {
-        console.log('[Migration] ℹ️ Foreign key já existe ou verificação retornou resultados ambíguos');
-      }
+      // Reabilitar constraints
+      await knex.raw('SET FOREIGN_KEY_CHECKS = 1');
+      
     } catch (error) {
+      await knex.raw('SET FOREIGN_KEY_CHECKS = 1');
       console.error('[Migration] ❌ Erro ao corrigir whatsapp_interactions:', error.message);
       throw error;
     }
@@ -53,19 +58,23 @@ exports.down = async function down(knex) {
     console.log('[Migration] Revertendo alterações em whatsapp_interactions');
     
     try {
-      // Remover foreign key antes de alterar tipo
+      await knex.raw('SET FOREIGN_KEY_CHECKS = 0');
+      
+      // Remover foreign key
       await knex.raw(`
         ALTER TABLE whatsapp_interactions 
         DROP FOREIGN KEY whatsapp_interactions_user_id_foreign
       `).catch(() => {
-        // FK pode não existir, ignorar erro
         console.log('[Migration] ℹ️ Foreign key não encontrada (OK)');
       });
       
-      // Reverter para int
-      await knex.raw('ALTER TABLE whatsapp_interactions MODIFY COLUMN user_id INT NOT NULL');
+      // Reverter para INT
+      await knex.raw('ALTER TABLE whatsapp_interactions MODIFY COLUMN user_id INT NULLABLE');
       console.log('[Migration] ✅ user_id revertido para INTEGER');
+      
+      await knex.raw('SET FOREIGN_KEY_CHECKS = 1');
     } catch (error) {
+      await knex.raw('SET FOREIGN_KEY_CHECKS = 1');
       console.error('[Migration] ❌ Erro ao reverter whatsapp_interactions:', error.message);
       throw error;
     }
