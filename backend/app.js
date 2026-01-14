@@ -21,6 +21,7 @@ const { createQueue } = require('./models/asyncQueue');
 // Importar rotas
 const lepaponOrdersRoutes = require('./routes/lepapon-orders');
 const apiRoutes = require('./routes/api');
+const financialRoutes = require('./routes/financial');
 
 // Validar variáveis de ambiente na inicialização
 validateEnvironment();
@@ -76,6 +77,9 @@ app.get('/api/sync/status', (req, res) => {
 
 // Rotas LePapon Orders
 app.use(lepaponOrdersRoutes);
+
+// Rotas Financeiras (Caixa, Despesas, Ativos)
+app.use(financialRoutes);
 
 // Rotas de API (Produtos, Estado Inicial)
 app.use(apiRoutes);
