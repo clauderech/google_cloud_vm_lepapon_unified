@@ -17,10 +17,14 @@ import type {
 } from '../types';
 
 // CONFIGURAÇÃO: Automático baseado no ambiente
-const USE_API = process.env.NODE_ENV === 'production';
-const API_URL = process.env.NODE_ENV === 'production' 
+// Durante desenvolvimento (dev server), usar localhost
+// Em produção, usar /api (mesmo servidor)
+const USE_API = import.meta.env.PROD || window.location.hostname !== 'localhost';
+const API_URL = import.meta.env.PROD 
   ? '/api' 
   : 'http://localhost:3000/api';
+
+console.log('[Storage Config] USE_API:', USE_API, '| API_URL:', API_URL, '| hostname:', window.location.hostname);
 
 const LOCAL_STORAGE_KEY = 'lanchonete_app_state_v5';
 
@@ -33,23 +37,41 @@ export const storageService = {
   loadState: async (): Promise<AppState> => {
     if (USE_API) {
       try {
+        console.log('[Storage] Carregando estado da API:', `${API_URL}/initial-state`);
         const response = await fetch(`${API_URL}/initial-state`);
-        if (!response.ok) throw new Error('Erro ao carregar estado inicial');
+        if (!response.ok) {
+          console.error('[Storage] Erro na resposta da API:', response.status, response.statusText);
+          throw new Error('Erro ao carregar estado inicial');
+        }
         
         const data = await response.json();
+        console.log('[Storage] Dados recebidos da API:', {
+          products: data.products?.length || 0,
+          suppliers: data.suppliers?.length || 0,
+          customers: data.customers?.length || 0
+        });
         
         // Mapear campos do banco para camelCase
-        return {
-          products: data.products.map(mapProductFromDB),
-          suppliers: data.suppliers.map(mapSupplierFromDB),
-          customers: data.customers?.map(mapCustomerFromDB) || [],
-          sales: data.sales?.map(mapSaleFromDB) || [],
-          purchases: data.purchases?.map(mapPurchaseFromDB) || [],
-          shoppingList: data.shoppingList?.map(mapShoppingListFromDB) || [],
-          activeComandas: data.activeComandas?.map(mapComandaFromDB) || []
+        const state = {
+          products: (data.products || []).map(mapProductFromDB),
+          suppliers: (data.suppliers || []).map(mapSupplierFromDB),
+          customers: (data.customers || []).map(mapCustomerFromDB),
+          sales: (data.sales || []).map(mapSaleFromDB),
+          purchases: (data.purchases || []).map(mapPurchaseFromDB),
+          shoppingList: (data.shoppingList || []).map(mapShoppingListFromDB),
+          activeComandas: (data.activeComandas || []).map(mapComandaFromDB)
         };
+        
+        console.log('[Storage] Estado mapeado:', {
+          products: state.products.length,
+          suppliers: state.suppliers.length,
+          customers: state.customers.length
+        });
+        
+        return state;
       } catch (e) {
-        console.error("Erro ao conectar na API:", e);
+        console.error("[Storage] Erro ao conectar na API:", e);
+        console.log('[Storage] Fallback para localStorage');
         return loadFromLocalStorage();
       }
     } else {
@@ -297,18 +319,20 @@ function mapProductFromDB(p: any): Product {
     id: p.id,
     name: p.name,
     type: p.type,
-    price: parseFloat(p.price),
-    cost: parseFloat(p.cost),
-    stock: parseFloat(p.stock),
-    minStock: parseFloat(p.min_stock),
+    price: p.price != null ? parseFloat(p.price) : 0,
+    cost: p.cost != null ? parseFloat(p.cost) : 0,
+    stock: p.stock != null ? parseFloat(p.stock) : 0,
+    minStock: p.min_stock != null ? parseFloat(p.min_stock) : 10,
     maxStock: p.max_stock ? parseFloat(p.max_stock) : undefined,
-    unit: p.unit,
+    unit: p.unit || 'un',
     supplierId: p.supplier_id || '',
-    category: p.category,
+    category: p.category || 'Geral',
     description: p.description,
     barcode: p.barcode,
-    isActive: p.is_active !== false,
-    recipe: p.recipe || []
+    isActive: p.is_active !== false && p.is_active !== 0,
+    recipe: p.recipe || [],
+    created_at: p.created_at,
+    updated_at: p.updated_at
   };
 }
 
