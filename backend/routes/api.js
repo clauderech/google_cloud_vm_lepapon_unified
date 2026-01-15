@@ -203,17 +203,41 @@ router.put('/api/products/:id', async (req, res) => {
     }
 
     const { id } = req.params;
-    const { name, type, category, price, stock, supplier_id } = req.body;
-
-    await db('products').where('id', id).update({
-      name,
-      type,
-      category,
-      price,
-      stock,
+    const { 
+      name, 
+      type, 
+      category, 
+      price, 
+      cost,
+      stock, 
+      min_stock,
+      max_stock,
+      unit,
       supplier_id,
-      updated_at: new Date()
-    });
+      description,
+      barcode,
+      is_active,
+      recipe
+    } = req.body;
+
+    const updateData: any = { updated_at: new Date() };
+    
+    // Apenas atualizar campos que foram enviados
+    if (name !== undefined) updateData.name = name;
+    if (type !== undefined) updateData.type = type;
+    if (category !== undefined) updateData.category = category;
+    if (price !== undefined) updateData.price = price;
+    if (cost !== undefined) updateData.cost = cost;
+    if (stock !== undefined) updateData.stock = stock;
+    if (min_stock !== undefined) updateData.min_stock = min_stock;
+    if (max_stock !== undefined) updateData.max_stock = max_stock;
+    if (unit !== undefined) updateData.unit = unit;
+    if (supplier_id !== undefined) updateData.supplier_id = supplier_id;
+    if (description !== undefined) updateData.description = description;
+    if (barcode !== undefined) updateData.barcode = barcode;
+    if (is_active !== undefined) updateData.is_active = is_active;
+
+    await db('products').where('id', id).update(updateData);
 
     res.json({
       success: true,

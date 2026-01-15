@@ -204,6 +204,38 @@ export const storageService = {
     return { productId: product.id };
   },
 
+  async updateProduct(productId: string, product: Partial<Product>): Promise<void> {
+    if (USE_API) {
+      // Mapear campos do frontend para o formato do backend
+      const productData: any = {};
+      if (product.name !== undefined) productData.name = product.name;
+      if (product.type !== undefined) productData.type = product.type;
+      if (product.category !== undefined) productData.category = product.category;
+      if (product.price !== undefined) productData.price = product.price;
+      if (product.cost !== undefined) productData.cost = product.cost;
+      if (product.stock !== undefined) productData.stock = product.stock;
+      if (product.minStock !== undefined) productData.min_stock = product.minStock;
+      if (product.maxStock !== undefined) productData.max_stock = product.maxStock;
+      if (product.unit !== undefined) productData.unit = product.unit;
+      if (product.supplierId !== undefined) productData.supplier_id = product.supplierId;
+      if (product.description !== undefined) productData.description = product.description;
+      if (product.barcode !== undefined) productData.barcode = product.barcode;
+      if (product.isActive !== undefined) productData.is_active = product.isActive;
+      if (product.recipe !== undefined) productData.recipe = product.recipe;
+
+      const response = await fetch(`${API_URL}/products/${productId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(productData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao atualizar produto');
+      }
+    }
+  },
+
   // =========================================
   // FORNECEDORES
   // =========================================

@@ -1183,26 +1183,36 @@ const App = () => {
       
       if (editingProductId) {
         // Atualizar produto existente
-        setState(prev => ({
-          ...prev,
-          products: prev.products.map(p => 
-            p.id === editingProductId 
-              ? {
-                  ...p,
-                  name: newProd.name || p.name,
-                  category: newProd.category || p.category,
-                  price: Number(newProd.price) || p.price,
-                  cost: Number(newProd.cost) || p.cost,
-                  stock: mode === 'prato' ? 0 : (Number(newProd.stock) !== undefined ? Number(newProd.stock) : p.stock),
-                  minStock: Number(newProd.minStock) || p.minStock,
-                  unit: newProd.unit || p.unit,
-                  supplierId: newProd.supplierId || p.supplierId,
-                  recipe: newProd.recipe || p.recipe,
-                  updated_at: new Date().toISOString()
-                }
-              : p
-          )
-        }));
+        try {
+          const updatedProduct = {
+            name: newProd.name,
+            category: newProd.category,
+            price: Number(newProd.price),
+            cost: Number(newProd.cost),
+            stock: mode === 'prato' ? 0 : Number(newProd.stock),
+            minStock: Number(newProd.minStock),
+            unit: newProd.unit,
+            supplierId: newProd.supplierId,
+            recipe: newProd.recipe
+          };
+
+          // Salvar no banco de dados através da API
+          await storageService.updateProduct(editingProductId, updatedProduct);
+          
+          // Atualizar o estado local
+          setState(prev => ({
+            ...prev,
+            products: prev.products.map(p => 
+              p.id === editingProductId 
+                ? { ...p, ...updatedProduct, updated_at: new Date().toISOString() }
+                : p
+            )
+          }));
+        } catch (error) {
+          console.error('Erro ao atualizar produto:', error);
+          alert('Erro ao atualizar produto no banco de dados. Verifique o console para mais detalhes.');
+          return;
+        }
         setEditingProductId(null);
       } else {
         // Criar novo produto
