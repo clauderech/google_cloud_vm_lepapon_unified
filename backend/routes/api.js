@@ -235,7 +235,11 @@ router.put('/api/products/:id', async (req, res) => {
     if (min_stock !== undefined) updateData.min_stock = min_stock;
     if (max_stock !== undefined) updateData.max_stock = max_stock;
     if (unit !== undefined) updateData.unit = unit;
-    if (supplier_id !== undefined) updateData.supplier_id = supplier_id || null;
+    // Converter string vazia em null para foreign key
+    if (supplier_id !== undefined) {
+      updateData.supplier_id = (supplier_id === '' || supplier_id === null) ? null : supplier_id;
+      console.log('[API] supplier_id original:', supplier_id, '| convertido:', updateData.supplier_id);
+    }
     if (description !== undefined) updateData.description = description;
     if (barcode !== undefined) updateData.barcode = barcode;
     if (is_active !== undefined) updateData.is_active = is_active;
