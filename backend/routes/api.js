@@ -220,7 +220,7 @@ router.put('/api/products/:id', async (req, res) => {
       recipe
     } = req.body;
 
-    const updateData: any = { updated_at: new Date() };
+    const updateData = { updated_at: new Date() };
     
     // Apenas atualizar campos que foram enviados
     if (name !== undefined) updateData.name = name;
