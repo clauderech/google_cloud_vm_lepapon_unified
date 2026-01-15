@@ -171,13 +171,34 @@ export const storageService = {
   
   async saveProduct(product: Product): Promise<{ productId: string }> {
     if (USE_API) {
+      // Mapear campos do frontend para o formato do backend
+      const productData = {
+        id: product.id,
+        name: product.name,
+        type: product.type,
+        category: product.category,
+        price: product.price,
+        cost: product.cost,
+        stock: product.stock,
+        min_stock: product.minStock,
+        max_stock: product.maxStock,
+        unit: product.unit,
+        supplier_id: product.supplierId,
+        description: product.description,
+        barcode: product.barcode,
+        is_active: product.isActive !== undefined ? product.isActive : true
+      };
+      
       const response = await fetch(`${API_URL}/products`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(product)
+        body: JSON.stringify(productData)
       });
       
-      if (!response.ok) throw new Error('Erro ao salvar produto');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao salvar produto');
+      }
       return response.json();
     }
     return { productId: product.id };

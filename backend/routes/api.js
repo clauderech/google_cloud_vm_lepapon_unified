@@ -132,7 +132,22 @@ router.post('/api/products', async (req, res) => {
       return res.status(500).json({ error: 'Database não inicializado' });
     }
 
-    const { id, name, type, category, price, stock, supplier_id } = req.body;
+    const { 
+      id, 
+      name, 
+      type, 
+      category, 
+      price, 
+      cost,
+      stock, 
+      min_stock,
+      max_stock,
+      unit,
+      supplier_id,
+      description,
+      barcode,
+      is_active
+    } = req.body;
 
     if (!id || !name) {
       return res.status(400).json({
@@ -145,11 +160,17 @@ router.post('/api/products', async (req, res) => {
       id,
       name,
       type: type || 'prato',
-      category: category || 'Outros',
+      category: category || 'Geral',
       price: price || 0,
+      cost: cost || 0,
       stock: stock || 0,
+      min_stock: min_stock || 10,
+      max_stock: max_stock || null,
+      unit: unit || 'un',
       supplier_id: supplier_id || null,
-      is_active: 1,
+      description: description || null,
+      barcode: barcode || null,
+      is_active: is_active !== undefined ? is_active : 1,
       created_at: new Date(),
       updated_at: new Date()
     });

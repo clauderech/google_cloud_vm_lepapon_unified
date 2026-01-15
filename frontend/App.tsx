@@ -262,8 +262,17 @@ const App = () => {
     });
   };
 
-  const addProduct = (product: Product) => {
-    setState(prev => ({ ...prev, products: [...prev.products, product] }));
+  const addProduct = async (product: Product) => {
+    try {
+      // Salvar no banco de dados através da API
+      await storageService.saveProduct(product);
+      
+      // Atualizar o estado local
+      setState(prev => ({ ...prev, products: [...prev.products, product] }));
+    } catch (error) {
+      console.error('Erro ao adicionar produto:', error);
+      alert('Erro ao salvar produto no banco de dados. Verifique o console para mais detalhes.');
+    }
   };
 
   const addCustomer = (customer: Omit<Customer, 'id' | 'created_at' | 'updated_at'>) => {
@@ -1169,7 +1178,7 @@ const App = () => {
       setShowForm(true);
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
       if (!newProd.name) return alert("Nome é obrigatório");
       
       if (editingProductId) {
@@ -1207,7 +1216,7 @@ const App = () => {
           supplierId: newProd.supplierId || '',
         } as Product;
 
-        addProduct(productToSave);
+        await addProduct(productToSave);
       }
       
       setShowForm(false);
