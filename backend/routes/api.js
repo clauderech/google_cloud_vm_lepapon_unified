@@ -167,7 +167,7 @@ router.post('/api/products', async (req, res) => {
       min_stock: min_stock || 10,
       max_stock: max_stock || null,
       unit: unit || 'un',
-      supplier_id: supplier_id || null,
+      supplier_id: (supplier_id && supplier_id !== '') ? supplier_id : null,
       description: description || null,
       barcode: barcode || null,
       is_active: is_active !== undefined ? is_active : 1,
@@ -203,6 +203,9 @@ router.put('/api/products/:id', async (req, res) => {
     }
 
     const { id } = req.params;
+    console.log('[API] Atualizando produto:', id);
+    console.log('[API] Body recebido:', JSON.stringify(req.body, null, 2));
+
     const { 
       name, 
       type, 
@@ -232,12 +235,15 @@ router.put('/api/products/:id', async (req, res) => {
     if (min_stock !== undefined) updateData.min_stock = min_stock;
     if (max_stock !== undefined) updateData.max_stock = max_stock;
     if (unit !== undefined) updateData.unit = unit;
-    if (supplier_id !== undefined) updateData.supplier_id = supplier_id;
+    if (supplier_id !== undefined) updateData.supplier_id = supplier_id || null;
     if (description !== undefined) updateData.description = description;
     if (barcode !== undefined) updateData.barcode = barcode;
     if (is_active !== undefined) updateData.is_active = is_active;
 
-    await db('products').where('id', id).update(updateData);
+    console.log('[API] UpdateData:', JSON.stringify(updateData, null, 2));
+
+    const result = await db('products').where('id', id).update(updateData);
+    console.log('[API] Linhas afetadas:', result);
 
     res.json({
       success: true,
@@ -246,10 +252,12 @@ router.put('/api/products/:id', async (req, res) => {
 
   } catch (error) {
     console.error('[API] Erro ao atualizar produto:', error);
+    console.error('[API] Stack:', error.stack);
     res.status(500).json({
       success: false,
       error: 'Erro ao atualizar produto',
-      message: error.message
+      message: error.message,
+      details: error.toString()
     });
   }
 });

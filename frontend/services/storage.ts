@@ -205,7 +205,7 @@ export const storageService = {
         min_stock: product.minStock,
         max_stock: product.maxStock,
         unit: product.unit,
-        supplier_id: product.supplierId,
+        supplier_id: (product.supplierId && product.supplierId !== '') ? product.supplierId : null,
         description: product.description,
         barcode: product.barcode,
         is_active: product.isActive !== undefined ? product.isActive : true
@@ -239,7 +239,7 @@ export const storageService = {
       if (product.minStock !== undefined) productData.min_stock = product.minStock;
       if (product.maxStock !== undefined) productData.max_stock = product.maxStock;
       if (product.unit !== undefined) productData.unit = product.unit;
-      if (product.supplierId !== undefined) productData.supplier_id = product.supplierId;
+      if (product.supplierId !== undefined) productData.supplier_id = (product.supplierId && product.supplierId !== '') ? product.supplierId : null;
       if (product.description !== undefined) productData.description = product.description;
       if (product.barcode !== undefined) productData.barcode = product.barcode;
       if (product.isActive !== undefined) productData.is_active = product.isActive;
