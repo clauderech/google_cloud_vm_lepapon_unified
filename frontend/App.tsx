@@ -674,7 +674,7 @@ const App = () => {
       }
     }, [activeTab, selectedComandaId, state.activeComandas]);
 
-    const pratos = state.products.filter(p => p.type === 'prato' || p.type === 'revenda');
+    const pratos = state.products.filter(p => (p.type === 'prato' || p.type === 'revenda') && p.isActive !== false);
     const filteredProducts = pratos.filter(p => 
       p.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -1149,7 +1149,8 @@ const App = () => {
       category: 'Geral', 
       minStock: 10,
       unit: 'un',
-      recipe: [] 
+      recipe: [],
+      isActive: true
     });
     const [showForm, setShowForm] = useState(false);
     const [editingProductId, setEditingProductId] = useState<string | null>(null);
@@ -1193,7 +1194,8 @@ const App = () => {
             minStock: Number(newProd.minStock),
             unit: newProd.unit,
             supplierId: newProd.supplierId,
-            recipe: newProd.recipe
+            recipe: newProd.recipe,
+            isActive: newProd.isActive !== false
           };
 
           // Salvar no banco de dados através da API
@@ -1230,13 +1232,13 @@ const App = () => {
       }
       
       setShowForm(false);
-      setNewProd({ category: 'Geral', minStock: 10, unit: 'un', recipe: [] });
+      setNewProd({ category: 'Geral', minStock: 10, unit: 'un', recipe: [], isActive: true });
     };
 
     const handleCancelEdit = () => {
       setEditingProductId(null);
       setShowForm(false);
-      setNewProd({ category: 'Geral', minStock: 10, unit: 'un', recipe: [] });
+      setNewProd({ category: 'Geral', minStock: 10, unit: 'un', recipe: [], isActive: true });
     };
 
     return (
@@ -1258,7 +1260,7 @@ const App = () => {
               onClick={() => {
                 setEditingProductId(null);
                 setShowForm(!showForm);
-                if (showForm) setNewProd({ category: 'Geral', minStock: 10, unit: 'un', recipe: [] });
+                if (showForm) setNewProd({ category: 'Geral', minStock: 10, unit: 'un', recipe: [], isActive: true });
               }}
               className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium"
             >
@@ -1295,6 +1297,20 @@ const App = () => {
               <input placeholder="Nome" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.name || ''} onChange={e => setNewProd({...newProd, name: e.target.value})} />
               <input placeholder="Categoria" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.category || ''} onChange={e => setNewProd({...newProd, category: e.target.value})} />
               
+              {/* Campo Status Ativo */}
+              <div className="flex items-center gap-2 border border-gray-400 p-2 rounded bg-white">
+                <input 
+                  type="checkbox" 
+                  id="isActive" 
+                  className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500"
+                  checked={newProd.isActive !== false}
+                  onChange={e => setNewProd({...newProd, isActive: e.target.checked})}
+                />
+                <label htmlFor="isActive" className="text-sm font-medium text-gray-900">
+                  Produto Ativo
+                </label>
+              </div>
+
               {mode === 'insumo' && (
                 <>
                   <select className="border border-gray-400 p-2 rounded text-black bg-white" value={newProd.unit} onChange={e => setNewProd({...newProd, unit: e.target.value as any})}>
@@ -1331,7 +1347,7 @@ const App = () => {
                     onChange={e => setRecipeIngId(e.target.value)}
                   >
                     <option value="">Adicionar Insumo...</option>
-                    {state.products.filter(p => p.type === 'insumo').map(p => (
+                    {state.products.filter(p => p.type === 'insumo' && p.isActive !== false).map(p => (
                       <option key={p.id} value={p.id}>{p.name} ({p.unit})</option>
                     ))}
                   </select>
@@ -1510,7 +1526,7 @@ const App = () => {
              <label className="block text-xs font-bold text-gray-700 mb-1">Insumo</label>
              <select className="w-full border border-gray-400 p-2 rounded-lg text-black bg-white font-medium" value={newItemId} onChange={e => setNewItemId(e.target.value)}>
                <option value="">Selecione...</option>
-               {state.products.filter(p => p.type === 'insumo').map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+               {state.products.filter(p => p.type === 'insumo' && p.isActive !== false).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
              </select>
            </div>
            <div className="w-24">
@@ -1575,12 +1591,12 @@ const App = () => {
 
     const getAiSuggestion = async () => {
       if (!selectedSupplier) return;
-      const text = await suggestRestockOrder(state.products.filter(p => p.type === 'insumo'), selectedSupplier);
+      const text = await suggestRestockOrder(state.products.filter(p => p.type === 'insumo' && p.isActive !== false), selectedSupplier);
       setAiSuggestion(text);
     };
 
     // Only filter 'insumo' (ingredients) for purchasing
-    const availableProducts = state.products.filter(p => p.supplierId === selectedSupplier && p.type === 'insumo');
+    const availableProducts = state.products.filter(p => p.supplierId === selectedSupplier && p.type === 'insumo' && p.isActive !== false);
 
     return (
       <div className="p-6 max-w-4xl mx-auto">
