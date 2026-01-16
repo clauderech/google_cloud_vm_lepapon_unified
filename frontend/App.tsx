@@ -140,7 +140,13 @@ const App = () => {
 
   // --- Helper: Calculate Max Possible Stock for a Recipe Product ---
   const calculateMaxProduciable = (product: Product, allProducts: Product[]): number => {
-    if (product.type === 'insumo') return product.stock;
+    if (product.type === 'insumo') {
+      // Debug para farinha_rosca
+      if (product.id === '1768489565327') {
+        console.log('[calculateMaxProduciable] farinha_rosca stock:', product.stock, typeof product.stock);
+      }
+      return product.stock;
+    }
     if (!product.recipe || product.recipe.length === 0) return 0;
 
     let maxCount = Infinity;
@@ -836,6 +842,16 @@ const App = () => {
               // If working on a comanda, we need to consider items already saved? 
               // For simplicity, we just check current stock vs cart.
               const available = maxStock - currentInCart;
+              
+              // Debug para farinha_rosca
+              if (product.id === '1768489565327') {
+                console.log('[Cardápio Render] farinha_rosca:', {
+                  product_stock: product.stock,
+                  maxStock,
+                  currentInCart,
+                  available
+                });
+              }
 
               return (
                 <button

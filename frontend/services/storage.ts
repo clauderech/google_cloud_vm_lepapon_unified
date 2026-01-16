@@ -315,13 +315,25 @@ export const storageService = {
 // =========================================
 
 function mapProductFromDB(p: any): Product {
+  const stockValue = p.stock != null ? parseFloat(p.stock) : 0;
+  
+  // Debug: log conversão de stock
+  if (p.id === '1768489565327') {
+    console.log('[mapProductFromDB] Debug farinha_rosca:', {
+      original: p.stock,
+      type: typeof p.stock,
+      parsed: stockValue,
+      parsedType: typeof stockValue
+    });
+  }
+  
   return {
     id: p.id,
     name: p.name,
     type: p.type,
     price: p.price != null ? parseFloat(p.price) : 0,
     cost: p.cost != null ? parseFloat(p.cost) : 0,
-    stock: p.stock != null ? parseFloat(p.stock) : 0,
+    stock: stockValue,
     minStock: p.min_stock != null ? parseFloat(p.min_stock) : 10,
     maxStock: p.max_stock ? parseFloat(p.max_stock) : undefined,
     unit: p.unit || 'un',
