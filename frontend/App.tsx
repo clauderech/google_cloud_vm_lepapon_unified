@@ -72,14 +72,8 @@ const App = () => {
 
   // --- Initialization ---
   useEffect(() => {
-    console.log('[App] Initialization started');
     const init = async () => {
-      console.log('[App] Calling storageService.loadState()');
       const data = await storageService.loadState();
-      console.log('[App] Data loaded:', {
-        products: data.products.length,
-        firstProduct: data.products[0]
-      });
       setState(data);
       setLoading(false);
     };
@@ -146,13 +140,12 @@ const App = () => {
 
   // --- Helper: Calculate Max Possible Stock for a Recipe Product ---
   const calculateMaxProduciable = (product: Product, allProducts: Product[]): number => {
-    if (product.type === 'insumo') {
-      // Debug para farinha_rosca
-      if (product.id === '1768489565327') {
-        console.log('[calculateMaxProduciable] farinha_rosca stock:', product.stock, typeof product.stock);
-      }
+    // Insumos e produtos de revenda usam stock direto
+    if (product.type === 'insumo' || product.type === 'revenda') {
       return product.stock;
     }
+    
+    // Produtos tipo 'prato' sem receita retornam 0
     if (!product.recipe || product.recipe.length === 0) return 0;
 
     let maxCount = Infinity;
@@ -845,23 +838,7 @@ const App = () => {
             {filteredProducts.map(product => {
               const maxStock = calculateMaxProduciable(product, state.products);
               const currentInCart = cart.find(c => c.productId === product.id)?.quantity || 0;
-              // If working on a comanda, we need to consider items already saved? 
-              // For simplicity, we just check current stock vs cart.
               const available = maxStock - currentInCart;
-              
-              // Debug para Trident
-              if (product.name && product.name.toLowerCase().includes('trident')) {
-                console.log('[Cardápio Render] Trident:', {
-                  id: product.id,
-                  name: product.name,
-                  type: product.type,
-                  product_stock: product.stock,
-                  recipe: product.recipe,
-                  maxStock,
-                  currentInCart,
-                  available
-                });
-              }
 
               return (
                 <button
