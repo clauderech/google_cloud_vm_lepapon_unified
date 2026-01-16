@@ -317,13 +317,16 @@ export const storageService = {
 function mapProductFromDB(p: any): Product {
   const stockValue = p.stock != null ? parseFloat(p.stock) : 0;
   
-  // Debug: log conversão de stock
-  if (p.id === '1768489565327') {
-    console.log('[mapProductFromDB] Debug farinha_rosca:', {
-      original: p.stock,
-      type: typeof p.stock,
-      parsed: stockValue,
-      parsedType: typeof stockValue
+  // Debug: log conversão de stock para Trident 8g
+  if (p.name && p.name.toLowerCase().includes('trident')) {
+    console.log('[mapProductFromDB] Debug Trident:', {
+      id: p.id,
+      name: p.name,
+      original_stock: p.stock,
+      type_of_stock: typeof p.stock,
+      parsed_stock: stockValue,
+      type_of_parsed: typeof stockValue,
+      product_type: p.type
     });
   }
   

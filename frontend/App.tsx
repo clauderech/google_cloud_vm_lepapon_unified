@@ -72,8 +72,14 @@ const App = () => {
 
   // --- Initialization ---
   useEffect(() => {
+    console.log('[App] Initialization started');
     const init = async () => {
+      console.log('[App] Calling storageService.loadState()');
       const data = await storageService.loadState();
+      console.log('[App] Data loaded:', {
+        products: data.products.length,
+        firstProduct: data.products[0]
+      });
       setState(data);
       setLoading(false);
     };
@@ -843,10 +849,14 @@ const App = () => {
               // For simplicity, we just check current stock vs cart.
               const available = maxStock - currentInCart;
               
-              // Debug para farinha_rosca
-              if (product.id === '1768489565327') {
-                console.log('[Cardápio Render] farinha_rosca:', {
+              // Debug para Trident
+              if (product.name && product.name.toLowerCase().includes('trident')) {
+                console.log('[Cardápio Render] Trident:', {
+                  id: product.id,
+                  name: product.name,
+                  type: product.type,
                   product_stock: product.stock,
+                  recipe: product.recipe,
                   maxStock,
                   currentInCart,
                   available
