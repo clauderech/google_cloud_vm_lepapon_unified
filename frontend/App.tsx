@@ -1271,145 +1271,210 @@ const App = () => {
           </div>
         </div>
 
+        {/* Modal de Edição/Criação de Produto */}
         {showForm && (
-          <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200 mb-6 animate-in fade-in slide-in-from-top-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-gray-900">{editingProductId ? '✏️ Editar' : '➕ Novo'} Produto</h3>
-              <button onClick={handleCancelEdit} className="text-gray-500 hover:text-gray-700 text-2xl">✕</button>
-            </div>
-
-            <div className="flex gap-4 mb-4 border-b pb-4">
-              <button 
-                onClick={() => setMode('insumo')} 
-                className={`px-4 py-2 rounded-lg font-bold ${mode === 'insumo' ? 'bg-blue-100 text-blue-800' : 'text-gray-600'}`}
-                disabled={!!editingProductId}
-              >
-                Insumo (Compra)
-              </button>
-              <button 
-                onClick={() => setMode('prato')} 
-                className={`px-4 py-2 rounded-lg font-bold ${mode === 'prato' ? 'bg-blue-100 text-blue-800' : 'text-gray-600'}`}
-                disabled={!!editingProductId}
-              >
-                Prato (Venda / Receita)
-              </button>
-              <button 
-                onClick={() => setMode('revenda')} 
-                className={`px-4 py-2 rounded-lg font-bold ${mode === 'revenda' ? 'bg-green-100 text-green-800' : 'text-gray-600'}`}
-                disabled={!!editingProductId}
-              >
-                Revenda
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-              <input placeholder="Nome" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.name || ''} onChange={e => setNewProd({...newProd, name: e.target.value})} />
-              <input placeholder="Categoria" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.category || ''} onChange={e => setNewProd({...newProd, category: e.target.value})} />
-              
-              {/* Campo Status Ativo */}
-              <div className="flex items-center gap-2 border border-gray-400 p-2 rounded bg-white">
-                <input 
-                  type="checkbox" 
-                  id="isActive" 
-                  className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500"
-                  checked={newProd.isActive !== false}
-                  onChange={e => setNewProd({...newProd, isActive: e.target.checked})}
-                />
-                <label htmlFor="isActive" className="text-sm font-medium text-gray-900">
-                  Produto Ativo
-                </label>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-in fade-in slide-in-from-bottom-4">
+              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center rounded-t-2xl">
+                <h3 className="text-xl font-bold text-gray-900">{editingProductId ? '✏️ Editar' : '➕ Novo'} Produto</h3>
+                <button onClick={handleCancelEdit} className="text-gray-500 hover:text-gray-700 text-3xl leading-none">&times;</button>
               </div>
 
-              {mode === 'insumo' && (
-                <>
-                  <select className="border border-gray-400 p-2 rounded text-black bg-white" value={newProd.unit} onChange={e => setNewProd({...newProd, unit: e.target.value as any})}>
-                    <option value="un">Unidade</option>
-                    <option value="kg">Kg</option>
-                    <option value="g">Gramas</option>
-                    <option value="l">Litros</option>
-                    <option value="ml">Ml</option>
-                  </select>
-                  <input type="number" placeholder="Custo de Compra" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.cost || ''} onChange={e => setNewProd({...newProd, cost: Number(e.target.value)})} />
-                  <input type="number" placeholder="Estoque Atual" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.stock || ''} onChange={e => setNewProd({...newProd, stock: Number(e.target.value)})} />
-                  <input type="number" placeholder="Estoque Mínimo" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.minStock} onChange={e => setNewProd({...newProd, minStock: Number(e.target.value)})} />
-                  <select className="border border-gray-400 p-2 rounded text-black bg-white" value={newProd.supplierId || ''} onChange={e => setNewProd({...newProd, supplierId: e.target.value})}>
-                    <option value="">Fornecedor</option>
-                    {state.suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
-                </>
-              )}
-
-              {mode === 'revenda' && (
-                <>
-                  <select className="border border-gray-400 p-2 rounded text-black bg-white" value={newProd.unit} onChange={e => setNewProd({...newProd, unit: e.target.value as any})}>
-                    <option value="un">Unidade</option>
-                    <option value="kg">Kg</option>
-                    <option value="g">Gramas</option>
-                    <option value="l">Litros</option>
-                    <option value="ml">Ml</option>
-                  </select>
-                  <input type="number" placeholder="Custo de Compra" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.cost || ''} onChange={e => setNewProd({...newProd, cost: Number(e.target.value)})} />
-                  <input type="number" placeholder="Preço de Venda" className="border border-gray-400 p-2 rounded font-bold text-black bg-white placeholder-gray-600" value={newProd.price || ''} onChange={e => setNewProd({...newProd, price: Number(e.target.value)})} />
-                  <input type="number" placeholder="Estoque Atual" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.stock || ''} onChange={e => setNewProd({...newProd, stock: Number(e.target.value)})} />
-                  <input type="number" placeholder="Estoque Mínimo" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.minStock} onChange={e => setNewProd({...newProd, minStock: Number(e.target.value)})} />
-                  <select className="border border-gray-400 p-2 rounded text-black bg-white" value={newProd.supplierId || ''} onChange={e => setNewProd({...newProd, supplierId: e.target.value})}>
-                    <option value="">Fornecedor</option>
-                    {state.suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
-                </>
-              )}
-
-              {mode === 'prato' && (
-                <>
-                  <input type="number" placeholder="Preço de Venda" className="border border-gray-400 p-2 rounded font-bold text-black bg-white placeholder-gray-600" value={newProd.price || ''} onChange={e => setNewProd({...newProd, price: Number(e.target.value)})} />
-                </>
-              )}
-            </div>
-
-            {mode === 'prato' && (
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4">
-                <h4 className="font-bold text-gray-800 mb-2">Ficha Técnica (Receita)</h4>
-                <div className="flex gap-2 mb-2">
-                  <select 
-                    className="flex-1 border border-gray-400 p-2 rounded text-black bg-white"
-                    value={recipeIngId}
-                    onChange={e => setRecipeIngId(e.target.value)}
+              <div className="p-6">
+                <div className="flex gap-4 mb-6 border-b pb-4">
+                  <button 
+                    onClick={() => setMode('insumo')} 
+                    className={`px-6 py-3 rounded-lg font-bold transition-colors ${mode === 'insumo' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                    disabled={!!editingProductId}
                   >
-                    <option value="">Adicionar Insumo...</option>
-                    {state.products.filter(p => p.type === 'insumo' && p.isActive !== false).map(p => (
-                      <option key={p.id} value={p.id}>{p.name} ({p.unit})</option>
-                    ))}
-                  </select>
-                  <input 
-                    type="number" 
-                    placeholder="Qtd" 
-                    className="w-24 border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600"
-                    value={recipeQty}
-                    onChange={e => setRecipeQty(Number(e.target.value))}
-                  />
-                  <button onClick={handleAddRecipeItem} className="bg-blue-600 text-white px-3 rounded font-bold">Add</button>
+                    📦 Insumo
+                  </button>
+                  <button 
+                    onClick={() => setMode('prato')} 
+                    className={`px-6 py-3 rounded-lg font-bold transition-colors ${mode === 'prato' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                    disabled={!!editingProductId}
+                  >
+                    🍽️ Prato
+                  </button>
+                  <button 
+                    onClick={() => setMode('revenda')} 
+                    className={`px-6 py-3 rounded-lg font-bold transition-colors ${mode === 'revenda' ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                    disabled={!!editingProductId}
+                  >
+                    🛒 Revenda
+                  </button>
                 </div>
-                <div className="space-y-1">
-                  {newProd.recipe?.map((item, idx) => {
-                    const ingName = state.products.find(p => p.id === item.ingredientId)?.name;
-                    return (
-                      <div key={idx} className="flex justify-between text-sm bg-white p-2 rounded border text-gray-800 font-medium">
-                        <span>{ingName}</span>
-                        <span>{item.quantity}</span>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                  <div className="lg:col-span-2">
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Nome *</label>
+                    <input 
+                      placeholder="Nome do produto" 
+                      className="w-full border border-gray-400 p-3 rounded-lg text-black bg-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200" 
+                      value={newProd.name || ''} 
+                      onChange={e => setNewProd({...newProd, name: e.target.value})} 
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Categoria</label>
+                    <input 
+                      placeholder="Categoria" 
+                      className="w-full border border-gray-400 p-3 rounded-lg text-black bg-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200" 
+                      value={newProd.category || ''} 
+                      onChange={e => setNewProd({...newProd, category: e.target.value})} 
+                    />
+                  </div>
+                  
+                  {/* Campo Status Ativo */}
+                  <div className="flex items-center gap-3 border border-gray-300 p-3 rounded-lg bg-gray-50">
+                    <input 
+                      type="checkbox" 
+                      id="isActive" 
+                      className="w-5 h-5 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
+                      checked={newProd.isActive !== false}
+                      onChange={e => setNewProd({...newProd, isActive: e.target.checked})}
+                    />
+                    <label htmlFor="isActive" className="text-sm font-bold text-gray-900 cursor-pointer">
+                      ✓ Produto Ativo
+                    </label>
+                  </div>
+
+                  {mode === 'insumo' && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Unidade</label>
+                        <select className="w-full border border-gray-400 p-3 rounded-lg text-black bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200" value={newProd.unit} onChange={e => setNewProd({...newProd, unit: e.target.value as any})}>
+                          <option value="un">Unidade</option>
+                          <option value="kg">Quilograma (Kg)</option>
+                          <option value="g">Gramas (g)</option>
+                          <option value="l">Litros (L)</option>
+                          <option value="ml">Mililitros (mL)</option>
+                        </select>
                       </div>
-                    );
-                  })}
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Custo de Compra</label>
+                        <input type="number" step="0.01" placeholder="0.00" className="w-full border border-gray-400 p-3 rounded-lg text-black bg-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200" value={newProd.cost || ''} onChange={e => setNewProd({...newProd, cost: Number(e.target.value)})} />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Estoque Atual</label>
+                        <input type="number" step="0.01" placeholder="0" className="w-full border border-gray-400 p-3 rounded-lg text-black bg-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200" value={newProd.stock || ''} onChange={e => setNewProd({...newProd, stock: Number(e.target.value)})} />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Estoque Mínimo</label>
+                        <input type="number" placeholder="10" className="w-full border border-gray-400 p-3 rounded-lg text-black bg-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200" value={newProd.minStock} onChange={e => setNewProd({...newProd, minStock: Number(e.target.value)})} />
+                      </div>
+                      <div className="lg:col-span-2">
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Fornecedor</label>
+                        <select className="w-full border border-gray-400 p-3 rounded-lg text-black bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200" value={newProd.supplierId || ''} onChange={e => setNewProd({...newProd, supplierId: e.target.value})}>
+                          <option value="">Selecione um fornecedor...</option>
+                          {state.suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                        </select>
+                      </div>
+                    </>
+                  )}
+
+                  {mode === 'revenda' && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Unidade</label>
+                        <select className="w-full border border-gray-400 p-3 rounded-lg text-black bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200" value={newProd.unit} onChange={e => setNewProd({...newProd, unit: e.target.value as any})}>
+                          <option value="un">Unidade</option>
+                          <option value="kg">Quilograma (Kg)</option>
+                          <option value="g">Gramas (g)</option>
+                          <option value="l">Litros (L)</option>
+                          <option value="ml">Mililitros (mL)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Custo de Compra</label>
+                        <input type="number" step="0.01" placeholder="0.00" className="w-full border border-gray-400 p-3 rounded-lg text-black bg-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200" value={newProd.cost || ''} onChange={e => setNewProd({...newProd, cost: Number(e.target.value)})} />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Preço de Venda</label>
+                        <input type="number" step="0.01" placeholder="0.00" className="w-full border border-gray-400 p-3 rounded-lg text-black bg-white placeholder-gray-500 font-bold focus:border-green-500 focus:ring-2 focus:ring-green-200" value={newProd.price || ''} onChange={e => setNewProd({...newProd, price: Number(e.target.value)})} />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Estoque Atual</label>
+                        <input type="number" step="0.01" placeholder="0" className="w-full border border-gray-400 p-3 rounded-lg text-black bg-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200" value={newProd.stock || ''} onChange={e => setNewProd({...newProd, stock: Number(e.target.value)})} />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Estoque Mínimo</label>
+                        <input type="number" placeholder="10" className="w-full border border-gray-400 p-3 rounded-lg text-black bg-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200" value={newProd.minStock} onChange={e => setNewProd({...newProd, minStock: Number(e.target.value)})} />
+                      </div>
+                      <div className="lg:col-span-2">
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Fornecedor</label>
+                        <select className="w-full border border-gray-400 p-3 rounded-lg text-black bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200" value={newProd.supplierId || ''} onChange={e => setNewProd({...newProd, supplierId: e.target.value})}>
+                          <option value="">Selecione um fornecedor...</option>
+                          {state.suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                        </select>
+                      </div>
+                    </>
+                  )}
+
+                  {mode === 'prato' && (
+                    <div className="lg:col-span-3">
+                      <label className="block text-sm font-bold text-gray-700 mb-1">Preço de Venda</label>
+                      <input type="number" step="0.01" placeholder="0.00" className="w-full border border-gray-400 p-3 rounded-lg font-bold text-black bg-white placeholder-gray-500 focus:border-green-500 focus:ring-2 focus:ring-green-200" value={newProd.price || ''} onChange={e => setNewProd({...newProd, price: Number(e.target.value)})} />
+                    </div>
+                  )}
+                </div>
+
+                {mode === 'prato' && (
+                  <div className="bg-blue-50 p-6 rounded-xl border-2 border-blue-200 mb-6">
+                    <h4 className="font-bold text-gray-900 mb-3 text-lg flex items-center gap-2">
+                      <ChefHat className="w-5 h-5" /> Ficha Técnica (Receita)
+                    </h4>
+                    <div className="flex gap-3 mb-4">
+                      <select 
+                        className="flex-1 border border-gray-400 p-3 rounded-lg text-black bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                        value={recipeIngId}
+                        onChange={e => setRecipeIngId(e.target.value)}
+                      >
+                        <option value="">Selecione um insumo...</option>
+                        {state.products.filter(p => p.type === 'insumo' && p.isActive !== false).map(p => (
+                          <option key={p.id} value={p.id}>{p.name} ({p.unit})</option>
+                        ))}
+                      </select>
+                      <input 
+                        type="number" 
+                        step="0.01"
+                        placeholder="Quantidade" 
+                        className="w-32 border border-gray-400 p-3 rounded-lg text-black bg-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                        value={recipeQty}
+                        onChange={e => setRecipeQty(Number(e.target.value))}
+                      />
+                      <button onClick={handleAddRecipeItem} className="bg-blue-600 hover:bg-blue-700 text-white px-6 rounded-lg font-bold transition-colors">
+                        <Plus className="w-5 h-5" />
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {newProd.recipe?.length > 0 ? (
+                        newProd.recipe.map((item, idx) => {
+                          const ingName = state.products.find(p => p.id === item.ingredientId)?.name;
+                          return (
+                            <div key={idx} className="flex justify-between items-center text-sm bg-white p-3 rounded-lg border border-gray-200 text-gray-900 font-medium">
+                              <span className="font-bold">{ingName}</span>
+                              <span className="text-blue-600 font-bold">{item.quantity}</span>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <p className="text-gray-500 text-sm italic text-center py-4">Nenhum ingrediente adicionado</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-4 pt-4 border-t border-gray-200">
+                  <button onClick={handleSave} className="flex-1 bg-green-600 hover:bg-green-700 text-white py-4 rounded-xl font-bold text-lg transition-colors shadow-lg">
+                    {editingProductId ? '💾 Atualizar' : '✅ Criar'} {mode === 'insumo' ? 'Insumo' : mode === 'prato' ? 'Prato' : 'Revenda'}
+                  </button>
+                  <button onClick={handleCancelEdit} className="px-8 bg-gray-200 hover:bg-gray-300 text-gray-800 py-4 rounded-xl font-bold text-lg transition-colors">
+                    Cancelar
+                  </button>
                 </div>
               </div>
-            )}
-
-            <div className="flex gap-3">
-              <button onClick={handleSave} className="flex-1 bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700">
-                {editingProductId ? '💾 Atualizar' : '✅ Criar'} {mode === 'insumo' ? 'Insumo' : mode === 'prato' ? 'Prato' : 'Revenda'}
-              </button>
-              <button onClick={handleCancelEdit} className="px-6 bg-gray-300 text-gray-800 py-3 rounded-lg font-bold hover:bg-gray-400">
-                Cancelar
-              </button>
             </div>
           </div>
         )}
