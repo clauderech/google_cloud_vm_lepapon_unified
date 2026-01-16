@@ -1144,7 +1144,7 @@ const App = () => {
   };
 
   const Inventory = () => {
-    const [mode, setMode] = useState<'insumo' | 'prato'>('insumo');
+    const [mode, setMode] = useState<'insumo' | 'prato' | 'revenda'>('insumo');
     const [newProd, setNewProd] = useState<Partial<Product>>({ 
       category: 'Geral', 
       minStock: 10,
@@ -1174,7 +1174,9 @@ const App = () => {
 
     const handleEditProduct = (product: Product) => {
       setEditingProductId(product.id);
-      setMode(product.type as 'insumo' | 'prato');
+      // Manter o tipo original do produto
+      const editMode = product.type as 'insumo' | 'prato' | 'revenda';
+      setMode(editMode);
       setNewProd(product);
       setShowForm(true);
     };
@@ -1291,6 +1293,13 @@ const App = () => {
               >
                 Prato (Venda / Receita)
               </button>
+              <button 
+                onClick={() => setMode('revenda')} 
+                className={`px-4 py-2 rounded-lg font-bold ${mode === 'revenda' ? 'bg-green-100 text-green-800' : 'text-gray-600'}`}
+                disabled={!!editingProductId}
+              >
+                Revenda
+              </button>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
@@ -1321,6 +1330,26 @@ const App = () => {
                     <option value="ml">Ml</option>
                   </select>
                   <input type="number" placeholder="Custo de Compra" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.cost || ''} onChange={e => setNewProd({...newProd, cost: Number(e.target.value)})} />
+                  <input type="number" placeholder="Estoque Atual" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.stock || ''} onChange={e => setNewProd({...newProd, stock: Number(e.target.value)})} />
+                  <input type="number" placeholder="Estoque Mínimo" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.minStock} onChange={e => setNewProd({...newProd, minStock: Number(e.target.value)})} />
+                  <select className="border border-gray-400 p-2 rounded text-black bg-white" value={newProd.supplierId || ''} onChange={e => setNewProd({...newProd, supplierId: e.target.value})}>
+                    <option value="">Fornecedor</option>
+                    {state.suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </>
+              )}
+
+              {mode === 'revenda' && (
+                <>
+                  <select className="border border-gray-400 p-2 rounded text-black bg-white" value={newProd.unit} onChange={e => setNewProd({...newProd, unit: e.target.value as any})}>
+                    <option value="un">Unidade</option>
+                    <option value="kg">Kg</option>
+                    <option value="g">Gramas</option>
+                    <option value="l">Litros</option>
+                    <option value="ml">Ml</option>
+                  </select>
+                  <input type="number" placeholder="Custo de Compra" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.cost || ''} onChange={e => setNewProd({...newProd, cost: Number(e.target.value)})} />
+                  <input type="number" placeholder="Preço de Venda" className="border border-gray-400 p-2 rounded font-bold text-black bg-white placeholder-gray-600" value={newProd.price || ''} onChange={e => setNewProd({...newProd, price: Number(e.target.value)})} />
                   <input type="number" placeholder="Estoque Atual" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.stock || ''} onChange={e => setNewProd({...newProd, stock: Number(e.target.value)})} />
                   <input type="number" placeholder="Estoque Mínimo" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.minStock} onChange={e => setNewProd({...newProd, minStock: Number(e.target.value)})} />
                   <select className="border border-gray-400 p-2 rounded text-black bg-white" value={newProd.supplierId || ''} onChange={e => setNewProd({...newProd, supplierId: e.target.value})}>
@@ -1376,7 +1405,7 @@ const App = () => {
 
             <div className="flex gap-3">
               <button onClick={handleSave} className="flex-1 bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700">
-                {editingProductId ? '💾 Atualizar' : '✅ Criar'} {mode === 'insumo' ? 'Insumo' : 'Prato'}
+                {editingProductId ? '💾 Atualizar' : '✅ Criar'} {mode === 'insumo' ? 'Insumo' : mode === 'prato' ? 'Prato' : 'Revenda'}
               </button>
               <button onClick={handleCancelEdit} className="px-6 bg-gray-300 text-gray-800 py-3 rounded-lg font-bold hover:bg-gray-400">
                 Cancelar
@@ -1445,7 +1474,7 @@ const App = () => {
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {state.products
-                      .filter(p => (p.type === 'prato' || p.type === 'revenda') && p.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                      .filter(p => p.type === 'prato' && p.name.toLowerCase().includes(searchTerm.toLowerCase()))
                       .map(p => {
                       const maxProd = calculateMaxProduciable(p, state.products);
                       return (
@@ -1471,6 +1500,51 @@ const App = () => {
                         </tr>
                       );
                     })}
+                  </tbody>
+                </table>
+             </div>
+          </section>
+
+          <section>
+             <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2"><ShoppingCart className="w-5 h-5" /> Produtos de Revenda</h3>
+             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <table className="w-full text-left">
+                  <thead className="bg-gray-100 text-gray-900 font-bold text-sm">
+                    <tr>
+                      <th className="p-3">Nome</th>
+                      <th className="p-3 text-right">Estoque</th>
+                      <th className="p-3">Unidade</th>
+                      <th className="p-3 text-right">Custo</th>
+                      <th className="p-3 text-right">Preço Venda</th>
+                      <th className="p-3">Status</th>
+                      <th className="p-3 text-center">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {state.products
+                      .filter(p => p.type === 'revenda' && p.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                      .map(p => (
+                      <tr key={p.id} className="hover:bg-gray-50 text-gray-900">
+                        <td className="p-3 font-medium">{p.name}</td>
+                        <td className="p-3 text-right font-mono font-bold">{p.stock}</td>
+                        <td className="p-3 text-sm text-gray-700 font-bold uppercase">{p.unit}</td>
+                        <td className="p-3 text-right font-medium">R$ {p.cost.toFixed(2)}</td>
+                        <td className="p-3 text-right text-green-700 font-bold">R$ {p.price.toFixed(2)}</td>
+                        <td className="p-3">
+                          {p.stock <= p.minStock ? 
+                            <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">Baixo</span> : 
+                            <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold">OK</span>}
+                        </td>
+                        <td className="p-3 text-center">
+                          <button 
+                            onClick={() => handleEditProduct(p)}
+                            className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1 rounded text-xs font-bold"
+                          >
+                            ✏️ Editar
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
              </div>
