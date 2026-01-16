@@ -648,6 +648,7 @@ const App = () => {
   const POS = () => {
     const [cart, setCart] = useState<CartItem[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [customerSearchTerm, setCustomerSearchTerm] = useState('');
     const [activeTab, setActiveTab] = useState<'quick' | 'comandas' | 'lepapon'>('quick');
     
     // Comanda State
@@ -904,6 +905,13 @@ const App = () => {
                       <label className="block text-xs font-bold text-gray-700 mb-1">
                         Cliente (opcional)
                       </label>
+                      <input
+                        type="text"
+                        placeholder="Buscar cliente..."
+                        className="w-full border border-gray-400 p-2 rounded-lg text-black bg-white placeholder-gray-600 mb-2"
+                        value={customerSearchTerm}
+                        onChange={e => setCustomerSearchTerm(e.target.value)}
+                      />
                       <select
                         className="w-full border border-gray-400 p-2 rounded-lg text-black bg-white"
                         value={selectedCustomerId}
@@ -920,11 +928,19 @@ const App = () => {
                         }}
                       >
                         <option value="">Sem cadastro</option>
-                        {state.customers.map(c => (
-                          <option key={c.id} value={c.id}>
-                            {c.nome} {c.sobrenome || ''} {c.fone ? `- ${c.fone}` : ''}
-                          </option>
-                        ))}
+                        {state.customers
+                          .filter(c => {
+                            if (!customerSearchTerm) return true;
+                            const search = customerSearchTerm.toLowerCase();
+                            const nomeCompleto = `${c.nome} ${c.sobrenome || ''}`.toLowerCase();
+                            const fone = c.fone || '';
+                            return nomeCompleto.includes(search) || fone.includes(search);
+                          })
+                          .map(c => (
+                            <option key={c.id} value={c.id}>
+                              {c.nome} {c.sobrenome || ''} {c.fone ? `- ${c.fone}` : ''}
+                            </option>
+                          ))}
                       </select>
                     </div>
                     <div>
