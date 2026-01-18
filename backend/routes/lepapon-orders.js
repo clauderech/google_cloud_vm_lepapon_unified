@@ -26,6 +26,7 @@ router.get('/api/lepapon-orders', async (req, res) => {
     const limit = req.query.limit ? parseInt(req.query.limit) : 50;
 
     let query = db('whatsapp_orders')
+      .leftJoin('customers', 'whatsapp_orders.customer_id', 'customers.id')
       .select(
         'whatsapp_orders.id',
         'whatsapp_orders.order_number',
@@ -35,7 +36,10 @@ router.get('/api/lepapon-orders', async (req, res) => {
         'whatsapp_orders.payment_type as payment_status',
         'whatsapp_orders.total_amount as total',
         'whatsapp_orders.created_at',
-        'whatsapp_orders.updated_at'
+        'whatsapp_orders.updated_at',
+        'customers.nome',
+        'customers.sobrenome',
+        'customers.fone'
       )
       .where('whatsapp_orders.source', 'lepapon');
 
@@ -63,10 +67,14 @@ router.get('/api/lepapon-orders', async (req, res) => {
           .select('product_retailer_id', 'quantity', 'unit_price', 'total_price');
 
         // Formatar como Comanda para frontend
+        const customerName = order.nome 
+          ? `${order.nome}${order.sobrenome ? ' ' + order.sobrenome : ''}`
+          : order.lepapon_session_id;
+        
         return {
           id: order.id,
           order_id: order.id,
-          customerName: order.lepapon_session_id, // session_id como nome
+          customerName: customerName,
           lepapon_session_id: order.lepapon_session_id,
           lepapon_order_id: order.lepapon_order_id,
           items: items.map(item => ({

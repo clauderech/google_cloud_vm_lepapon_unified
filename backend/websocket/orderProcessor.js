@@ -110,14 +110,20 @@ class OrderProcessor {
         timestamp
       } = orderData;
 
-      // 1. Buscar ou criar usuário com session_id como telefone
-      let userId = await this.findOrCreateUserBySession(session_id);
+      // Extrair nome do cliente do primeiro item (se disponível)
+      const customerInfo = items && items.length > 0 && items[0].nome_cliente 
+        ? { nome_cliente: items[0].nome_cliente }
+        : {};
+
+      // 1. Buscar ou criar cliente na tabela customers
+      let customerId = await this.findOrCreateCustomerBySession(session_id, customerInfo);
 
       // 2. Criar pedido em whatsapp_orders
       const orderNumber = `LEP-${orderId}-${Date.now()}`;
       
       const insertedOrder = await this.db('whatsapp_orders').insert({
-        user_id: userId,
+        user_id: null,  // Não usar mais whatsapp_users
+        customer_id: customerId,  // Usar tabela customers
         order_number: orderNumber,
         lepapon_order_id: orderId,
         lepapon_session_id: session_id,
@@ -185,39 +191,56 @@ class OrderProcessor {
   }
 
   /**
-   * Busca ou cria usuário baseado em session_id (usado como telefone)
+   * Busca ou cria cliente na tabela customers baseado em session_id
+   * @param {string} sessionId - ID da sessão LePapon (usado como fone)
+   * @param {Object} customerInfo - Informações do cliente (nome_cliente, etc)
    */
-  async findOrCreateUserBySession(sessionId) {
+  async findOrCreateCustomerBySession(sessionId, customerInfo = {}) {
     try {
-      // Buscar usuário existente
-      const existingUser = await this.db('whatsapp_users')
-        .where('lepapon_session_id', sessionId)
+      // Buscar cliente existente pelo telefone (session_id)
+      const existingCustomer = await this.db('customers')
+        .where('fone', sessionId)
         .first();
 
-      if (existingUser) {
-        this.logger.debug(`[OrderProcessor] Usuário encontrado. ID: ${existingUser.id}, Session: ${sessionId}`);
-        return existingUser.id;
+      if (existingCustomer) {
+        // Se cliente existe mas não tem sobrenome, atualizar com info do pedido
+        if (customerInfo.nome_cliente && !existingCustomer.sobrenome) {
+          const nameParts = customerInfo.nome_cliente.trim().split(/\s+/);
+          await this.db('customers')
+            .where('id', existingCustomer.id)
+            .update({
+              nome: nameParts[0],
+              sobrenome: nameParts.slice(1).join(' ') || null,
+              updated_at: this.db.fn.now()
+            });
+          this.logger.debug(`[OrderProcessor] Nome do cliente atualizado. ID: ${existingCustomer.id}`);
+        }
+        
+        this.logger.debug(`[OrderProcessor] Cliente encontrado. ID: ${existingCustomer.id}, Session: ${sessionId}`);
+        return existingCustomer.id;
       }
 
-      // Criar novo usuário
-      const newUser = {
-        lepapon_session_id: sessionId,
-        phone_number: sessionId,  // Usar session_id como telefone
-        username: `lepapon_${sessionId}`,
-        business_scoped_user_id: null,
-        primary_identifier: sessionId,
+      // Criar novo cliente
+      const nameParts = customerInfo.nome_cliente ? customerInfo.nome_cliente.trim().split(/\s+/) : ['Cliente'];
+      const customerId = `LEP-${sessionId}-${Date.now()}`;
+      
+      const newCustomer = {
+        id: customerId,
+        nome: nameParts[0],
+        sobrenome: nameParts.slice(1).join(' ') || null,
+        fone: sessionId,
+        loyalty_points: 0,
         created_at: this.db.fn.now(),
         updated_at: this.db.fn.now()
       };
 
-      const insertedUser = await this.db('whatsapp_users').insert(newUser);
-      const newUserId = Array.isArray(insertedUser) ? insertedUser[0] : insertedUser;
+      await this.db('customers').insert(newCustomer);
 
-      this.logger.info(`[OrderProcessor] Novo usuário criado. ID: ${newUserId}, Session: ${sessionId}`);
+      this.logger.info(`[OrderProcessor] Novo cliente criado. ID: ${customerId}, Session: ${sessionId}, Nome: ${customerInfo.nome_cliente || 'N/A'}`);
 
-      return newUserId;
+      return customerId;
     } catch (error) {
-      this.logger.error('[OrderProcessor] Erro ao buscar/criar usuário:', error.message);
+      this.logger.error('[OrderProcessor] Erro ao buscar/criar cliente:', error.message);
       throw error;
     }
   }
