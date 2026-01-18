@@ -1309,11 +1309,21 @@ const App = () => {
           </div>
         </div>
       )}
-      isActive: true
-    });
-    const [showForm, setShowForm] = useState(false);
-    const [editingProductId, setEditingProductId] = useState<string | null>(null);
-    const [searchTerm, setSearchTerm] = useState('');
+    </div>
+  );
+};
+
+const Inventory = () => {
+  const [mode, setMode] = useState<'insumo' | 'prato' | 'revenda'>('insumo');
+  const [newProd, setNewProd] = useState<Partial<Product>>({ 
+    category: 'Geral', 
+    minStock: 10,
+    unit: 'un',
+    isActive: true
+  });
+  const [showForm, setShowForm] = useState(false);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
     
     // Recipe Builder States
     const [recipeIngId, setRecipeIngId] = useState('');
