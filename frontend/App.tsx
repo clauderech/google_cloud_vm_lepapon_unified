@@ -306,14 +306,16 @@ const App = () => {
   };
 
   // --- Comanda Actions ---
-  const openComanda = (customerName: string) => {
+  const openComanda = (customerName: string, customerId?: string) => {
     const newComanda: Comanda = {
       id: Date.now().toString(),
+      customerId,
       customerName,
       openedAt: new Date().toISOString(),
       items: [],
       total: 0,
-      status: 'open'
+      status: 'open',
+      source: 'pos'
     };
     setState(prev => ({ ...prev, activeComandas: [...prev.activeComandas, newComanda] }));
     return newComanda.id;
@@ -659,6 +661,10 @@ const App = () => {
     const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
     const [appliedDiscount, setAppliedDiscount] = useState<{ percent: number; pointsUsed: number } | null>(null);
 
+    // Modal para cadastro rápido de cliente
+    const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
+    const [newCustomerForm, setNewCustomerForm] = useState({ nome: '', sobrenome: '', fone: '' });
+
     // Modal para observações de prato
     const [showObservationModal, setShowObservationModal] = useState(false);
     const [pendingProduct, setPendingProduct] = useState<Product | null>(null);
@@ -774,10 +780,68 @@ const App = () => {
     };
 
     const handleCreateComanda = () => {
-      if (!newCustomerName.trim()) return alert("Nome do cliente obrigatório");
-      const id = openComanda(newCustomerName);
+      let customerName = '';
+      let customerId: string | undefined = undefined;
+
+      // Se selecionou um cliente existente
+      if (selectedCustomerId) {
+        const customer = state.customers.find(c => c.id === selectedCustomerId);
+        if (customer) {
+          customerName = `${customer.nome}${customer.sobrenome ? ' ' + customer.sobrenome : ''}`;
+          customerId = customer.id;
+        }
+      } 
+      // Se digitou um nome manualmente
+      else if (newCustomerName.trim()) {
+        customerName = newCustomerName.trim();
+        // Criar novo cliente na tabela customers
+        const nameParts = customerName.split(/\s+/);
+        const newCustomer: Customer = {
+          id: `CUST-${Date.now()}`,
+          nome: nameParts[0],
+          sobrenome: nameParts.slice(1).join(' ') || undefined,
+          loyaltyPoints: 0
+        };
+        setState(prev => ({ 
+          ...prev, 
+          customers: [...prev.customers, newCustomer] 
+        }));
+        customerId = newCustomer.id;
+      } 
+      else {
+        return alert("Selecione um cliente ou digite um nome");
+      }
+
+      const id = openComanda(customerName, customerId);
       setNewCustomerName('');
+      setSelectedCustomerId('');
       setSelectedComandaId(id);
+    };
+
+    const handleSaveNewCustomer = () => {
+      if (!newCustomerForm.nome.trim()) {
+        return alert('Nome é obrigatório');
+      }
+      if (!newCustomerForm.sobrenome.trim()) {
+        return alert('Sobrenome é obrigatório');
+      }
+      if (!newCustomerForm.fone.trim()) {
+        return alert('Telefone é obrigatório');
+      }
+
+      const newCustomer: Customer = {
+        id: `CUST-${Date.now()}`,
+        nome: newCustomerForm.nome.trim(),
+        sobrenome: newCustomerForm.sobrenome.trim(),
+        fone: newCustomerForm.fone.trim(),
+        loyaltyPoints: 0
+      };
+
+      addCustomer(newCustomer);
+      setSelectedCustomerId(newCustomer.id);
+      setNewCustomerName(`${newCustomer.nome}${newCustomer.sobrenome ? ' ' + newCustomer.sobrenome : ''}`.trim());
+      setNewCustomerForm({ nome: '', sobrenome: '', fone: '' });
+      setShowAddCustomerModal(false);
     };
 
     const handleSaveComanda = () => {
@@ -899,19 +963,20 @@ const App = () => {
             {activeTab === 'comandas' && !selectedComandaId && (
               <div className="p-4 space-y-4">
                 <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                  <h3 className="font-bold text-gray-900 mb-3">Nova Comanda</h3>
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="font-bold text-gray-900">Nova Comanda</h3>
+                    <button
+                      onClick={() => setShowAddCustomerModal(true)}
+                      className="text-xs bg-green-600 text-white px-3 py-1 rounded-lg font-bold hover:bg-green-700 flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" /> Novo Cliente
+                    </button>
+                  </div>
                   <div className="space-y-3">
                     <div>
                       <label className="block text-xs font-bold text-gray-700 mb-1">
-                        Cliente (opcional)
+                        Selecionar Cliente Cadastrado
                       </label>
-                      <input
-                        type="text"
-                        placeholder="Buscar cliente..."
-                        className="w-full border border-gray-400 p-2 rounded-lg text-black bg-white placeholder-gray-600 mb-2"
-                        value={customerSearchTerm}
-                        onChange={e => setCustomerSearchTerm(e.target.value)}
-                      />
                       <select
                         className="w-full border border-gray-400 p-2 rounded-lg text-black bg-white"
                         value={selectedCustomerId}
@@ -927,7 +992,7 @@ const App = () => {
                           }
                         }}
                       >
-                        <option value="">Sem cadastro</option>
+                        <option value="">-- Selecione um cliente --</option>
                         {state.customers
                           .filter(c => {
                             if (!customerSearchTerm) return true;
@@ -943,17 +1008,32 @@ const App = () => {
                           ))}
                       </select>
                     </div>
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-gray-300"></div>
+                      </div>
+                      <div className="relative flex justify-center text-xs">
+                        <span className="px-2 bg-white text-gray-500">OU</span>
+                      </div>
+                    </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-700 mb-1">
-                        Nome / Mesa
+                        Digite Novo Nome / Mesa
                       </label>
                       <input 
                         type="text" 
-                        placeholder="Nome do Cliente / Mesa" 
+                        placeholder="Ex: João Silva / Mesa 5" 
                         className="w-full border border-gray-400 p-2 rounded-lg text-black bg-white placeholder-gray-600"
                         value={newCustomerName}
-                        onChange={e => setNewCustomerName(e.target.value)}
+                        onChange={e => {
+                          setNewCustomerName(e.target.value);
+                          setSelectedCustomerId('');
+                        }}
+                        disabled={!!selectedCustomerId}
                       />
+                      {selectedCustomerId && (
+                        <p className="text-xs text-gray-500 mt-1">Limpe a seleção acima para digitar um novo nome</p>
+                      )}
                     </div>
                     <button 
                       onClick={handleCreateComanda}
@@ -1886,6 +1966,77 @@ const App = () => {
 
       {/* Help Menu */}
       <HelpMenu isOpen={showHelp} onClose={() => setShowHelp(false)} />
+
+      {/* Modal de Cadastro Rápido de Cliente */}
+      {showAddCustomerModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900">Cadastrar Novo Cliente</h2>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Nome <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: João"
+                  className="w-full border border-gray-300 p-3 rounded-lg text-black bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={newCustomerForm.nome}
+                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, nome: e.target.value })}
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Sobrenome <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: Silva"
+                  className="w-full border border-gray-300 p-3 rounded-lg text-black bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={newCustomerForm.sobrenome}
+                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, sobrenome: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Telefone <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  placeholder="Ex: (11) 98765-4321"
+                  className="w-full border border-gray-300 p-3 rounded-lg text-black bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={newCustomerForm.fone}
+                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, fone: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200 flex gap-3">
+              <button
+                onClick={() => {
+                  setShowAddCustomerModal(false);
+                  setNewCustomerForm({ nome: '', sobrenome: '', fone: '' });
+                }}
+                className="flex-1 px-4 py-3 rounded-lg border border-gray-300 text-gray-700 font-bold hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveNewCustomer}
+                className="flex-1 px-4 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700"
+              >
+                Salvar Cliente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
