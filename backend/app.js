@@ -22,6 +22,7 @@ const { createQueue } = require('./models/asyncQueue');
 const lepaponOrdersRoutes = require('./routes/lepapon-orders');
 const apiRoutes = require('./routes/api');
 const financialRoutes = require('./routes/financial');
+const monthlyAccountRoutes = require('./routes/monthly-account');
 
 // Validar variáveis de ambiente na inicialização
 validateEnvironment();
@@ -80,6 +81,9 @@ app.use(lepaponOrdersRoutes);
 
 // Rotas Financeiras (Caixa, Despesas, Ativos)
 app.use(financialRoutes);
+
+// Rotas de Crediário Mensal
+app.use(monthlyAccountRoutes);
 
 // Rotas de API (Produtos, Estado Inicial)
 app.use(apiRoutes);
