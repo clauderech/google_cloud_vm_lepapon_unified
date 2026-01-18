@@ -1238,17 +1238,77 @@ const App = () => {
             </div>
           </div>
         )}
-      </div>
-    );
-  };
 
-  const Inventory = () => {
-    const [mode, setMode] = useState<'insumo' | 'prato' | 'revenda'>('insumo');
-    const [newProd, setNewProd] = useState<Partial<Product>>({ 
-      category: 'Geral', 
-      minStock: 10,
-      unit: 'un',
-      recipe: [],
+      {/* Modal de Cadastro Rápido de Cliente */}
+      {showAddCustomerModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900">Cadastrar Novo Cliente</h2>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Nome <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: João"
+                  className="w-full border border-gray-300 p-3 rounded-lg text-black bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={newCustomerForm.nome}
+                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, nome: e.target.value })}
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Sobrenome <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: Silva"
+                  className="w-full border border-gray-300 p-3 rounded-lg text-black bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={newCustomerForm.sobrenome}
+                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, sobrenome: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Telefone <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  placeholder="Ex: (11) 98765-4321"
+                  className="w-full border border-gray-300 p-3 rounded-lg text-black bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={newCustomerForm.fone}
+                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, fone: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200 flex gap-3">
+              <button
+                onClick={() => {
+                  setShowAddCustomerModal(false);
+                  setNewCustomerForm({ nome: '', sobrenome: '', fone: '' });
+                }}
+                className="flex-1 px-4 py-3 rounded-lg border border-gray-300 text-gray-700 font-bold hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveNewCustomer}
+                className="flex-1 px-4 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700"
+              >
+                Salvar Cliente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       isActive: true
     });
     const [showForm, setShowForm] = useState(false);
@@ -1966,77 +2026,6 @@ const App = () => {
 
       {/* Help Menu */}
       <HelpMenu isOpen={showHelp} onClose={() => setShowHelp(false)} />
-
-      {/* Modal de Cadastro Rápido de Cliente */}
-      {showAddCustomerModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900">Cadastrar Novo Cliente</h2>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Nome <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ex: João"
-                  className="w-full border border-gray-300 p-3 rounded-lg text-black bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={newCustomerForm.nome}
-                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, nome: e.target.value })}
-                  autoFocus
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Sobrenome <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ex: Silva"
-                  className="w-full border border-gray-300 p-3 rounded-lg text-black bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={newCustomerForm.sobrenome}
-                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, sobrenome: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Telefone <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  placeholder="Ex: (11) 98765-4321"
-                  className="w-full border border-gray-300 p-3 rounded-lg text-black bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={newCustomerForm.fone}
-                  onChange={(e) => setNewCustomerForm({ ...newCustomerForm, fone: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-gray-200 flex gap-3">
-              <button
-                onClick={() => {
-                  setShowAddCustomerModal(false);
-                  setNewCustomerForm({ nome: '', sobrenome: '', fone: '' });
-                }}
-                className="flex-1 px-4 py-3 rounded-lg border border-gray-300 text-gray-700 font-bold hover:bg-gray-50"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSaveNewCustomer}
-                className="flex-1 px-4 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700"
-              >
-                Salvar Cliente
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
