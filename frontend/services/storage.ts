@@ -50,6 +50,11 @@ export const storageService = {
           suppliers: data.suppliers?.length || 0,
           customers: data.customers?.length || 0
         });
+
+        // Debug: inspecionar como o backend está mandando os clientes
+        const rawCustomerSample = Array.isArray(data.customers) ? data.customers[0] : undefined;
+        console.log('[Storage] Sample customer (raw):', rawCustomerSample);
+        console.log('[Storage] Sample customer keys (raw):', rawCustomerSample ? Object.keys(rawCustomerSample) : []);
         
         // Mapear campos do banco para camelCase
         const state = {
@@ -67,6 +72,9 @@ export const storageService = {
           suppliers: state.suppliers.length,
           customers: state.customers.length
         });
+
+        // Debug: confirmar que o sobrenome está chegando no frontend
+        console.log('[Storage] Sample customer (mapped):', state.customers[0]);
         
         return state;
       } catch (e) {
@@ -355,11 +363,11 @@ function mapCustomerFromDB(c: any): Customer {
   return {
     id: c.id,
     nome: c.nome,
+    sobrenome: c.sobrenome ?? c.last_name ?? c.lastName ?? c.surname,
     fone: c.fone,
-    email: c.email,
-    endereco: c.endereco,
-    dataCadastro: c.data_cadastro,
-    loyaltyPoints: c.loyalty_points || 0
+    loyaltyPoints: c.loyalty_points || 0,
+    created_at: c.created_at,
+    updated_at: c.updated_at
   };
 }
 
