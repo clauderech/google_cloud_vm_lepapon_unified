@@ -839,7 +839,7 @@ const App = () => {
 
       addCustomer(newCustomer);
       setSelectedCustomerId(newCustomer.id);
-      setNewCustomerName(`${newCustomer.nome}${newCustomer.sobrenome ? ' ' + newCustomer.sobrenome : ''}`.trim());
+      setNewCustomerName(`${newCustomer.nome} ${newCustomer.sobrenome || ''}`.trim());
       setNewCustomerForm({ nome: '', sobrenome: '', fone: '' });
       setShowAddCustomerModal(false);
     };
