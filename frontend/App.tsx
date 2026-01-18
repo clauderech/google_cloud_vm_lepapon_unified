@@ -787,7 +787,7 @@ const App = () => {
       if (selectedCustomerId) {
         const customer = state.customers.find(c => c.id === selectedCustomerId);
         if (customer) {
-          customerName = `${customer.nome}${customer.sobrenome ? ' ' + customer.sobrenome : ''}`;
+          customerName = `${customer.nome} ${customer.sobrenome || ''}`.trim();
           customerId = customer.id;
         }
       } 
