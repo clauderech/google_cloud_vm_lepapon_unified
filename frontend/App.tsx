@@ -22,7 +22,9 @@ import {
   FileText,
   Wallet,
   LogOut,
-  HelpCircle
+  HelpCircle,
+  Menu,
+  X
 } from 'lucide-react';
 import { 
   AppState, 
@@ -60,6 +62,7 @@ const App = () => {
   const [view, setView] = useState<PageView>('dashboard');
   const [loading, setLoading] = useState(true);
   const [showHelp, setShowHelp] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [state, setState] = useState<AppState>({
     products: [],
     suppliers: [],
@@ -524,50 +527,50 @@ const App = () => {
     };
 
     return (
-      <div className="p-6 space-y-6">
-        <h2 className="text-2xl font-bold text-gray-900">Painel de Controle</h2>
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Painel de Controle</h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-6 rounded-xl shadow-lg text-white">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white/90 text-sm font-bold">Vendas Totais</h3>
-              <TrendingUp className="text-white/90 w-6 h-6" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+          <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-4 sm:p-6 rounded-lg sm:rounded-xl shadow-lg text-white">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="text-white/90 text-xs sm:text-sm font-bold">Vendas Totais</h3>
+              <TrendingUp className="text-white/90 w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <p className="text-3xl font-bold">R$ {totalSales.toFixed(2)}</p>
+            <p className="text-2xl sm:text-3xl font-bold">R$ {totalSales.toFixed(2)}</p>
             <p className="text-xs text-white/80 mt-1 font-medium">{state.sales.length} transações</p>
           </div>
 
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-xl shadow-lg text-white">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white/90 text-sm font-bold">Ticket Médio</h3>
-              <Receipt className="text-white/90 w-6 h-6" />
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-4 sm:p-6 rounded-lg sm:rounded-xl shadow-lg text-white">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="text-white/90 text-xs sm:text-sm font-bold">Ticket Médio</h3>
+              <Receipt className="text-white/90 w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <p className="text-3xl font-bold">R$ {avgTicket.toFixed(2)}</p>
+            <p className="text-2xl sm:text-3xl font-bold">R$ {avgTicket.toFixed(2)}</p>
             <p className="text-xs text-white/80 mt-1 font-medium">Por venda</p>
           </div>
 
-          <div className="bg-gradient-to-br from-amber-500 to-amber-600 p-6 rounded-xl shadow-lg text-white">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white/90 text-sm font-bold">Insumos Críticos</h3>
-              <AlertTriangle className="text-white/90 w-6 h-6" />
+          <div className="bg-gradient-to-br from-amber-500 to-amber-600 p-4 sm:p-6 rounded-lg sm:rounded-xl shadow-lg text-white">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="text-white/90 text-xs sm:text-sm font-bold">Insumos Críticos</h3>
+              <AlertTriangle className="text-white/90 w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <p className="text-3xl font-bold">{lowStockCount}</p>
+            <p className="text-2xl sm:text-3xl font-bold">{lowStockCount}</p>
             <p className="text-xs text-white/80 mt-1 font-medium">Abaixo do mínimo</p>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-xl shadow-lg text-white">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white/90 text-sm font-bold">Comandas Abertas</h3>
-              <Users className="text-white/90 w-6 h-6" />
+          <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-4 sm:p-6 rounded-lg sm:rounded-xl shadow-lg text-white">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="text-white/90 text-xs sm:text-sm font-bold">Comandas Abertas</h3>
+              <Users className="text-white/90 w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <p className="text-3xl font-bold">{state.activeComandas.length}</p>
+            <p className="text-2xl sm:text-3xl font-bold">{state.activeComandas.length}</p>
             <p className="text-xs text-white/80 mt-1 font-medium">Em atendimento</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-             <h3 className="text-lg font-bold text-gray-800 mb-4">Vendas da Semana</h3>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <div className="bg-white p-4 sm:p-6 rounded-lg sm:rounded-xl shadow-sm border border-gray-200">
+             <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4">Vendas da Semana</h3>
              <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={salesData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -579,8 +582,8 @@ const App = () => {
              </ResponsiveContainer>
           </div>
 
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Top 5 Produtos Vendidos</h3>
+          <div className="bg-white p-4 sm:p-6 rounded-lg sm:rounded-xl shadow-sm border border-gray-200">
+            <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4">Top 5 Produtos Vendidos</h3>
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={topProducts}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -592,8 +595,8 @@ const App = () => {
             </ResponsiveContainer>
           </div>
 
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Vendas por Categoria</h3>
+          <div className="bg-white p-4 sm:p-6 rounded-lg sm:rounded-xl shadow-sm border border-gray-200">
+            <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4">Vendas por Categoria</h3>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie
@@ -615,10 +618,10 @@ const App = () => {
             </ResponsiveContainer>
           </div>
 
-          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-xl border border-indigo-100">
-            <div className="flex items-center gap-2 mb-4">
-              <Sparkles className="w-5 h-5 text-indigo-700" />
-              <h3 className="text-lg font-bold text-indigo-900">Consultor IA</h3>
+          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-4 sm:p-6 rounded-lg sm:rounded-xl border border-indigo-100">
+            <div className="flex items-center gap-2 mb-3 sm:mb-4">
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-700" />
+              <h3 className="text-base sm:text-lg font-bold text-indigo-900">Consultor IA</h3>
             </div>
             {!insight ? (
               <div className="text-center py-8">
@@ -883,15 +886,15 @@ const App = () => {
     return (
       <div className="h-screen flex flex-col md:flex-row overflow-hidden">
         {/* Left Side: Products */}
-        <div className="flex-1 p-6 overflow-y-auto bg-gray-50 border-r border-gray-200">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Cardápio</h2>
-            <div className="relative">
+        <div className="flex-1 p-3 sm:p-4 md:p-6 overflow-y-auto bg-gray-50 md:border-r md:border-gray-200">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-2xl font-bold text-gray-900">Cardápio</h2>
+            <div className="relative w-full sm:w-auto">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
               <input 
                 type="text"
                 placeholder="Buscar prato..."
-                className="pl-10 pr-4 py-2 rounded-lg border border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black bg-white placeholder-gray-600 w-64"
+                className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg border border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black bg-white placeholder-gray-600 text-sm"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
@@ -899,7 +902,7 @@ const App = () => {
           </div>
           
           {/* Product Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
             {filteredProducts.map(product => {
               const maxStock = calculateMaxProduciable(product, state.products);
               const currentInCart = cart.find(c => c.productId === product.id)?.quantity || 0;
@@ -910,30 +913,30 @@ const App = () => {
                   key={product.id}
                   onClick={() => handleAddProductWithObservation(product, maxStock)}
                   disabled={available <= 0 || (activeTab === 'comandas' && !selectedComandaId)}
-                  className={`p-4 rounded-xl border text-left transition-all ${
+                  className={`p-2 sm:p-4 rounded-lg sm:rounded-xl border text-left transition-all text-xs sm:text-sm ${
                     available <= 0 || (activeTab === 'comandas' && !selectedComandaId)
                       ? 'bg-gray-100 border-gray-200 opacity-60 cursor-not-allowed'
                       : 'bg-white border-gray-200 hover:shadow-md hover:border-blue-300'
                   }`}
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="font-bold text-gray-900 line-clamp-1">{product.name}</span>
-                    <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+                  <div className="flex justify-between items-start mb-1 sm:mb-2 gap-1">
+                    <span className="font-bold text-gray-900 line-clamp-2">{product.name}</span>
+                    <span className={`text-xs font-bold px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full whitespace-nowrap ${
                       available <= 5 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
                     }`}>
-                      {available} un
+                      {available}
                     </span>
                   </div>
-                  <p className="text-lg font-black text-blue-700">R$ {product.price.toFixed(2)}</p>
-                  <p className="text-xs text-gray-600 mt-1 font-medium">{product.category}</p>
+                  <p className="text-base sm:text-lg font-black text-blue-700">R$ {product.price.toFixed(2)}</p>
+                  <p className="text-xs text-gray-600 mt-0.5 sm:mt-1 font-medium line-clamp-1">{product.category}</p>
                 </button>
               );
             })}
           </div>
         </div>
 
-        {/* Right Side: Order Management */}
-        <div className="w-full md:w-[400px] bg-white flex flex-col h-full shadow-xl z-10">
+        {/* Right Side: Order Management - Hidden on mobile */}
+        <div className="hidden md:flex w-full md:w-[350px] lg:w-[400px] bg-white flex-col h-full shadow-xl z-10">
           
           {/* Tabs */}
           <div className="flex border-b border-gray-200">
@@ -1200,8 +1203,8 @@ const App = () => {
 
         {/* Modal de Observações para Prato */}
         {showObservationModal && pendingProduct && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 animate-in fade-in slide-in-from-bottom-4">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 max-w-md w-full animate-in fade-in slide-in-from-bottom-4">
               <h3 className="text-2xl font-bold text-gray-900 mb-2">
                 🍽️ {pendingProduct.name}
               </h3>
@@ -1413,16 +1416,16 @@ const Inventory = () => {
     };
 
     return (
-      <div className="p-6 max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Cadastro & Estoque</h2>
-          <div className="flex gap-3">
-            <div className="relative">
+      <div className="p-4 sm:p-6 max-w-6xl mx-auto">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Cadastro & Estoque</h2>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:flex-none">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
               <input 
                 type="text"
                 placeholder="Buscar produto..."
-                className="pl-10 pr-4 py-2 rounded-lg border border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black bg-white placeholder-gray-600 w-48"
+                className="w-full sm:w-48 pl-10 pr-4 py-2 rounded-lg border border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black bg-white placeholder-gray-600 text-sm"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
@@ -1433,7 +1436,7 @@ const Inventory = () => {
                 setShowForm(!showForm);
                 if (showForm) setNewProd({ category: 'Geral', minStock: 10, unit: 'un', recipe: [], isActive: true });
               }}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 font-medium text-sm"
             >
               <Plus className="w-4 h-4" /> {editingProductId ? 'Cancelar' : 'Novo Item'}
             </button>
@@ -1443,7 +1446,7 @@ const Inventory = () => {
         {/* Modal de Edição/Criação de Produto */}
         {showForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-in fade-in slide-in-from-bottom-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-y-auto animate-in fade-in slide-in-from-bottom-4">
               <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center rounded-t-2xl">
                 <h3 className="text-xl font-bold text-gray-900">{editingProductId ? '✏️ Editar' : '➕ Novo'} Produto</h3>
                 <button onClick={handleCancelEdit} className="text-gray-500 hover:text-gray-700 text-3xl leading-none">&times;</button>
@@ -1651,9 +1654,9 @@ const Inventory = () => {
         {/* List View */}
         <div className="space-y-8">
           <section>
-             <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2"><Package className="w-5 h-5" /> Insumos (Estoque Controlado)</h3>
-             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <table className="w-full text-left">
+             <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 flex items-center gap-2"><Package className="w-5 h-5" /> Insumos (Estoque Controlado)</h3>
+             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
+                <table className="w-full text-left text-sm">
                   <thead className="bg-gray-100 text-gray-900 font-bold text-sm">
                     <tr>
                       <th className="p-3">Nome</th>
@@ -1694,9 +1697,9 @@ const Inventory = () => {
           </section>
 
           <section>
-             <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2"><ChefHat className="w-5 h-5" /> Pratos / Lanches (Estoque Calculado)</h3>
-             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <table className="w-full text-left">
+             <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 flex items-center gap-2"><ChefHat className="w-5 h-5" /> Pratos / Lanches (Estoque Calculado)</h3>
+             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
+                <table className="w-full text-left text-sm">
                   <thead className="bg-gray-100 text-gray-900 font-bold text-sm">
                     <tr>
                       <th className="p-3">Nome</th>
@@ -1740,9 +1743,9 @@ const Inventory = () => {
           </section>
 
           <section>
-             <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2"><ShoppingCart className="w-5 h-5" /> Produtos de Revenda</h3>
-             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <table className="w-full text-left">
+             <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 flex items-center gap-2"><ShoppingCart className="w-5 h-5" /> Produtos de Revenda</h3>
+             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
+                <table className="w-full text-left text-sm">
                   <thead className="bg-gray-100 text-gray-900 font-bold text-sm">
                     <tr>
                       <th className="p-3">Nome</th>
@@ -1816,68 +1819,70 @@ const Inventory = () => {
       }, 0);
 
     return (
-      <div className="p-6 max-w-5xl mx-auto space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+      <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
             <ClipboardList className="text-purple-700" /> Lista de Compras
           </h2>
           <button 
             onClick={fillShoppingListWithLowStock}
-            className="bg-amber-100 text-amber-900 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-bold hover:bg-amber-200 border border-amber-200"
+            className="bg-amber-100 text-amber-900 px-3 sm:px-4 py-2 rounded-lg flex items-center gap-2 text-xs sm:text-sm font-bold hover:bg-amber-200 border border-amber-200 whitespace-nowrap"
           >
             <AlertTriangle className="w-4 h-4" /> Auto Preencher (Estoque Baixo)
           </button>
         </div>
 
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex gap-4 items-end">
-           <div className="flex-1">
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col sm:flex-row gap-3 sm:gap-4 items-end">
+           <div className="flex-1 w-full">
              <label className="block text-xs font-bold text-gray-700 mb-1">Insumo</label>
-             <select className="w-full border border-gray-400 p-2 rounded-lg text-black bg-white font-medium" value={newItemId} onChange={e => setNewItemId(e.target.value)}>
+             <select className="w-full border border-gray-400 p-2 rounded-lg text-black bg-white font-medium text-sm" value={newItemId} onChange={e => setNewItemId(e.target.value)}>
                <option value="">Selecione...</option>
                {state.products.filter(p => p.type === 'insumo' && p.isActive !== false).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
              </select>
            </div>
-           <div className="w-24">
+           <div className="w-full sm:w-24">
              <label className="block text-xs font-bold text-gray-700 mb-1">Qtd</label>
-             <input type="number" className="w-full border border-gray-400 p-2 rounded-lg text-black bg-white font-medium" min="1" value={newItemQty} onChange={e => setNewItemQty(Number(e.target.value))} />
+             <input type="number" className="w-full border border-gray-400 p-2 rounded-lg text-black bg-white font-medium text-sm" min="1" value={newItemQty} onChange={e => setNewItemQty(Number(e.target.value))} />
            </div>
-           <button onClick={() => { if(newItemId) { addToShoppingList(newItemId, newItemQty); setNewItemId(''); setNewItemQty(1); } }} className="bg-purple-600 text-white px-6 py-2 rounded-lg h-[42px] font-bold">Adicionar</button>
+           <button onClick={() => { if(newItemId) { addToShoppingList(newItemId, newItemQty); setNewItemId(''); setNewItemQty(1); } }} className="bg-purple-600 text-white px-4 sm:px-6 py-2 rounded-lg h-10 font-bold text-sm w-full sm:w-auto">Adicionar</button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-             <div className="divide-y divide-gray-200">
+             <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
                {state.shoppingList.length === 0 && <p className="p-8 text-center text-gray-500 font-medium">Lista vazia.</p>}
                {state.shoppingList.map(item => {
                  const product = state.products.find(p => p.id === item.productId);
                  return (
-                   <div key={item.id} className="p-4 flex items-center gap-4 hover:bg-gray-50">
+                   <div key={item.id} className="p-3 sm:p-4 flex items-center gap-3 sm:gap-4 hover:bg-gray-50">
                      <input type="checkbox" className="w-5 h-5 cursor-pointer" checked={selectedItems.includes(item.id)} onChange={() => toggleSelect(item.id)} />
-                     <div className="flex-1">
-                       <p className="font-bold text-gray-900 text-lg">{product?.name}</p>
-                       <p className="text-sm text-gray-700 font-medium">{product?.supplierId ? state.suppliers.find(s => s.id === product.supplierId)?.name : 'Sem fornecedor fixo'}</p>
+                     <div className="flex-1 min-w-0">
+                       <p className="font-bold text-gray-900 text-sm sm:text-lg line-clamp-1">{product?.name}</p>
+                       <p className="text-xs sm:text-sm text-gray-700 font-medium line-clamp-1">{product?.supplierId ? state.suppliers.find(s => s.id === product.supplierId)?.name : 'Sem fornecedor fixo'}</p>
                      </div>
-                     <div className="text-right mr-4">
-                       <p className="font-black text-gray-900 text-lg">{item.quantity} {product?.unit}</p>
-                       <p className="text-sm text-gray-700 font-medium">R$ {((product?.cost || 0) * item.quantity).toFixed(2)}</p>
+                     <div className="text-right flex items-center gap-2 sm:gap-4">
+                       <div>
+                         <p className="font-black text-gray-900 text-sm sm:text-lg whitespace-nowrap">{item.quantity} {product?.unit}</p>
+                         <p className="text-xs sm:text-sm text-gray-700 font-medium">R$ {((product?.cost || 0) * item.quantity).toFixed(2)}</p>
+                       </div>
+                       <button onClick={() => removeFromShoppingList([item.id])} className="text-red-500 hover:text-red-700 p-1"><Trash2 className="w-4 h-4" /></button>
                      </div>
-                     <button onClick={() => removeFromShoppingList([item.id])} className="text-red-500 hover:text-red-700 p-2"><Trash2 className="w-5 h-5" /></button>
                    </div>
                  );
                })}
              </div>
           </div>
 
-          <div className="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-gray-200 h-fit">
-            <h3 className="font-bold text-gray-900 mb-4 text-lg">Finalizar Compra</h3>
+          <div className="lg:col-span-1 bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200 h-fit">
+            <h3 className="font-bold text-gray-900 mb-4 text-base sm:text-lg">Finalizar Compra</h3>
             <div className="space-y-4">
-              <select className="w-full border border-gray-400 p-2 rounded-lg text-black bg-white font-medium" value={targetSupplier} onChange={e => setTargetSupplier(e.target.value)}>
+              <select className="w-full border border-gray-400 p-2 rounded-lg text-black bg-white font-medium text-sm" value={targetSupplier} onChange={e => setTargetSupplier(e.target.value)}>
                 <option value="">Selecione Fornecedor...</option>
                 {state.suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
-              <div className="bg-gray-100 p-3 rounded-lg flex justify-between text-gray-800"><span className="text-sm font-bold">Itens:</span><span className="font-black">{selectedItems.length}</span></div>
-              <div className="bg-gray-100 p-3 rounded-lg flex justify-between text-gray-800"><span className="text-sm font-bold">Total Est.:</span><span className="font-black text-green-700">R$ {estimatedCost.toFixed(2)}</span></div>
-              <button onClick={handleProcessPurchase} disabled={selectedItems.length === 0} className="w-full bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700 disabled:opacity-50 text-lg shadow-md">Confirmar Entrada</button>
+              <div className="bg-gray-100 p-3 rounded-lg flex justify-between text-gray-800 text-sm"><span className="text-xs font-bold">Itens:</span><span className="font-black">{selectedItems.length}</span></div>
+              <div className="bg-gray-100 p-3 rounded-lg flex justify-between text-gray-800 text-sm"><span className="text-xs font-bold">Total Est.:</span><span className="font-black text-green-700">R$ {estimatedCost.toFixed(2)}</span></div>
+              <button onClick={handleProcessPurchase} disabled={selectedItems.length === 0} className="w-full bg-green-600 text-white py-2 sm:py-3 rounded-lg font-bold hover:bg-green-700 disabled:opacity-50 text-sm sm:text-base shadow-md">Confirmar Entrada</button>
             </div>
           </div>
         </div>
@@ -1907,34 +1912,34 @@ const Inventory = () => {
     const availableProducts = state.products.filter(p => p.supplierId === selectedSupplier && p.type === 'insumo' && p.isActive !== false);
 
     return (
-      <div className="p-6 max-w-4xl mx-auto">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Entrada de Nota / Compras</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="p-4 sm:p-6 max-w-4xl mx-auto">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Entrada de Nota / Compras</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
           <div className="md:col-span-1 space-y-4">
             <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
               <label className="block text-sm font-bold text-gray-800 mb-2">Fornecedor</label>
-              <select className="w-full border border-gray-400 p-2 rounded-lg text-black bg-white" value={selectedSupplier} onChange={e => { setSelectedSupplier(e.target.value); setPurchaseCart([]); setAiSuggestion(''); }}>
+              <select className="w-full border border-gray-400 p-2 rounded-lg text-black bg-white text-sm" value={selectedSupplier} onChange={e => { setSelectedSupplier(e.target.value); setPurchaseCart([]); setAiSuggestion(''); }}>
                 <option value="">Selecione...</option>
                 {state.suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
               {selectedSupplier && (
-                <button onClick={getAiSuggestion} className="mt-4 w-full bg-purple-50 text-purple-800 border border-purple-200 py-2 rounded-lg text-sm flex items-center justify-center gap-2 hover:bg-purple-100 font-bold">
+                <button onClick={getAiSuggestion} className="mt-4 w-full bg-purple-50 text-purple-800 border border-purple-200 py-2 rounded-lg text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-purple-100 font-bold">
                   <Sparkles className="w-4 h-4" /> Sugerir Pedido
                 </button>
               )}
             </div>
-            {aiSuggestion && <div className="bg-purple-50 p-4 rounded-xl border border-purple-200 text-sm text-purple-900 whitespace-pre-line font-medium">{aiSuggestion}</div>}
+            {aiSuggestion && <div className="bg-purple-50 p-4 rounded-xl border border-purple-200 text-xs sm:text-sm text-purple-900 whitespace-pre-line font-medium max-h-48 overflow-y-auto">{aiSuggestion}</div>}
           </div>
 
-          <div className="md:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="md:col-span-2 bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
             {selectedSupplier ? (
               <>
-                <h3 className="font-bold text-gray-800 mb-4">Itens do Fornecedor</h3>
-                <div className="flex gap-2 mb-4">
-                  <select id="prodSelect" className="flex-1 border border-gray-400 p-2 rounded-lg text-black bg-white">
+                <h3 className="font-bold text-gray-800 mb-4 text-base sm:text-lg">Itens do Fornecedor</h3>
+                <div className="flex flex-col sm:flex-row gap-2 mb-4">
+                  <select id="prodSelect" className="flex-1 border border-gray-400 p-2 rounded-lg text-black bg-white text-sm">
                     {availableProducts.map(p => <option key={p.id} value={p.id}>{p.name} (Atual: {p.stock} {p.unit})</option>)}
                   </select>
-                  <input id="qtyInput" type="number" placeholder="Qtd" className="w-20 border border-gray-400 p-2 rounded-lg text-black bg-white placeholder-gray-600" />
+                  <input id="qtyInput" type="number" placeholder="Qtd" className="w-full sm:w-20 border border-gray-400 p-2 rounded-lg text-black bg-white placeholder-gray-600 text-sm" />
                   <button onClick={() => {
                       const sel = document.getElementById('prodSelect') as HTMLSelectElement;
                       const qty = document.getElementById('qtyInput') as HTMLInputElement;
@@ -1943,23 +1948,23 @@ const Inventory = () => {
                         setPurchaseCart([...purchaseCart, { productId: prod.id, productName: prod.name, quantity: Number(qty.value), unitPrice: prod.cost }]);
                         qty.value = '';
                       }
-                    }} className="bg-blue-600 text-white px-4 rounded-lg font-bold">Add</button>
+                    }} className="bg-blue-600 text-white px-4 rounded-lg font-bold text-sm whitespace-nowrap">Add</button>
                 </div>
-                <div className="space-y-2 mb-6">
+                <div className="space-y-2 mb-6 max-h-40 overflow-y-auto">
                   {purchaseCart.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-center bg-gray-100 p-3 rounded border border-gray-200">
-                      <span className="text-gray-900 font-bold">{item.productName} (x{item.quantity})</span>
+                    <div key={idx} className="flex justify-between items-center bg-gray-100 p-2 sm:p-3 rounded border border-gray-200 text-sm">
+                      <span className="text-gray-900 font-bold truncate">{item.productName} (x{item.quantity})</span>
                       <span className="text-gray-800 font-medium">R$ {(item.quantity * item.unitPrice).toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
-                <div className="flex justify-between items-center border-t border-gray-200 pt-4">
-                   <span className="font-black text-xl text-gray-900">Total: R$ {purchaseCart.reduce((acc, i) => acc + (i.quantity * i.unitPrice), 0).toFixed(2)}</span>
-                   <button onClick={handleAddPurchase} className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 font-bold shadow-md">Confirmar</button>
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-t border-gray-200 pt-4">
+                   <span className="font-black text-lg sm:text-xl text-gray-900">Total: R$ {purchaseCart.reduce((acc, i) => acc + (i.quantity * i.unitPrice), 0).toFixed(2)}</span>
+                   <button onClick={handleAddPurchase} className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 font-bold shadow-md text-sm sm:text-base">Confirmar</button>
                 </div>
               </>
             ) : (
-              <div className="h-full flex items-center justify-center text-gray-500 font-medium">Selecione um fornecedor.</div>
+              <div className="h-32 flex items-center justify-center text-gray-500 font-medium">Selecione um fornecedor.</div>
             )}
           </div>
         </div>
@@ -1969,7 +1974,23 @@ const Inventory = () => {
 
   return (
     <div className="flex h-screen bg-[#f1f5f9]">
-      <aside className="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col">
+      {/* Mobile Menu Toggle */}
+      <div className="md:hidden fixed top-0 left-0 right-0 bg-white border-b border-gray-200 p-4 flex justify-between items-center z-40">
+        <h1 className="text-lg font-black text-blue-700">Lanchonete AI</h1>
+        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-gray-600">
+          {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      </div>
+
+      {/* Sidebar - Mobile Overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 md:hidden z-30" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`fixed md:static w-64 h-screen bg-white border-r border-gray-200 flex flex-col z-30 transform transition-transform md:transform-none ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+      }`}>
         <div className="p-6 border-b border-gray-200">
           <h1 className="text-xl font-black text-blue-700 flex items-center gap-2">
             <div className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center">L</div>
@@ -1989,19 +2010,19 @@ const Inventory = () => {
           </button>
         </div>
         <nav className="flex-1 p-4">
-          {hasPermission('view_dashboard') && <SidebarItem icon={LayoutDashboard} label="Dashboard" active={view === 'dashboard'} onClick={() => setView('dashboard')} />}
-          {hasPermission('view_pos') && <SidebarItem icon={ShoppingCart} label="PDV (Vendas)" active={view === 'pos'} onClick={() => setView('pos')} />}
-          {hasPermission('view_inventory') && <SidebarItem icon={Package} label="Estoque / Receitas" active={view === 'inventory'} onClick={() => setView('inventory')} />}
-          {hasPermission('manage_products') && <SidebarItem icon={Users} label="Clientes" active={view === 'customers'} onClick={() => setView('customers')} />}
-          {hasPermission('view_shopping_list') && <SidebarItem icon={ClipboardList} label="Lista de Compras" active={view === 'shopping-list'} onClick={() => setView('shopping-list')} />}
-          {hasPermission('view_purchases') && <SidebarItem icon={Truck} label="Entrada de Notas" active={view === 'purchases'} onClick={() => setView('purchases')} />}
+          {hasPermission('view_dashboard') && <SidebarItem icon={LayoutDashboard} label="Dashboard" active={view === 'dashboard'} onClick={() => { setView('dashboard'); setSidebarOpen(false); }} />}
+          {hasPermission('view_pos') && <SidebarItem icon={ShoppingCart} label="PDV (Vendas)" active={view === 'pos'} onClick={() => { setView('pos'); setSidebarOpen(false); }} />}
+          {hasPermission('view_inventory') && <SidebarItem icon={Package} label="Estoque / Receitas" active={view === 'inventory'} onClick={() => { setView('inventory'); setSidebarOpen(false); }} />}
+          {hasPermission('manage_products') && <SidebarItem icon={Users} label="Clientes" active={view === 'customers'} onClick={() => { setView('customers'); setSidebarOpen(false); }} />}
+          {hasPermission('view_shopping_list') && <SidebarItem icon={ClipboardList} label="Lista de Compras" active={view === 'shopping-list'} onClick={() => { setView('shopping-list'); setSidebarOpen(false); }} />}
+          {hasPermission('view_purchases') && <SidebarItem icon={Truck} label="Entrada de Notas" active={view === 'purchases'} onClick={() => { setView('purchases'); setSidebarOpen(false); }} />}
           <div className="my-2 border-t border-gray-200"></div>
-          {hasPermission('view_financial') && <SidebarItem icon={TrendingUp} label="Financeiro" active={view === 'financial'} onClick={() => setView('financial')} />}
-          {hasPermission('view_expenses') && <SidebarItem icon={Receipt} label="Despesas" active={view === 'expenses'} onClick={() => setView('expenses')} />}
-          {hasPermission('view_cash_register') && <SidebarItem icon={Wallet} label="Caixa" active={view === 'cash-register'} onClick={() => setView('cash-register')} />}
-          {hasPermission('view_reports') && <SidebarItem icon={FileText} label="Relatórios" active={view === 'reports'} onClick={() => setView('reports')} />}
+          {hasPermission('view_financial') && <SidebarItem icon={TrendingUp} label="Financeiro" active={view === 'financial'} onClick={() => { setView('financial'); setSidebarOpen(false); }} />}
+          {hasPermission('view_expenses') && <SidebarItem icon={Receipt} label="Despesas" active={view === 'expenses'} onClick={() => { setView('expenses'); setSidebarOpen(false); }} />}
+          {hasPermission('view_cash_register') && <SidebarItem icon={Wallet} label="Caixa" active={view === 'cash-register'} onClick={() => { setView('cash-register'); setSidebarOpen(false); }} />}
+          {hasPermission('view_reports') && <SidebarItem icon={FileText} label="Relatórios" active={view === 'reports'} onClick={() => { setView('reports'); setSidebarOpen(false); }} />}
           <div className="my-2 border-t border-gray-200"></div>
-          {hasPermission('view_financial') && <SidebarItem icon={DollarSign} label="Crediário" active={view === 'crediario'} onClick={() => setView('crediario')} />}
+          {hasPermission('view_financial') && <SidebarItem icon={DollarSign} label="Crediário" active={view === 'crediario'} onClick={() => { setView('crediario'); setSidebarOpen(false); }} />}
         </nav>
         <div className="p-4 border-t border-gray-200">
           <button
@@ -2014,7 +2035,7 @@ const Inventory = () => {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto md:mt-0 mt-20">
         {loading ? (
            <div className="flex h-full items-center justify-center text-blue-600 font-bold text-xl">Carregando Sistema...</div>
         ) : (
