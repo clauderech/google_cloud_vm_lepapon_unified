@@ -19,6 +19,7 @@ const OrderProcessor = require('./websocket/orderProcessor');
 const { createQueue } = require('./models/asyncQueue');
 
 // Importar rotas
+const authRoutes = require('./routes/auth');
 const lepaponOrdersRoutes = require('./routes/lepapon-orders');
 const apiRoutes = require('./routes/api');
 const financialRoutes = require('./routes/financial');
@@ -75,6 +76,9 @@ app.get('/api/lanchonete/health', (req, res) => {
 app.get('/api/sync/status', (req, res) => {
   res.json({ status: 'ok', module: 'sync' });
 });
+
+// Rotas de Autenticação
+app.use('/api/auth', authRoutes);
 
 // Rotas LePapon Orders
 app.use(lepaponOrdersRoutes);

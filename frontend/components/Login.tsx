@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Lock, User, Eye, EyeOff, LogIn } from 'lucide-react';
 
 interface LoginProps {
-  onLogin: (user: { id: string; name: string; role: string }) => void;
+  onLogin: (user: { id: string; name: string; role: string; token?: string }) => void;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
@@ -12,40 +12,118 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Usuários de demonstração (em produção, verificar no backend)
-  const demoUsers = [
-    { id: 'admin_1', username: 'admin', password: 'admin123', name: 'Administrador', role: 'admin' },
-    { id: 'op_1', username: 'operador', password: 'op123', name: 'Operador', role: 'operador' },
-    { id: 'caixa_1', username: 'caixa', password: 'caixa123', name: 'Caixa', role: 'caixa' }
-  ];
+  // Configuração: URL da API e modo demo
+  const demoMode = import.meta.env.VITE_DEMO_MODE === 'true';
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  
+  // Usuários de demonstração (apenas para modo demo)
+  const getDemoUsers = () => {
+    if (!demoMode) return [];
+    
+    return [
+      { 
+        id: 'admin_1', 
+        username: import.meta.env.VITE_DEMO_USER_ADMIN || 'admin', 
+        password: import.meta.env.VITE_DEMO_PASS_ADMIN || '', 
+        name: 'Administrador', 
+        role: 'admin' 
+      },
+      { 
+        id: 'op_1', 
+        username: import.meta.env.VITE_DEMO_USER_OPERADOR || 'operador', 
+        password: import.meta.env.VITE_DEMO_PASS_OPERADOR || '', 
+        name: 'Operador', 
+        role: 'operador' 
+      },
+      { 
+        id: 'caixa_1', 
+        username: import.meta.env.VITE_DEMO_USER_CAIXA || 'caixa', 
+        password: import.meta.env.VITE_DEMO_PASS_CAIXA || '', 
+        name: 'Caixa', 
+        role: 'caixa' 
+      }
+    ];
+  };
+  
+  const demoUsers = getDemoUsers();
+
+  // Autenticação via backend API
+  const authenticateViaAPI = async () => {
+    try {
+      const response = await fetch(`${apiUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Falha na autenticação');
+      }
+
+      // Salvar token JWT
+      localStorage.setItem('auth_token', data.token);
+      localStorage.setItem('auth_expiresAt', new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString());
+
+      // Salvar sessão do usuário
+      const session = {
+        id: data.user.id,
+        name: data.user.name,
+        role: data.user.role,
+        loginAt: new Date().toISOString(),
+        token: data.token
+      };
+      
+      localStorage.setItem('lanchonete_session', JSON.stringify(session));
+      onLogin(session);
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : 'Erro ao conectar ao servidor');
+    }
+  };
+
+  // Autenticação via modo demo (fallback)
+  const authenticateViaDemo = async () => {
+    // Simular delay de rede
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    const user = demoUsers.find(u => u.username === username && u.password === password);
+    if (!user) {
+      throw new Error('Usuário ou senha incorretos');
+    }
+
+    // Salvar sessão (sem token em modo demo)
+    const session = {
+      id: user.id,
+      name: user.name,
+      role: user.role,
+      loginAt: new Date().toISOString()
+    };
+    
+    localStorage.setItem('lanchonete_session', JSON.stringify(session));
+    onLogin(session);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    // Simular delay de rede
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    // Verificar credenciais
-    const user = demoUsers.find(u => u.username === username && u.password === password);
-
-    if (user) {
-      // Salvar sessão
-      const session = {
-        id: user.id,
-        name: user.name,
-        role: user.role,
-        loginAt: new Date().toISOString()
-      };
-      
-      localStorage.setItem('lanchonete_session', JSON.stringify(session));
-      onLogin(session);
-    } else {
-      setError('Usuário ou senha incorretos');
+    try {
+      if (demoMode) {
+        // Modo demo: usar credenciais locais
+        await authenticateViaDemo();
+      } else {
+        // Produção: usar API do backend
+        await authenticateViaAPI();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao fazer login');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
@@ -58,6 +136,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           </div>
           <h1 className="text-3xl font-black text-white mb-2">Lanchonete AI</h1>
           <p className="text-blue-100 text-sm font-medium">Sistema de Gestão Inteligente</p>
+          {demoMode && (
+            <div className="mt-3 bg-yellow-400/20 border border-yellow-300/50 rounded px-3 py-1 inline-block">
+              <p className="text-yellow-100 text-xs font-bold">Modo Demonstração</p>
+            </div>
+          )}
         </div>
 
         {/* Form */}
@@ -76,6 +159,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   onChange={e => setUsername(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 text-black bg-white placeholder-gray-400"
                   placeholder="Digite seu usuário"
+                  disabled={loading}
                   required
                 />
               </div>
@@ -94,12 +178,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   onChange={e => setPassword(e.target.value)}
                   className="w-full pl-11 pr-12 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 text-black bg-white placeholder-gray-400"
                   placeholder="Digite sua senha"
+                  disabled={loading}
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  disabled={loading}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 disabled:opacity-50"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -113,6 +199,18 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               </div>
             )}
 
+            {/* Demo Hints */}
+            {demoMode && demoUsers.length > 0 && (
+              <div className="bg-blue-50 border border-blue-200 p-3 rounded text-xs">
+                <p className="font-bold text-blue-900 mb-2">Credenciais de demonstração:</p>
+                <ul className="space-y-1 text-blue-800">
+                  <li>👤 admin / {demoUsers.find(u => u.role === 'admin')?.password}</li>
+                  <li>👤 operador / {demoUsers.find(u => u.role === 'operador')?.password}</li>
+                  <li>👤 caixa / {demoUsers.find(u => u.role === 'caixa')?.password}</li>
+                </ul>
+              </div>
+            )}
+
             {/* Submit */}
             <button
               type="submit"
@@ -120,7 +218,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white py-3 rounded-lg font-bold text-lg shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading ? (
-                <>Entrando...</>
+                <>
+                  <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
+                  Entrando...
+                </>
               ) : (
                 <>
                   <LogIn className="w-5 h-5" />
