@@ -172,7 +172,7 @@ router.post('/api/products', async (req, res) => {
       description: description || null,
       barcode: barcode || null,
       is_active: is_active !== undefined ? is_active : 1,
-      recipe: recipe || null,
+      recipe: recipe ? JSON.stringify(recipe) : null,
       created_at: new Date(),
       updated_at: new Date()
     });
@@ -245,7 +245,7 @@ router.put('/api/products/:id', async (req, res) => {
     if (description !== undefined) updateData.description = description;
     if (barcode !== undefined) updateData.barcode = barcode;
     if (is_active !== undefined) updateData.is_active = is_active;
-    if (recipe !== undefined) updateData.recipe = recipe || null;
+    if (recipe !== undefined) updateData.recipe = recipe ? JSON.stringify(recipe) : null;
 
     console.log('[API] UpdateData:', JSON.stringify(updateData, null, 2));
 
