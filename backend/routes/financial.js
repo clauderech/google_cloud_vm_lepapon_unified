@@ -41,11 +41,14 @@ router.post('/api/cash-register/open', async (req, res) => {
     }
 
     // Criar novo registro de caixa
+    const now = new Date();
+    const dateOnly = now.toISOString().split('T')[0]; // Formato: YYYY-MM-DD
+    
     const [id] = await db('cash_registers').insert({
-      date: new Date().toISOString(),
+      date: dateOnly,
       initial_amount: initialAmount,
       opened_by: openedBy,
-      opened_at: new Date().toISOString(),
+      opened_at: now.toISOString(),
       closed_at: null,
       closed_by: null,
       final_amount: null,
