@@ -6,6 +6,14 @@
  */
 
 exports.up = async function(knex) {
+  // Verificar se a tabela exists
+  const tableExists = await knex.schema.hasTable('expenses');
+  
+  if (!tableExists) {
+    console.log('[Migration] Tabela expenses não existe, migrando para version de update');
+    return;
+  }
+
   const hasSupplierName = await knex.schema.hasColumn('expenses', 'supplier_name');
   const hasInvoiceNumber = await knex.schema.hasColumn('expenses', 'invoice_number');
   const hasIsRecurring = await knex.schema.hasColumn('expenses', 'is_recurring');
@@ -31,6 +39,12 @@ exports.up = async function(knex) {
 };
 
 exports.down = async function(knex) {
+  const tableExists = await knex.schema.hasTable('expenses');
+  
+  if (!tableExists) {
+    return;
+  }
+
   const hasSupplierName = await knex.schema.hasColumn('expenses', 'supplier_name');
   const hasInvoiceNumber = await knex.schema.hasColumn('expenses', 'invoice_number');
   const hasIsRecurring = await knex.schema.hasColumn('expenses', 'is_recurring');

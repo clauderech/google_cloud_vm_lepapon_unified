@@ -6,6 +6,14 @@
  */
 
 exports.up = async function(knex) {
+  // Verificar se a tabela exists
+  const tableExists = await knex.schema.hasTable('cash_registers');
+  
+  if (!tableExists) {
+    console.log('[Migration] Tabela cash_registers não existe, migrando para version de update');
+    return;
+  }
+
   const hasExpectedAmount = await knex.schema.hasColumn('cash_registers', 'expected_amount');
   const hasDifference = await knex.schema.hasColumn('cash_registers', 'difference');
 
@@ -23,6 +31,12 @@ exports.up = async function(knex) {
 };
 
 exports.down = async function(knex) {
+  const tableExists = await knex.schema.hasTable('cash_registers');
+  
+  if (!tableExists) {
+    return;
+  }
+
   const hasExpectedAmount = await knex.schema.hasColumn('cash_registers', 'expected_amount');
   const hasDifference = await knex.schema.hasColumn('cash_registers', 'difference');
 
