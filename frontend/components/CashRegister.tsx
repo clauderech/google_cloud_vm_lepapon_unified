@@ -16,6 +16,7 @@ export const CashRegisterComponent: React.FC = () => {
 
   const [closeForm, setCloseForm] = useState({
     actualAmount: 0,
+    closedBy: '',
     observations: ''
   });
 
@@ -73,6 +74,11 @@ export const CashRegisterComponent: React.FC = () => {
       return;
     }
 
+    if (!closeForm.closedBy.trim()) {
+      alert('Informe o responsável pelo fechamento');
+      return;
+    }
+
     const confirmMsg = currentRegister.difference !== 0
       ? `Há uma diferença de ${financialService.formatCurrency(Math.abs(currentRegister.difference))}. Deseja realmente fechar o caixa?`
       : 'Deseja fechar o caixa?';
@@ -83,10 +89,10 @@ export const CashRegisterComponent: React.FC = () => {
       await financialService.closeCashRegister(
         currentRegister.id,
         closeForm.actualAmount,
-        currentRegister.responsibleUser,
+        closeForm.closedBy,
         closeForm.observations
       );
-      setCloseForm({ actualAmount: 0, observations: '' });
+      setCloseForm({ actualAmount: 0, closedBy: '', observations: '' });
       loadCashRegister();
       alert('Caixa fechado com sucesso!');
     } catch (err) {
@@ -272,8 +278,20 @@ export const CashRegisterComponent: React.FC = () => {
               )}
             </div>
 
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">
+            <div>              <label className="block text-sm font-bold text-gray-700 mb-2">
+                Responsável pelo Fechamento
+              </label>
+              <input
+                type="text"
+                value={closeForm.closedBy}
+                onChange={(e) => setCloseForm({ ...closeForm, closedBy: e.target.value })}
+                placeholder="Nome de quem está fechando"
+                className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none font-medium"
+                required
+              />
+            </div>
+
+            <div>              <label className="block text-sm font-bold text-gray-700 mb-2">
                 Observações (opcional)
               </label>
               <textarea

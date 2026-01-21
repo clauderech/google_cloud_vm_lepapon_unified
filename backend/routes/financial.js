@@ -145,6 +145,10 @@ router.post('/api/cash-register/close', async (req, res) => {
       return res.status(400).json({ error: 'Valor final não pode ser negativo' });
     }
 
+    if (!closedBy || !closedBy.trim()) {
+      return res.status(400).json({ error: 'Responsável pelo fechamento é obrigatório' });
+    }
+
     // Buscar registro
     const register = await db('cash_registers')
       .where('id', registerId)

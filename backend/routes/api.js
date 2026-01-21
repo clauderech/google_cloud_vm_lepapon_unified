@@ -1,6 +1,7 @@
 'use strict';
 
 const express = require('express');
+const { authMiddleware, roleMiddleware } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
@@ -195,9 +196,9 @@ router.post('/api/products', async (req, res) => {
 
 /**
  * PUT /api/products/:id
- * Atualizar produto
+ * Atualizar produto [REQUER AUTENTICAÇÃO]
  */
-router.put('/api/products/:id', async (req, res) => {
+router.put('/api/products/:id', authMiddleware, async (req, res) => {
   try {
     const db = req.db;
     if (!db) {
@@ -271,9 +272,9 @@ router.put('/api/products/:id', async (req, res) => {
 
 /**
  * DELETE /api/products/:id
- * Deletar produto
+ * Deletar produto [REQUER ADMIN]
  */
-router.delete('/api/products/:id', async (req, res) => {
+router.delete('/api/products/:id', authMiddleware, roleMiddleware('admin'), async (req, res) => {
   try {
     const db = req.db;
     if (!db) {

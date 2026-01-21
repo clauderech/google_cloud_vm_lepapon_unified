@@ -3,18 +3,15 @@
 const express = require('express');
 const ComandaController = require('../controllers/ComandaController');
 const { authMiddleware } = require('../middleware/authMiddleware');
+const { requireOpenCashRegister, validateCashRegisterIfPresent } = require('../middleware/cashRegisterMiddleware');
 
 const router = express.Router();
 
 // Aplicar middleware de autenticação em todas as rotas
 router.use(authMiddleware);
 
-/**
- * Comandas Routes
- */
-
 // POST /api/comandas - Criar nova comanda
-router.post('/', ComandaController.create);
+router.post('/', validateCashRegisterIfPresent, ComandaController.create);
 
 // GET /api/comandas - Listar comandas com filtros
 router.get('/', ComandaController.list);
@@ -25,17 +22,17 @@ router.get('/open', ComandaController.listOpen);
 // GET /api/comandas/:id - Obter comanda por ID
 router.get('/:id', ComandaController.getById);
 
-// POST /api/comandas/:id/items - Adicionar item
-router.post('/:id/items', ComandaController.addItem);
+// POST /api/comandas/:id/items - Adicionar item [REQUER CAIXA ABERTO]
+router.post('/:id/items', requireOpenCashRegister, ComandaController.addItem);
 
-// PUT /api/comandas/:comandaId/items/:itemId - Atualizar item
-router.put('/:comandaId/items/:itemId', ComandaController.updateItem);
+// PUT /api/comandas/:comandaId/items/:itemId - Atualizar item [REQUER CAIXA ABERTO]
+router.put('/:comandaId/items/:itemId', requireOpenCashRegister, ComandaController.updateItem);
 
-// DELETE /api/comandas/:comandaId/items/:itemId - Remover item
-router.delete('/:comandaId/items/:itemId', ComandaController.removeItem);
+// DELETE /api/comandas/:comandaId/items/:itemId - Remover item [REQUER CAIXA ABERTO]
+router.delete('/:comandaId/items/:itemId', requireOpenCashRegister, ComandaController.removeItem);
 
-// PUT /api/comandas/:id/close - Fechar comanda
-router.put('/:id/close', ComandaController.close);
+// PUT /api/comandas/:id/close - Fechar comanda [REQUER CAIXA ABERTO]
+router.put('/:id/close', requireOpenCashRegister, ComandaController.close);
 
 // PUT /api/comandas/:id/cancel - Cancelar comanda
 router.put('/:id/cancel', ComandaController.cancel);

@@ -52,11 +52,16 @@ import CrediarioManager from './components/CrediarioManager';
 import HelpMenu from './components/HelpMenu';
 import LepaponOrdersTab from './components/LepaponOrdersTab';
 import Login from './components/Login';
+import CashRegisterBanner from './components/CashRegisterBanner';
 import { useAuth } from './hooks/useAuth';
+import { useCashRegisterStatus } from './hooks/useCashRegisterStatus';
 
 const App = () => {
   // --- Authentication ---
   const { user, isAuthenticated, login, logout, hasPermission } = useAuth();
+  
+  // --- Cash Register Status ---
+  const { isOpen: isCashOpen, refresh: refreshCashStatus } = useCashRegisterStatus();
   
   // --- State Management ---
   const [view, setView] = useState<PageView>('dashboard');
@@ -2040,6 +2045,16 @@ const Inventory = () => {
            <div className="flex h-full items-center justify-center text-blue-600 font-bold text-xl">Carregando Sistema...</div>
         ) : (
            <>
+            {/* Banner de Status do Caixa */}
+            {(view === 'pos' || view === 'dashboard') && (
+              <div className="px-6 pt-6">
+                <CashRegisterBanner 
+                  isOpen={isCashOpen} 
+                  onOpenCashClick={() => setView('cash-register')} 
+                />
+              </div>
+            )}
+            
             {view === 'dashboard' && <Dashboard />}
             {view === 'pos' && <POS />}
             {view === 'inventory' && <Inventory />}
