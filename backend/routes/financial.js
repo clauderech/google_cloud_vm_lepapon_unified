@@ -48,7 +48,7 @@ router.post('/api/cash-register/open', async (req, res) => {
       date: dateOnly,
       initial_amount: initialAmount,
       opened_by: openedBy,
-      opened_at: now.toISOString(),
+      opened_at: now,  // Deixar como Date object - Knex/MySQL2 converte corretamente
       closed_at: null,
       closed_by: null,
       final_amount: null,
@@ -171,7 +171,7 @@ router.post('/api/cash-register/close', async (req, res) => {
       .update({
         final_amount: actualAmount,
         closed_by: closedBy,
-        closed_at: new Date().toISOString(),
+        closed_at: new Date(),  // Deixar como Date object - Knex/MySQL2 converte corretamente
         notes: notes || null
       });
 
