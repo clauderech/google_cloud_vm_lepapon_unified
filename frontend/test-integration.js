@@ -162,7 +162,6 @@ async function runTests() {
       log(`❌ Erro: ${error.message}`, colors.red);
       testResults.failed++;
     }
-    }
 
     // Listar comandas
     log('\n📝 Testando: GET /api/comandas', colors.cyan);
@@ -204,7 +203,6 @@ async function runTests() {
     } catch (error) {
       log(`❌ Erro: ${error.message}`, colors.red);
       testResults.failed++;
-    }
     }
   }
 
