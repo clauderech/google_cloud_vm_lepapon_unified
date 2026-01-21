@@ -5,7 +5,7 @@
  * Testa os endpoints mais críticos
  */
 
-const http = require('http');
+import http from 'http';
 
 const API_URL = 'http://localhost:3000';
 
