@@ -190,7 +190,7 @@ export const CashRegisterComponent: React.FC = () => {
       </div>
 
       {/* Formulário de Abertura */}
-      {!currentRegister || currentRegister.status === 'closed' ? (
+      {!currentRegister?.id || currentRegister.status === 'closed' ? (
         <div className="bg-white p-6 rounded-xl shadow-lg border-2 border-blue-200">
           <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
             <Unlock className="w-5 h-5 text-blue-600" />
