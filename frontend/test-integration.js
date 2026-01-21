@@ -133,6 +133,10 @@ async function runTests() {
           'Authorization': `Bearer ${loginResponse.token}`
         }
       };
+      
+      log(`   URL: ${url.toString()}`, colors.cyan);
+      log(`   Headers: ${JSON.stringify(options.headers).substring(0, 100)}...`, colors.cyan);
+      
       const response = await new Promise((resolve, reject) => {
         const req = http.request(url, options, (res) => {
           let data = '';
@@ -149,6 +153,9 @@ async function runTests() {
         req.end();
       });
 
+      log(`   Response Status: ${response.status}`, colors.cyan);
+      log(`   Response: ${JSON.stringify(response.data).substring(0, 150)}`, colors.cyan);
+      
       if (response.status === 200) {
         log(`✅ Sucesso (${response.status})`, colors.green);
         testResults.passed++;
