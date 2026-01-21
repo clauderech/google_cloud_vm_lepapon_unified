@@ -127,7 +127,9 @@ async function runTests() {
     try {
       const url = new URL('/api/users/me', API_URL);
       const options = {
+        method: 'GET',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${loginResponse.token}`
         }
       };
@@ -154,10 +156,12 @@ async function runTests() {
       } else {
         log(`❌ Falha (${response.status})`, colors.red);
         testResults.failed++;
+        testResults.errors.push(`GET /api/users/me: ${response.status}`);
       }
     } catch (error) {
       log(`❌ Erro: ${error.message}`, colors.red);
       testResults.failed++;
+    }
     }
 
     // Listar comandas
@@ -165,7 +169,9 @@ async function runTests() {
     try {
       const url = new URL('/api/comandas', API_URL);
       const options = {
+        method: 'GET',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${loginResponse.token}`
         }
       };
@@ -193,10 +199,12 @@ async function runTests() {
       } else {
         log(`❌ Falha (${response.status})`, colors.red);
         testResults.failed++;
+        testResults.errors.push(`GET /api/comandas: ${response.status}`);
       }
     } catch (error) {
       log(`❌ Erro: ${error.message}`, colors.red);
       testResults.failed++;
+    }
     }
   }
 
