@@ -11,6 +11,10 @@ const knex = require('knex');
 const { buildKnexConfig } = require('./config/knex');
 const { validateEnvironment } = require('./config/validateEnv');
 
+// Importar middlewares
+const authMiddleware = require('./middleware/authMiddleware');
+const authMiddlewareFlexible = require('./middleware/authMiddlewareFlexible');
+
 // Importar WebSocket e LePapon
 const FrontendBroadcaster = require('./websocket/frontendBroadcaster');
 const LePaponWebSocketClient = require('./websocket/lepaponWebSocketClient');
@@ -24,6 +28,11 @@ const lepaponOrdersRoutes = require('./routes/lepapon-orders');
 const apiRoutes = require('./routes/api');
 const financialRoutes = require('./routes/financial');
 const monthlyAccountRoutes = require('./routes/monthly-account');
+const stockMovementsRoutes = require('./routes/stock-movements');
+const comandasRoutes = require('./routes/comandas');
+const recipesRoutes = require('./routes/recipes');
+const usersRoutes = require('./routes/users');
+const loyaltyTransactionsRoutes = require('./routes/loyalty-transactions');
 
 // Validar variáveis de ambiente na inicialização
 validateEnvironment();
@@ -80,6 +89,9 @@ app.get('/api/sync/status', (req, res) => {
 // Rotas de Autenticação
 app.use('/api/auth', authRoutes);
 
+// Rotas de Usuários (Novo Sistema)
+app.use('/api/users', usersRoutes);
+
 // Rotas LePapon Orders
 app.use(lepaponOrdersRoutes);
 
@@ -88,6 +100,18 @@ app.use(financialRoutes);
 
 // Rotas de Crediário Mensal
 app.use(monthlyAccountRoutes);
+
+// Rotas de Movimentação de Estoque (Novo)
+app.use('/api/stock-movements', stockMovementsRoutes);
+
+// Rotas de Comandas (Novo)
+app.use('/api/comandas', comandasRoutes);
+
+// Rotas de Receitas (Novo)
+app.use('/api/recipes', recipesRoutes);
+
+// Rotas de Transações de Fidelidade (Novo)
+app.use('/api/loyalty-transactions', loyaltyTransactionsRoutes);
 
 // Rotas de API (Produtos, Estado Inicial)
 app.use(apiRoutes);

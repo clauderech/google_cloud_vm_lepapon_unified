@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Lock, User, Eye, EyeOff, LogIn } from 'lucide-react';
+import { authService } from '../services/authService';
 
 interface LoginProps {
   onLogin: (user: { id: string; name: string; role: string; token?: string }) => void;
@@ -14,7 +15,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   // Configuração: URL da API e modo demo
   const demoMode = import.meta.env.VITE_DEMO_MODE === 'true';
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
   
   // Usuários de demonstração (apenas para modo demo)
   const getDemoUsers = () => {
@@ -50,34 +50,19 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   // Autenticação via backend API
   const authenticateViaAPI = async () => {
     try {
-      const response = await fetch(`${apiUrl}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ username, password })
-      });
+      const loginResponse = await authService.login(username, password);
+      
+      // Salvar sessão
+      authService.saveSession(loginResponse);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Falha na autenticação');
-      }
-
-      // Salvar token JWT
-      localStorage.setItem('auth_token', data.token);
-      localStorage.setItem('auth_expiresAt', new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString());
-
-      // Salvar sessão do usuário
+      // Preparar dados para callback
       const session = {
-        id: data.user.id,
-        name: data.user.name,
-        role: data.user.role,
-        loginAt: new Date().toISOString(),
-        token: data.token
+        id: loginResponse.user.id,
+        name: loginResponse.user.name,
+        role: loginResponse.user.role,
+        token: loginResponse.token
       };
       
-      localStorage.setItem('lanchonete_session', JSON.stringify(session));
       onLogin(session);
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Erro ao conectar ao servidor');
