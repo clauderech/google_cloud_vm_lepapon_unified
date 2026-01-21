@@ -98,6 +98,9 @@ async function runTests() {
       password: 'admin123'
     });
     
+    log(`   Status: ${response.status}`, colors.cyan);
+    log(`   Response: ${JSON.stringify(response.data).substring(0, 200)}`, colors.cyan);
+    
     if (response.status === 200 && response.data.data?.token) {
       log(`✅ Sucesso (${response.status})`, colors.green);
       testResults.passed++;
@@ -105,9 +108,9 @@ async function runTests() {
       log(`   Token: ${response.data.data.token.substring(0, 30)}...`);
       log(`   Usuário: ${response.data.data.user.name} (${response.data.data.user.role})`);
     } else {
-      log(`❌ Falha`, colors.red);
+      log(`❌ Falha (esperado 200 com token)`, colors.red);
       testResults.failed++;
-      testResults.errors.push('Login: resposta inválida');
+      testResults.errors.push(`Login: status ${response.status}, esperado 200`);
     }
   } catch (error) {
     log(`❌ Erro: ${error.message}`, colors.red);
