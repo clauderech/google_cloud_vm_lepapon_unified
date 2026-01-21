@@ -2,7 +2,7 @@
 
 const express = require('express');
 const RecipeController = require('../controllers/RecipeController');
-const authMiddleware = require('../middleware/authMiddleware');
+const { authMiddleware } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 

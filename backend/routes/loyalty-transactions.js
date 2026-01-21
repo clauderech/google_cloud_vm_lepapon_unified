@@ -2,7 +2,7 @@
 
 const express = require('express');
 const LoyaltyTransactionController = require('../controllers/LoyaltyTransactionController');
-const authMiddleware = require('../middleware/authMiddleware');
+const { authMiddleware } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 

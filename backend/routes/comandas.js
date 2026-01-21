@@ -2,7 +2,7 @@
 
 const express = require('express');
 const ComandaController = require('../controllers/ComandaController');
-const authMiddleware = require('../middleware/authMiddleware');
+const { authMiddleware } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
