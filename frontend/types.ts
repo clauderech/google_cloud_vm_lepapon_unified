@@ -201,14 +201,19 @@ export type CashRegisterStatus = 'open' | 'closed';
 
 export interface CashRegister {
   id: string;
+  date: string;
   openedAt: string;
   closedAt?: string;
   openedBy: string;
+  responsibleUser?: string;
   closedBy?: string;
   initialAmount: number;
   expectedAmount: number;
-  actualAmount: number;
-  difference: number;
+  actualAmount?: number;
+  difference?: number;
+  totalSales: number;
+  totalExpenses: number;
+  movements: any[];
   status: CashRegisterStatus;
   notes?: string;
   created_at?: string;

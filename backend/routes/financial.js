@@ -109,20 +109,21 @@ router.get('/api/cash-register/current', async (req, res) => {
 
     res.json({
       success: true,
-      data: {
-        id: register.id,
-        date: register.date,
-        initialAmount: register.initial_amount,
-        openedBy: register.opened_by,
-        openedAt: register.opened_at,
-        expectedAmount,
-        totalSales,
-        totalExpenses,
-        movements,
-        actualAmount: register.final_amount,
-        difference: register.final_amount ? (register.final_amount - expectedAmount) : null,
-        isClosed: register.closed_at !== null
-      }
+      id: register.id,
+      date: register.date,
+      initialAmount: register.initial_amount,
+      openedBy: register.opened_by,
+      responsibleUser: register.opened_by,
+      openedAt: register.opened_at,
+      closedAt: register.closed_at,
+      closedBy: register.closed_by,
+      expectedAmount,
+      totalSales,
+      totalExpenses,
+      movements,
+      actualAmount: register.final_amount,
+      difference: register.final_amount ? (register.final_amount - expectedAmount) : null,
+      status: register.closed_at ? 'closed' : 'open'
     });
 
   } catch (error) {
