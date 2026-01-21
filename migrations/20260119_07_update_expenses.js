@@ -6,18 +6,23 @@
  */
 
 exports.up = async function(knex) {
+  const hasSupplierName = await knex.schema.hasColumn('expenses', 'supplier_name');
+  const hasInvoiceNumber = await knex.schema.hasColumn('expenses', 'invoice_number');
+  const hasIsRecurring = await knex.schema.hasColumn('expenses', 'is_recurring');
+  const hasNotes = await knex.schema.hasColumn('expenses', 'notes');
+
   await knex.schema.table('expenses', (table) => {
     // Adicionar novos campos se não existirem
-    if (!(await knex.schema.hasColumn('expenses', 'supplier_name'))) {
+    if (!hasSupplierName) {
       table.string('supplier_name', 255).nullable();
     }
-    if (!(await knex.schema.hasColumn('expenses', 'invoice_number'))) {
+    if (!hasInvoiceNumber) {
       table.string('invoice_number', 50).nullable();
     }
-    if (!(await knex.schema.hasColumn('expenses', 'is_recurring'))) {
+    if (!hasIsRecurring) {
       table.boolean('is_recurring').defaultTo(false);
     }
-    if (!(await knex.schema.hasColumn('expenses', 'notes'))) {
+    if (!hasNotes) {
       table.text('notes').nullable();
     }
   });
@@ -26,18 +31,23 @@ exports.up = async function(knex) {
 };
 
 exports.down = async function(knex) {
+  const hasSupplierName = await knex.schema.hasColumn('expenses', 'supplier_name');
+  const hasInvoiceNumber = await knex.schema.hasColumn('expenses', 'invoice_number');
+  const hasIsRecurring = await knex.schema.hasColumn('expenses', 'is_recurring');
+  const hasNotes = await knex.schema.hasColumn('expenses', 'notes');
+
   await knex.schema.table('expenses', (table) => {
     // Remover campos adicionados
-    if (await knex.schema.hasColumn('expenses', 'supplier_name')) {
+    if (hasSupplierName) {
       table.dropColumn('supplier_name');
     }
-    if (await knex.schema.hasColumn('expenses', 'invoice_number')) {
+    if (hasInvoiceNumber) {
       table.dropColumn('invoice_number');
     }
-    if (await knex.schema.hasColumn('expenses', 'is_recurring')) {
+    if (hasIsRecurring) {
       table.dropColumn('is_recurring');
     }
-    if (await knex.schema.hasColumn('expenses', 'notes')) {
+    if (hasNotes) {
       table.dropColumn('notes');
     }
   });

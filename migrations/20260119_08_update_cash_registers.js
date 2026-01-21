@@ -6,12 +6,15 @@
  */
 
 exports.up = async function(knex) {
+  const hasExpectedAmount = await knex.schema.hasColumn('cash_registers', 'expected_amount');
+  const hasDifference = await knex.schema.hasColumn('cash_registers', 'difference');
+
   await knex.schema.table('cash_registers', (table) => {
     // Adicionar novos campos se não existirem
-    if (!(await knex.schema.hasColumn('cash_registers', 'expected_amount'))) {
+    if (!hasExpectedAmount) {
       table.decimal('expected_amount', 10, 2).defaultTo(0);
     }
-    if (!(await knex.schema.hasColumn('cash_registers', 'difference'))) {
+    if (!hasDifference) {
       table.decimal('difference', 10, 2).defaultTo(0);
     }
   });
@@ -20,12 +23,15 @@ exports.up = async function(knex) {
 };
 
 exports.down = async function(knex) {
+  const hasExpectedAmount = await knex.schema.hasColumn('cash_registers', 'expected_amount');
+  const hasDifference = await knex.schema.hasColumn('cash_registers', 'difference');
+
   await knex.schema.table('cash_registers', (table) => {
     // Remover campos adicionados
-    if (await knex.schema.hasColumn('cash_registers', 'expected_amount')) {
+    if (hasExpectedAmount) {
       table.dropColumn('expected_amount');
     }
-    if (await knex.schema.hasColumn('cash_registers', 'difference')) {
+    if (hasDifference) {
       table.dropColumn('difference');
     }
   });
