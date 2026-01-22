@@ -10,6 +10,7 @@ const ComandaModel = require('../models/comanda');
 const router = express.Router();
 
 router.get('/', async (req, res) => {
+  console.log('[DEBUG] /api/initial-state chamada em', new Date().toISOString(), 'IP:', req.ip);
   try {
     const [products, suppliers, customers, sales, purchases, comandas] = await Promise.all([
       ProductModel.list(),
