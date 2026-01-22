@@ -25,6 +25,9 @@ app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 // Inicializar banco de dados
 let db;
 try {
+  // LOG TEMPORÁRIO PARA DEBUG DO .ENV
+  console.log('DEBUG ENV: NODE_ENV =', process.env.NODE_ENV);
+  // FIM DO LOG TEMPORÁRIO
   const knexConfig = buildKnexConfig();
   db = knex(knexConfig);
   console.log('[DB] Conectado ao banco de dados lepapon_unified_db');
