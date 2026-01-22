@@ -31,10 +31,6 @@ export const useCashRegisterStatus = (): CashStatusHook => {
 
   useEffect(() => {
     refresh();
-    
-    // Atualizar a cada 30 segundos
-    const interval = setInterval(refresh, 30000);
-    return () => clearInterval(interval);
   }, []);
 
   return {
