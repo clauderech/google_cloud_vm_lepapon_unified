@@ -19,12 +19,18 @@ import type {
 import { authService } from './authService';
 
 // CONFIGURAÇÃO: Automático baseado no ambiente
-// Durante desenvolvimento (dev server), usar localhost
-// Em produção, usar /api (mesmo servidor)
+// - Prioriza VITE_API_URL quando definido (ex: http://<ip>:3000)
+// - Em produção, usar /api (mesmo servidor)
+// - Em dev local (localhost), usar http://localhost:3000/api
+// - Em dev remoto (acesso via IP/hostname), usar http(s)://<hostname>:3000/api
 const USE_API = import.meta.env.PROD || window.location.hostname !== 'localhost';
-const API_URL = import.meta.env.PROD 
-  ? '/api' 
-  : 'http://localhost:3000/api';
+const API_URL = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api`
+  : (import.meta.env.PROD
+      ? '/api'
+      : (window.location.hostname !== 'localhost'
+          ? `${window.location.protocol}//${window.location.hostname}:3000/api`
+          : 'http://localhost:3000/api'));
 
 console.log('[Storage Config] USE_API:', USE_API, '| API_URL:', API_URL, '| hostname:', window.location.hostname);
 
