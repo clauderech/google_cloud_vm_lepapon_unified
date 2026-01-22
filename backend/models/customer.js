@@ -1,0 +1,23 @@
+'use strict';
+
+const { db } = require('../config/knex');
+
+const CustomerModel = {
+  async list() {
+    return db('customers').select('*');
+  },
+  async getById(id) {
+    return db('customers').where({ id }).first();
+  },
+  async create(data) {
+    return db('customers').insert(data);
+  },
+  async update(id, data) {
+    return db('customers').where({ id }).update(data);
+  },
+  async remove(id) {
+    return db('customers').where({ id }).del();
+  }
+};
+
+module.exports = CustomerModel;

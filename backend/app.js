@@ -44,6 +44,27 @@ app.use((req, res, next) => {
   req.db = db;
   next();
 });
+// Rotas de produtos
+const productsRouter = require('./routes/products');
+app.use('/api/products', productsRouter);
+// Rotas de fornecedores
+const suppliersRouter = require('./routes/suppliers');
+app.use('/api/suppliers', suppliersRouter);
+// Rotas de clientes
+const customersRouter = require('./routes/customers');
+app.use('/api/customers', customersRouter);
+// Rotas de vendas
+const salesRouter = require('./routes/sales');
+app.use('/api/sales', salesRouter);
+// Rotas de compras
+const purchasesRouter = require('./routes/purchases');
+app.use('/api/purchases', purchasesRouter);
+// Rotas de comandas
+const comandasRouter = require('./routes/comandas');
+app.use('/api/comandas', comandasRouter);
+// Rota de estado inicial
+const initialStateRouter = require('./routes/initialState');
+app.use('/api/initial-state', initialStateRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {

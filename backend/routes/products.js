@@ -1,0 +1,58 @@
+'use strict';
+
+const express = require('express');
+const ProductModel = require('../models/product');
+const router = express.Router();
+
+// Listar todos os produtos
+router.get('/', async (req, res) => {
+  try {
+    const products = await ProductModel.list();
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao listar produtos', details: err.message });
+  }
+});
+
+// Buscar produto por ID
+router.get('/:id', async (req, res) => {
+  try {
+    const product = await ProductModel.getById(req.params.id);
+    if (!product) return res.status(404).json({ error: 'Produto não encontrado' });
+    res.json(product);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao buscar produto', details: err.message });
+  }
+});
+
+// Criar produto
+router.post('/', async (req, res) => {
+  try {
+    const result = await ProductModel.create(req.body);
+    res.status(201).json({ success: true, id: result[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao criar produto', details: err.message });
+  }
+});
+
+// Atualizar produto
+router.put('/:id', async (req, res) => {
+  try {
+    await ProductModel.update(req.params.id, req.body);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao atualizar produto', details: err.message });
+  }
+});
+
+// Remover produto
+router.delete('/:id', async (req, res) => {
+  try {
+    await ProductModel.remove(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao remover produto', details: err.message });
+  }
+});
+
+module.exports = router;
