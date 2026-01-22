@@ -27,6 +27,7 @@ let db;
 try {
   // LOG TEMPORÁRIO PARA DEBUG DO .ENV
   console.log('DEBUG ENV: NODE_ENV =', process.env.NODE_ENV);
+  console.log('DEBUG ENV: WHATSAPP_FLOW_PRIVATE_KEY_PATH =', process.env.WHATSAPP_FLOW_PRIVATE_KEY_PATH);
   // FIM DO LOG TEMPORÁRIO
   const knexConfig = buildKnexConfig();
   db = knex(knexConfig);
