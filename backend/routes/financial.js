@@ -93,7 +93,7 @@ router.get('/api/cash-register/current', async (req, res) => {
 
     // Buscar movimentações do caixa
     const movements = await db('cash_movements')
-      .where('register_id', register.id)
+      .where('cash_register_id', register.id)
       .orderBy('created_at', 'desc');
 
     // Calcular totais
