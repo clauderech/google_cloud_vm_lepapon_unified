@@ -41,7 +41,18 @@ router.put('/:id', async (req, res) => {
     await ProductModel.update(req.params.id, req.body);
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: 'Erro ao atualizar produto', details: err.message });
+    console.error('[ERRO PRODUTO PUT]', {
+      id: req.params.id,
+      body: req.body,
+      error: err.message,
+      stack: err.stack
+    });
+    res.status(500).json({
+      error: 'Erro ao atualizar produto',
+      details: err.message,
+      body: req.body,
+      stack: err.stack
+    });
   }
 });
 
