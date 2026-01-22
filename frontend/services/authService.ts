@@ -3,7 +3,7 @@
  * Gerencia autenticação JWT com backend
  */
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://snackbatio.com.br:3000';
+const API_URL = import.meta.env.VITE_API_URL || 'https://snackbatio.com.br';
 
 export interface User {
   id: string;
