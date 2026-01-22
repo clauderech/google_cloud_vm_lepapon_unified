@@ -25,6 +25,16 @@ const API_URL = process.env.NODE_ENV === 'production'
 const LOCAL_STORAGE_KEY = 'lanchonete_app_state_v5';
 
 export const storageService = {
+    async updateProduct(product: Product): Promise<void> {
+      if (USE_API) {
+        const response = await fetch(`${API_URL}/products/${product.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(product)
+        });
+        if (!response.ok) throw new Error('Erro ao atualizar produto');
+      }
+    },
   
   // =========================================
   // CARREGAR ESTADO INICIAL

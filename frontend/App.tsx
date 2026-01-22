@@ -139,7 +139,7 @@ const App = () => {
 
   // --- Helper: Calculate Max Possible Stock for a Recipe Product ---
   const calculateMaxProduciable = (product: Product, allProducts: Product[]): number => {
-    if (product.type === 'insumo') return product.stock;
+    if (product.type === 'insumo' || product.type === 'revenda') return product.stock;
     if (!product.recipe || product.recipe.length === 0) return 0;
 
     let maxCount = Infinity;
@@ -1176,12 +1176,51 @@ const App = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {state.products.filter(p => p.type === 'insumo').map(p => (
+                    {state.products.filter(p => p.type === 'insumo' || p.type === 'revenda').map(p => (
                       <tr key={p.id} className="hover:bg-gray-50 text-gray-900">
                         <td className="p-3 font-medium">{p.name}</td>
-                        <td className="p-3 text-right font-mono font-bold">{p.stock}</td>
+                        <td className="p-3 text-right font-mono font-bold">
+                          <input
+                            type="number"
+                            className="w-20 border border-gray-300 rounded px-2 py-1 text-right font-mono font-bold bg-white"
+                            value={p.stock}
+                            min={0}
+                            onChange={async e => {
+                              const newStock = Number(e.target.value);
+                              setState(prev => ({
+                                ...prev,
+                                products: prev.products.map(prod => prod.id === p.id ? { ...prod, stock: newStock } : prod)
+                              }));
+                              try {
+                                await storageService.updateProduct({ ...p, stock: newStock });
+                              } catch (err) {
+                                alert('Erro ao salvar estoque no banco!');
+                              }
+                            }}
+                          />
+                        </td>
                         <td className="p-3 text-sm text-gray-700 font-bold uppercase">{p.unit}</td>
-                        <td className="p-3 text-right font-medium">R$ {p.cost.toFixed(2)}</td>
+                        <td className="p-3 text-right font-medium">
+                          <input
+                            type="number"
+                            className="w-20 border border-gray-300 rounded px-2 py-1 text-right font-mono font-bold bg-white"
+                            value={p.cost}
+                            min={0}
+                            step={0.01}
+                            onChange={async e => {
+                              const newCost = Number(e.target.value);
+                              setState(prev => ({
+                                ...prev,
+                                products: prev.products.map(prod => prod.id === p.id ? { ...prod, cost: newCost } : prod)
+                              }));
+                              try {
+                                await storageService.updateProduct({ ...p, cost: newCost });
+                              } catch (err) {
+                                alert('Erro ao salvar custo no banco!');
+                              }
+                            }}
+                          />
+                        </td>
                         <td className="p-3">
                           {p.stock <= p.minStock ? 
                             <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">Baixo</span> : 
