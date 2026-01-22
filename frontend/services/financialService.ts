@@ -5,17 +5,9 @@
 
 import type { DailyAssets, Expense, CashRegister } from '../types';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-const API_URL = import.meta.env.PROD ? '/api' : `${BASE_URL}/api`;
-
-async function readErrorMessage(response: Response, fallback: string): Promise<string> {
-  try {
-    const data = await response.json();
-    return data?.message || data?.error || fallback;
-  } catch {
-    return fallback;
-  }
-}
+const API_URL = process.env.NODE_ENV === 'production' 
+  ? '/api' 
+  : 'http://localhost:3001/api';
 
 export const financialService = {
   // =========================================
@@ -28,13 +20,13 @@ export const financialService = {
     if (endDate) params.append('endDate', endDate);
     
     const response = await fetch(`${API_URL}/daily-assets?${params}`);
-    if (!response.ok) throw new Error(await readErrorMessage(response, 'Erro ao buscar ativos diários'));
+    if (!response.ok) throw new Error('Erro ao buscar ativos diários');
     return response.json();
   },
 
   async getTodayAssets(): Promise<DailyAssets | null> {
     const response = await fetch(`${API_URL}/daily-assets/today`);
-    if (!response.ok) throw new Error(await readErrorMessage(response, 'Erro ao buscar ativos do dia'));
+    if (!response.ok) throw new Error('Erro ao buscar ativos do dia');
     return response.json();
   },
 
@@ -49,7 +41,7 @@ export const financialService = {
       body: JSON.stringify(expense)
     });
     
-    if (!response.ok) throw new Error(await readErrorMessage(response, 'Erro ao adicionar despesa'));
+    if (!response.ok) throw new Error('Erro ao adicionar despesa');
     return response.json();
   },
 
@@ -60,7 +52,7 @@ export const financialService = {
     if (category) params.append('category', category);
     
     const response = await fetch(`${API_URL}/expenses?${params}`);
-    if (!response.ok) throw new Error(await readErrorMessage(response, 'Erro ao buscar despesas'));
+    if (!response.ok) throw new Error('Erro ao buscar despesas');
     return response.json();
   },
 
@@ -75,7 +67,7 @@ export const financialService = {
       body: JSON.stringify({ initialAmount, openedBy })
     });
     
-    if (!response.ok) throw new Error(await readErrorMessage(response, 'Erro ao abrir caixa'));
+    if (!response.ok) throw new Error('Erro ao abrir caixa');
     return response.json();
   },
 
@@ -91,19 +83,19 @@ export const financialService = {
       body: JSON.stringify({ registerId, actualAmount, closedBy, notes })
     });
     
-    if (!response.ok) throw new Error(await readErrorMessage(response, 'Erro ao fechar caixa'));
+    if (!response.ok) throw new Error('Erro ao fechar caixa');
     return response.json();
   },
 
   async getCurrentCashRegister(): Promise<CashRegister | null> {
     const response = await fetch(`${API_URL}/cash-register/current`);
-    if (!response.ok) throw new Error(await readErrorMessage(response, 'Erro ao buscar caixa atual'));
+    if (!response.ok) throw new Error('Erro ao buscar caixa atual');
     return response.json();
   },
 
   async getCashRegisterHistory(days: number = 30): Promise<CashRegister[]> {
     const response = await fetch(`${API_URL}/cash-register/history?days=${days}`);
-    if (!response.ok) throw new Error(await readErrorMessage(response, 'Erro ao buscar histórico de caixa'));
+    if (!response.ok) throw new Error('Erro ao buscar histórico de caixa');
     return response.json();
   },
 
@@ -113,31 +105,31 @@ export const financialService = {
   
   async getMonthlyReport(month: number, year: number): Promise<any> {
     const response = await fetch(`${API_URL}/reports/monthly?month=${month}&year=${year}`);
-    if (!response.ok) throw new Error(await readErrorMessage(response, 'Erro ao gerar relatório mensal'));
+    if (!response.ok) throw new Error('Erro ao gerar relatório mensal');
     return response.json();
   },
 
   async getLowStockReport(): Promise<any[]> {
     const response = await fetch(`${API_URL}/reports/low-stock`);
-    if (!response.ok) throw new Error(await readErrorMessage(response, 'Erro ao buscar produtos com estoque baixo'));
+    if (!response.ok) throw new Error('Erro ao buscar produtos com estoque baixo');
     return response.json();
   },
 
   async getProductionCapacityReport(): Promise<any[]> {
     const response = await fetch(`${API_URL}/reports/production-capacity`);
-    if (!response.ok) throw new Error(await readErrorMessage(response, 'Erro ao calcular capacidade de produção'));
+    if (!response.ok) throw new Error('Erro ao calcular capacidade de produção');
     return response.json();
   },
 
   async getBestSellersReport(): Promise<any[]> {
     const response = await fetch(`${API_URL}/reports/best-sellers`);
-    if (!response.ok) throw new Error(await readErrorMessage(response, 'Erro ao buscar produtos mais vendidos'));
+    if (!response.ok) throw new Error('Erro ao buscar produtos mais vendidos');
     return response.json();
   },
 
   async getProfitabilityReport(): Promise<any[]> {
     const response = await fetch(`${API_URL}/reports/profitability`);
-    if (!response.ok) throw new Error(await readErrorMessage(response, 'Erro ao calcular lucratividade'));
+    if (!response.ok) throw new Error('Erro ao calcular lucratividade');
     return response.json();
   },
 
