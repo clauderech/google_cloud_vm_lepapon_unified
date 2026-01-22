@@ -1,11 +1,16 @@
 'use strict';
 
+
 /**
  * Servidor Express para webhook da Meta / WhatsApp Cloud API.
  * Entry-point: `npm start`
  */
 
-require('dotenv').config();
+// Carregar .env do caminho absoluto do servidor
+require('dotenv').config({ path: '/var/www/google_cloud_vm_lepapon_unified/.env' });
+// LOG TEMPORÁRIO PARA DEBUG DO .ENV
+console.log('DEBUG ENV: WHATSAPP_FLOW_PRIVATE_KEY_PATH =', process.env.WHATSAPP_FLOW_PRIVATE_KEY_PATH);
+// FIM DO LOG TEMPORÁRIO
 
 const express = require('express');
 
