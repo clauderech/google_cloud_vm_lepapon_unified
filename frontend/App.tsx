@@ -170,7 +170,7 @@ const App = () => {
   };
 
   // --- Actions ---
-  const addSale = (
+  const addSale = async (
     items: CartItem[], 
     paymentMethod: Sale['paymentMethod'], 
     customerName?: string,
@@ -198,9 +198,11 @@ const App = () => {
       customerId
     };
 
-    // If using API, we would call storageService.syncSale(newSale) here
+    try {
+      const { saleId } = await storageService.saveSale(newSale);
+      const saleToStore: Sale = { ...newSale, id: saleId || newSale.id };
 
-    setState(prev => {
+      setState(prev => {
       // Create a copy of products to mutate stocks
       const productsMap = new Map<string, Product>(prev.products.map(p => [p.id, { ...p }]));
 
@@ -240,11 +242,16 @@ const App = () => {
 
       return {
         ...prev,
-        sales: [...prev.sales, newSale],
+        sales: [...prev.sales, saleToStore],
         products: Array.from(productsMap.values()),
         customers: updatedCustomers
       };
     });
+    } catch (error: any) {
+      console.error('Erro ao registrar venda no banco:', error);
+      alert(error?.message || 'Erro ao registrar venda no banco. Verifique o console para mais detalhes.');
+      return;
+    }
   };
 
   const addPurchase = (supplierId: string, items: CartItem[]) => {
@@ -342,12 +349,12 @@ const App = () => {
     }));
   };
 
-  const closeComanda = (comandaId: string, paymentMethod: Sale['paymentMethod']) => {
+  const closeComanda = async (comandaId: string, paymentMethod: Sale['paymentMethod']) => {
     const comanda = state.activeComandas.find(c => c.id === comandaId);
     if (!comanda) return;
 
     // Convert Comanda to Sale (deducts stock inside addSale)
-    addSale(comanda.items, paymentMethod, comanda.customerName);
+    await addSale(comanda.items, paymentMethod, comanda.customerName);
 
     // Remove from active list
     setState(prev => ({
@@ -857,14 +864,14 @@ const App = () => {
       }
     };
 
-    const handleConfirmPayment = () => {
+    const handleConfirmPayment = async () => {
       if (!pendingCheckout) return;
 
       if (pendingCheckout.type === 'quick') {
         const customer = state.customers.find(c => c.id === selectedCustomerId);
         const customerName = customer ? `${customer.nome} ${customer.sobrenome || ''}`.trim() : undefined;
         
-        addSale(
+        await addSale(
           cart, 
           selectedPaymentMethod, 
           customerName,
@@ -879,7 +886,7 @@ const App = () => {
         alert("Venda Rápida finalizada!");
       } else if (pendingCheckout.type === 'comanda') {
         if (selectedComandaId) {
-          closeComanda(selectedComandaId, selectedPaymentMethod);
+          await closeComanda(selectedComandaId, selectedPaymentMethod);
           alert("Conta fechada e estoque atualizado!");
           setSelectedComandaId(null);
         }

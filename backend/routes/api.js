@@ -2,6 +2,7 @@
 
 const express = require('express');
 const { authMiddleware, roleMiddleware } = require('../middleware/authMiddleware');
+const { requireOpenCashRegister } = require('../middleware/cashRegisterMiddleware');
 
 const router = express.Router();
 
@@ -29,9 +30,36 @@ router.get('/api/initial-state', async (req, res) => {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     
-    const sales = await db('sales')
+    const salesRaw = await db('sales')
       .where('created_at', '>=', thirtyDaysAgo)
       .select('*');
+
+    const saleIds = (salesRaw || []).map(s => s.id).filter(Boolean);
+    const saleItemsRaw = saleIds.length > 0
+      ? await db('sale_items').whereIn('sale_id', saleIds).select('*')
+      : [];
+
+    const itemsBySaleId = new Map();
+    for (const it of saleItemsRaw) {
+      const sid = it.sale_id;
+      if (!itemsBySaleId.has(sid)) itemsBySaleId.set(sid, []);
+      itemsBySaleId.get(sid).push({
+        productId: it.product_id,
+        productName: it.product_name,
+        quantity: Number(it.quantity),
+        unitPrice: Number(it.unit_price)
+      });
+    }
+
+    const sales = (salesRaw || []).map(s => {
+      const items = itemsBySaleId.get(s.id) || [];
+      const subtotal = items.reduce((acc, i) => acc + (Number(i.quantity) * Number(i.unitPrice)), 0);
+      return {
+        ...s,
+        items,
+        subtotal
+      };
+    });
 
     // Carregar compras recentes
     const purchases = await db('purchases')
@@ -52,6 +80,153 @@ router.get('/api/initial-state', async (req, res) => {
     console.error('[API] Erro ao carregar estado inicial:', error);
     res.status(500).json({
       error: 'Erro ao carregar estado inicial',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/sales
+ * Criar nova venda [REQUER AUTENTICAÇÃO + CAIXA ABERTO]
+ */
+router.post('/api/sales', authMiddleware, requireOpenCashRegister, async (req, res) => {
+  const db = req.db;
+  if (!db) {
+    return res.status(500).json({ error: 'Database não inicializado' });
+  }
+
+  const {
+    id,
+    date,
+    items,
+    total,
+    discount,
+    paymentMethod,
+    customerId,
+    customerName
+  } = req.body || {};
+
+  if (!Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({
+      success: false,
+      error: 'Itens da venda são obrigatórios'
+    });
+  }
+
+  const normalizedTotal = Number(total);
+  if (!Number.isFinite(normalizedTotal) || normalizedTotal < 0) {
+    return res.status(400).json({
+      success: false,
+      error: 'Total inválido'
+    });
+  }
+
+  const allowedPayment = new Set(['cash', 'card', 'pix', 'credit']);
+  if (!allowedPayment.has(paymentMethod)) {
+    return res.status(400).json({
+      success: false,
+      error: 'Forma de pagamento inválida'
+    });
+  }
+
+  const saleId = (id && String(id).trim()) ? String(id).trim() : `SALE-${Date.now()}`;
+  const saleDate = date ? new Date(date) : new Date();
+  const normalizedDiscount = Number(discount || 0);
+
+  const trx = await db.transaction();
+  try {
+    // Inserir venda
+    await trx('sales').insert({
+      id: saleId,
+      date: saleDate,
+      total: normalizedTotal,
+      payment_method: paymentMethod,
+      customer_id: customerId || null,
+      customer_name: customerName || null,
+      discount: Number.isFinite(normalizedDiscount) ? normalizedDiscount : 0,
+      created_at: new Date()
+    });
+
+    // Inserir itens
+    const saleItemsToInsert = items.map(it => ({
+      sale_id: saleId,
+      product_id: it.productId,
+      product_name: it.productName,
+      quantity: Number(it.quantity),
+      unit_price: Number(it.unitPrice),
+      created_at: new Date()
+    }));
+
+    for (const it of saleItemsToInsert) {
+      if (!it.product_id || !it.product_name) {
+        throw new Error('Item de venda inválido: product_id/product_name ausente');
+      }
+      if (!Number.isFinite(it.quantity) || it.quantity <= 0) {
+        throw new Error('Item de venda inválido: quantity');
+      }
+      if (!Number.isFinite(it.unit_price) || it.unit_price < 0) {
+        throw new Error('Item de venda inválido: unit_price');
+      }
+    }
+
+    await trx('sale_items').insert(saleItemsToInsert);
+
+    // Atualizar estoque no banco
+    const productIds = [...new Set(saleItemsToInsert.map(i => i.product_id))];
+    const products = await trx('products').whereIn('id', productIds).select('id', 'recipe');
+    const productById = new Map(products.map(p => [p.id, p]));
+
+    for (const it of saleItemsToInsert) {
+      const productRow = productById.get(it.product_id);
+      if (!productRow) {
+        throw new Error(`Produto não encontrado: ${it.product_id}`);
+      }
+
+      // Se tiver receita, debita ingredientes; senão, debita o próprio produto
+      let recipe = null;
+      if (productRow.recipe) {
+        try {
+          recipe = typeof productRow.recipe === 'string' ? JSON.parse(productRow.recipe) : productRow.recipe;
+        } catch {
+          recipe = null;
+        }
+      }
+
+      if (Array.isArray(recipe) && recipe.length > 0) {
+        for (const r of recipe) {
+          const ingredientId = r.ingredientId || r.ingredient_id;
+          const qty = Number(r.quantity);
+          if (!ingredientId || !Number.isFinite(qty) || qty <= 0) continue;
+          const debit = qty * Number(it.quantity);
+          await trx('products')
+            .where('id', ingredientId)
+            .update({
+              stock: trx.raw('stock - ?', [debit]),
+              updated_at: new Date()
+            });
+        }
+      } else {
+        await trx('products')
+          .where('id', it.product_id)
+          .update({
+            stock: trx.raw('stock - ?', [Number(it.quantity)]),
+            updated_at: new Date()
+          });
+      }
+    }
+
+    await trx.commit();
+    return res.json({
+      success: true,
+      saleId,
+      message: 'Venda registrada com sucesso'
+    });
+  } catch (error) {
+    await trx.rollback();
+    console.error('[API] Erro ao criar venda:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Erro ao criar venda',
       message: error.message
     });
   }

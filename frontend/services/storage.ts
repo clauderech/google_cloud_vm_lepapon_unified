@@ -16,6 +16,8 @@ import type {
   CartItem
 } from '../types';
 
+import { authService } from './authService';
+
 // CONFIGURAÇÃO: Automático baseado no ambiente
 // Durante desenvolvimento (dev server), usar localhost
 // Em produção, usar /api (mesmo servidor)
@@ -27,6 +29,15 @@ const API_URL = import.meta.env.PROD
 console.log('[Storage Config] USE_API:', USE_API, '| API_URL:', API_URL, '| hostname:', window.location.hostname);
 
 const LOCAL_STORAGE_KEY = 'lanchonete_app_state_v5';
+
+async function readErrorMessage(response: Response, fallback: string): Promise<string> {
+  try {
+    const data = await response.json();
+    return data?.message || data?.error || fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 export const storageService = {
   
@@ -106,21 +117,22 @@ export const storageService = {
     if (USE_API) {
       const response = await fetch(`${API_URL}/sales`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authService.getAuthHeader() },
         body: JSON.stringify({
+          id: sale.id,
+          date: sale.date,
           items: sale.items,
           total: sale.total,
-          subtotal: sale.subtotal,
           discount: sale.discount || 0,
           paymentMethod: sale.paymentMethod,
-          customerName: sale.customerName,
-          customerPhone: sale.customerPhone,
-          comandaId: sale.comandaId,
-          notes: sale.notes
+          customerId: sale.customerId,
+          customerName: sale.customerName
         })
       });
       
-      if (!response.ok) throw new Error('Erro ao salvar venda');
+      if (!response.ok) {
+        throw new Error(await readErrorMessage(response, 'Erro ao salvar venda'));
+      }
       return response.json();
     }
     return { saleId: sale.id };
@@ -134,7 +146,7 @@ export const storageService = {
     if (USE_API) {
       const response = await fetch(`${API_URL}/comandas`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authService.getAuthHeader() },
         body: JSON.stringify({ customerName, tableNumber })
       });
       
@@ -148,7 +160,7 @@ export const storageService = {
     if (USE_API) {
       const response = await fetch(`${API_URL}/comandas/${comandaId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authService.getAuthHeader() },
         body: JSON.stringify({ items })
       });
       
@@ -160,7 +172,7 @@ export const storageService = {
     if (USE_API) {
       const response = await fetch(`${API_URL}/comandas/${comandaId}/close`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authService.getAuthHeader() },
         body: JSON.stringify({ paymentMethod })
       });
       
@@ -178,7 +190,7 @@ export const storageService = {
     if (USE_API) {
       const response = await fetch(`${API_URL}/purchases`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authService.getAuthHeader() },
         body: JSON.stringify({
           supplierId: purchase.supplierId,
           items: purchase.items,
@@ -221,7 +233,7 @@ export const storageService = {
       
       const response = await fetch(`${API_URL}/products`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authService.getAuthHeader() },
         body: JSON.stringify(productData)
       });
       
@@ -255,7 +267,7 @@ export const storageService = {
 
       const response = await fetch(`${API_URL}/products/${productId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authService.getAuthHeader() },
         body: JSON.stringify(productData)
       });
       
@@ -274,7 +286,7 @@ export const storageService = {
     if (USE_API) {
       const response = await fetch(`${API_URL}/suppliers`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authService.getAuthHeader() },
         body: JSON.stringify(supplier)
       });
       
@@ -292,7 +304,7 @@ export const storageService = {
     if (USE_API) {
       const response = await fetch(`${API_URL}/shopping-list`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authService.getAuthHeader() },
         body: JSON.stringify({
           productId: item.productId,
           quantity: item.quantity,
@@ -372,13 +384,19 @@ function mapCustomerFromDB(c: any): Customer {
 }
 
 function mapSaleFromDB(s: any): Sale {
+  const discount = s.discount ? parseFloat(s.discount) : 0;
+  const total = s.total !== undefined ? parseFloat(s.total) : 0;
+  const subtotal = s.subtotal !== undefined && s.subtotal !== null && s.subtotal !== ''
+    ? parseFloat(s.subtotal)
+    : (Number.isFinite(total) ? total + (Number.isFinite(discount) ? discount : 0) : 0);
+
   return {
     id: s.id,
     date: s.date,
     items: s.items || [],
-    total: parseFloat(s.total),
-    subtotal: parseFloat(s.subtotal),
-    discount: s.discount ? parseFloat(s.discount) : 0,
+    total,
+    subtotal,
+    discount,
     paymentMethod: s.payment_method,
     customerName: s.customer_name,
     customerPhone: s.customer_phone,
