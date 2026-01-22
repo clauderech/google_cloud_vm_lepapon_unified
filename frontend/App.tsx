@@ -655,8 +655,9 @@ const App = () => {
       }
     }, [activeTab, selectedComandaId, state.activeComandas]);
 
-    const pratos = state.products.filter(p => p.type === 'prato');
-    const filteredProducts = pratos.filter(p => 
+    // Exibir produtos do tipo 'prato' e 'revenda' no cardápio
+    const cardapioProdutos = state.products.filter(p => p.type === 'prato' || p.type === 'revenda');
+    const filteredProducts = cardapioProdutos.filter(p => 
       p.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
