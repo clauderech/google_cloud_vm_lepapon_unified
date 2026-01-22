@@ -677,6 +677,11 @@ const App = () => {
     const [showObservationModal, setShowObservationModal] = useState(false);
     const [pendingProduct, setPendingProduct] = useState<Product | null>(null);
     const [observation, setObservation] = useState('');
+    
+    // Modal para seleção de pagamento
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'cash' | 'card' | 'pix' | 'credit'>('cash');
+    const [pendingCheckout, setPendingCheckout] = useState<{ type: 'quick' | 'comanda' } | null>(null);
 
     // Reset cart when switching modes or comandas
     useEffect(() => {
@@ -764,23 +769,8 @@ const App = () => {
 
     const handleQuickCheckout = () => {
       if (cart.length === 0) return;
-      
-      const customer = state.customers.find(c => c.id === selectedCustomerId);
-      const customerName = customer ? `${customer.nome} ${customer.sobrenome || ''}`.trim() : undefined;
-      
-      addSale(
-        cart, 
-        'cash', 
-        customerName,
-        selectedCustomerId || undefined,
-        appliedDiscount?.percent,
-        appliedDiscount?.pointsUsed
-      );
-      
-      setCart([]);
-      setSelectedCustomerId('');
-      setAppliedDiscount(null);
-      alert("Venda Rápida finalizada!");
+      setPendingCheckout({ type: 'quick' });
+      setShowPaymentModal(true);
     };
     
     const handleApplyDiscount = (discountPercent: number, pointsToDeduct: number) => {
@@ -862,10 +852,42 @@ const App = () => {
 
     const handleCloseComanda = () => {
       if (selectedComandaId) {
-        closeComanda(selectedComandaId, 'cash');
-        alert("Conta fechada e estoque atualizado!");
-        setSelectedComandaId(null);
+        setPendingCheckout({ type: 'comanda' });
+        setShowPaymentModal(true);
       }
+    };
+
+    const handleConfirmPayment = () => {
+      if (!pendingCheckout) return;
+
+      if (pendingCheckout.type === 'quick') {
+        const customer = state.customers.find(c => c.id === selectedCustomerId);
+        const customerName = customer ? `${customer.nome} ${customer.sobrenome || ''}`.trim() : undefined;
+        
+        addSale(
+          cart, 
+          selectedPaymentMethod, 
+          customerName,
+          selectedCustomerId || undefined,
+          appliedDiscount?.percent,
+          appliedDiscount?.pointsUsed
+        );
+        
+        setCart([]);
+        setSelectedCustomerId('');
+        setAppliedDiscount(null);
+        alert("Venda Rápida finalizada!");
+      } else if (pendingCheckout.type === 'comanda') {
+        if (selectedComandaId) {
+          closeComanda(selectedComandaId, selectedPaymentMethod);
+          alert("Conta fechada e estoque atualizado!");
+          setSelectedComandaId(null);
+        }
+      }
+
+      setShowPaymentModal(false);
+      setPendingCheckout(null);
+      setSelectedPaymentMethod('cash');
     };
 
     const handleSelectLepaponOrder = (lepaponComanda: Comanda) => {
@@ -1246,6 +1268,104 @@ const App = () => {
             </div>
           </div>
         )}
+
+      {/* Modal de Seleção de Forma de Pagamento */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-6">
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Selecionar Forma de Pagamento</h3>
+              <p className="text-gray-600">Escolha como o cliente deseja pagar</p>
+            </div>
+
+            {/* Payment Methods */}
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setSelectedPaymentMethod('cash')}
+                className={`p-4 rounded-lg border-2 transition-all font-bold flex flex-col items-center gap-2 ${
+                  selectedPaymentMethod === 'cash'
+                    ? 'border-green-500 bg-green-50 text-green-900'
+                    : 'border-gray-300 bg-gray-50 text-gray-700 hover:border-green-300'
+                }`}
+              >
+                <span className="text-2xl">💵</span>
+                <span>Dinheiro</span>
+              </button>
+
+              <button
+                onClick={() => setSelectedPaymentMethod('card')}
+                className={`p-4 rounded-lg border-2 transition-all font-bold flex flex-col items-center gap-2 ${
+                  selectedPaymentMethod === 'card'
+                    ? 'border-blue-500 bg-blue-50 text-blue-900'
+                    : 'border-gray-300 bg-gray-50 text-gray-700 hover:border-blue-300'
+                }`}
+              >
+                <span className="text-2xl">💳</span>
+                <span>Cartão</span>
+              </button>
+
+              <button
+                onClick={() => setSelectedPaymentMethod('pix')}
+                className={`p-4 rounded-lg border-2 transition-all font-bold flex flex-col items-center gap-2 ${
+                  selectedPaymentMethod === 'pix'
+                    ? 'border-purple-500 bg-purple-50 text-purple-900'
+                    : 'border-gray-300 bg-gray-50 text-gray-700 hover:border-purple-300'
+                }`}
+              >
+                <span className="text-2xl">📱</span>
+                <span>PIX</span>
+              </button>
+
+              <button
+                onClick={() => setSelectedPaymentMethod('credit')}
+                className={`p-4 rounded-lg border-2 transition-all font-bold flex flex-col items-center gap-2 ${
+                  selectedPaymentMethod === 'credit'
+                    ? 'border-orange-500 bg-orange-50 text-orange-900'
+                    : 'border-gray-300 bg-gray-50 text-gray-700 hover:border-orange-300'
+                }`}
+              >
+                <span className="text-2xl">🏦</span>
+                <span>Crédito</span>
+              </button>
+            </div>
+
+            {/* Amount Display */}
+            {pendingCheckout?.type === 'quick' && (
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <p className="text-sm text-blue-700 font-semibold mb-1">Valor da Venda</p>
+                <p className="text-2xl font-black text-blue-900">R$ {cartTotal.toFixed(2)}</p>
+              </div>
+            )}
+
+            {pendingCheckout?.type === 'comanda' && selectedComandaId && (
+              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <p className="text-sm text-green-700 font-semibold mb-1">Valor da Conta</p>
+                <p className="text-2xl font-black text-green-900">R$ {cartTotal.toFixed(2)}</p>
+              </div>
+            )}
+
+            {/* Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowPaymentModal(false);
+                  setPendingCheckout(null);
+                  setSelectedPaymentMethod('cash');
+                }}
+                className="flex-1 px-6 py-3 rounded-lg border-2 border-gray-300 text-gray-700 font-bold hover:bg-gray-50 transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmPayment}
+                className="flex-1 px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-lg"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de Cadastro Rápido de Cliente */}
       {showAddCustomerModal && (
