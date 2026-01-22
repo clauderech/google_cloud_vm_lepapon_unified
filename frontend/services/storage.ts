@@ -27,10 +27,27 @@ const LOCAL_STORAGE_KEY = 'lanchonete_app_state_v5';
 export const storageService = {
     async updateProduct(product: Product): Promise<void> {
       if (USE_API) {
+        // Enviar apenas campos essenciais para evitar erro 500
+        const payload = {
+          id: product.id,
+          name: product.name,
+          type: product.type,
+          price: product.price,
+          cost: product.cost,
+          stock: product.stock,
+          min_stock: product.minStock,
+          max_stock: product.maxStock,
+          unit: product.unit,
+          supplier_id: product.supplierId,
+          category: product.category,
+          description: product.description,
+          barcode: product.barcode,
+          is_active: product.isActive
+        };
         const response = await fetch(`${API_URL}/products/${product.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(product)
+          body: JSON.stringify(payload)
         });
         if (!response.ok) throw new Error('Erro ao atualizar produto');
       }
