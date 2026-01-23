@@ -1,0 +1,113 @@
+'use strict';
+
+const express = require('express');
+const router = express.Router();
+const { db } = require('../config/knex');
+
+// Abrir caixa
+router.post('/open', async (req, res) => {
+  const { initial_amount, opened_by } = req.body;
+  try {
+    // Verifica se já existe caixa aberto
+    const caixaAberto = await db('cash_registers').whereNull('closed_at').first();
+    if (caixaAberto) {
+      return res.status(400).json({ error: 'Já existe um caixa aberto', caixaAberto });
+    }
+    const [id] = await db('cash_registers').insert({
+      date: db.raw('CURDATE()'),
+      initial_amount,
+      opened_by,
+      opened_at: db.fn.now()
+    });
+    console.log('[CAIXA] Aberto:', { id, initial_amount, opened_by, timestamp: new Date().toISOString() });
+    res.json({ registerId: id });
+  } catch (err) {
+    console.error('[ERRO CAIXA OPEN]', { payload: req.body, error: err.message, stack: err.stack });
+    res.status(500).json({ error: 'Erro ao abrir caixa', details: err.message });
+  }
+});
+
+// Fechar caixa
+router.post('/close', async (req, res) => {
+  const { id, final_amount, closed_by, notes } = req.body;
+  try {
+    const caixa = await db('cash_registers').where({ id }).whereNull('closed_at').first();
+    if (!caixa) {
+      return res.status(404).json({ error: 'Caixa não encontrado ou já fechado' });
+    }
+    await db('cash_registers').where({ id }).update({
+      final_amount,
+      closed_by,
+      closed_at: db.fn.now(),
+      notes
+    });
+    console.log('[CAIXA] Fechado:', { id, final_amount, closed_by, notes, timestamp: new Date().toISOString() });
+    const result = await db('cash_registers').where({ id }).first();
+    res.json({ result });
+  } catch (err) {
+    console.error('[ERRO CAIXA CLOSE]', { payload: req.body, error: err.message, stack: err.stack });
+    res.status(500).json({ error: 'Erro ao fechar caixa', details: err.message });
+  }
+});
+
+// Consultar caixa atual
+router.get('/current', async (req, res) => {
+  try {
+    const caixa = await db('cash_registers').whereNull('closed_at').first();
+    res.json(caixa || null);
+  } catch (err) {
+    console.error('[ERRO CAIXA CURRENT]', { error: err.message, stack: err.stack });
+    res.status(500).json({ error: 'Erro ao consultar caixa atual', details: err.message });
+  }
+});
+
+// Histórico de caixas
+router.get('/history', async (req, res) => {
+  const days = Number(req.query.days) || 30;
+  try {
+    const caixas = await db('cash_registers')
+      .where('date', '>=', db.raw(`CURDATE() - INTERVAL ${days} DAY`))
+      .orderBy('date', 'desc');
+    res.json(caixas);
+  } catch (err) {
+    console.error('[ERRO CAIXA HISTORY]', { error: err.message, stack: err.stack });
+    res.status(500).json({ error: 'Erro ao consultar histórico de caixas', details: err.message });
+  }
+});
+
+// Listar movimentações do caixa
+router.get('/:id/movements', async (req, res) => {
+  try {
+    const movimentos = await db('cash_movements').where({ cash_register_id: req.params.id }).orderBy('created_at', 'desc');
+    res.json(movimentos);
+  } catch (err) {
+    console.error('[ERRO CAIXA MOVEMENTS]', { id: req.params.id, error: err.message, stack: err.stack });
+    res.status(500).json({ error: 'Erro ao consultar movimentações', details: err.message });
+  }
+});
+
+// Adicionar movimentação ao caixa
+router.post('/:id/movements', async (req, res) => {
+  const { type, amount, description } = req.body;
+  try {
+    const caixa = await db('cash_registers').where({ id: req.params.id }).whereNull('closed_at').first();
+    if (!caixa) {
+      return res.status(404).json({ error: 'Caixa não encontrado ou já fechado' });
+    }
+    const [movId] = await db('cash_movements').insert({
+      cash_register_id: req.params.id,
+      type,
+      amount,
+      description,
+      created_at: db.fn.now()
+    });
+    console.log('[CAIXA] Movimento:', { movId, type, amount, description, caixaId: req.params.id, timestamp: new Date().toISOString() });
+    const movimento = await db('cash_movements').where({ id: movId }).first();
+    res.json(movimento);
+  } catch (err) {
+    console.error('[ERRO CAIXA ADD MOVEMENT]', { payload: req.body, caixaId: req.params.id, error: err.message, stack: err.stack });
+    res.status(500).json({ error: 'Erro ao adicionar movimentação', details: err.message });
+  }
+});
+
+module.exports = router;
