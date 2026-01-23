@@ -305,16 +305,22 @@ const App = () => {
   };
 
   const updateComanda = (comandaId: string, items: CartItem[]) => {
-    setState(prev => ({
-      ...prev,
-      activeComandas: prev.activeComandas.map(c => {
-        if (c.id === comandaId) {
-          const total = items.reduce((acc, i) => acc + (i.quantity * i.unitPrice), 0);
-          return { ...c, items, total };
-        }
-        return c;
+    storageService.updateComanda(comandaId, items)
+      .then(() => {
+        setState(prev => ({
+          ...prev,
+          activeComandas: prev.activeComandas.map(c => {
+            if (c.id === comandaId) {
+              const total = items.reduce((acc, i) => acc + (i.quantity * i.unitPrice), 0);
+              return { ...c, items, total };
+            }
+            return c;
+          })
+        }));
       })
-    }));
+      .catch((err) => {
+        alert('Erro ao atualizar comanda: ' + (err?.message || err));
+      });
   };
 
   const closeComanda = (comandaId: string, paymentMethod: Sale['paymentMethod']) => {
