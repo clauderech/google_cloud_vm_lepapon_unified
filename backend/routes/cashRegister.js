@@ -17,8 +17,8 @@ router.post('/open', async (req, res) => {
     }
     const [id] = await db('cash_registers').insert({
       date: db.raw('CURDATE()'),
-      initial_amount,
-      opened_by,
+      initial_amount: initial_amount,
+      opened_by: opened_by,
       opened_at: db.fn.now()
     });
     console.log('[CAIXA][OPEN][RESULT]', { id, initial_amount, opened_by, timestamp: new Date().toISOString() });
