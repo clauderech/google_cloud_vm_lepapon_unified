@@ -37,7 +37,7 @@ const CustomerPurchaseHistory: React.FC<CustomerPurchaseHistoryProps> = ({
           itemsCount[item.productId] = { name: item.productName, count: 0, total: 0 };
         }
         itemsCount[item.productId].count += item.quantity;
-        itemsCount[item.productId].total += item.quantity * item.unitPrice;
+        itemsCount[item.productId].total += item.quantity * (typeof item.unitPrice === 'number' ? item.unitPrice : 0);
       });
     });
     
@@ -89,7 +89,7 @@ const CustomerPurchaseHistory: React.FC<CustomerPurchaseHistoryProps> = ({
                 <span className="text-xs font-bold text-gray-600">Total Gasto</span>
               </div>
               <p className="text-2xl font-black text-gray-900">
-                R$ {stats.totalSpent.toFixed(2)}
+                R$ {typeof stats.totalSpent === 'number' ? stats.totalSpent.toFixed(2) : '0.00'}
               </p>
             </div>
             
@@ -109,7 +109,7 @@ const CustomerPurchaseHistory: React.FC<CustomerPurchaseHistoryProps> = ({
                 <span className="text-xs font-bold text-gray-600">Ticket Médio</span>
               </div>
               <p className="text-2xl font-black text-gray-900">
-                R$ {stats.averageTicket.toFixed(2)}
+                R$ {typeof stats.averageTicket === 'number' ? stats.averageTicket.toFixed(2) : '0.00'}
               </p>
             </div>
             
@@ -137,7 +137,7 @@ const CustomerPurchaseHistory: React.FC<CustomerPurchaseHistoryProps> = ({
                 <div key={idx} className="bg-blue-50 p-3 rounded-lg border border-blue-200">
                   <p className="font-bold text-gray-900 text-sm truncate">{product.name}</p>
                   <p className="text-xs text-gray-600 mt-1">
-                    {product.count}x • R$ {product.total.toFixed(2)}
+                    {product.count}x • R$ {typeof product.total === 'number' ? product.total.toFixed(2) : '0.00'}
                   </p>
                 </div>
               ))}
@@ -182,7 +182,7 @@ const CustomerPurchaseHistory: React.FC<CustomerPurchaseHistoryProps> = ({
                     </div>
                     <div className="text-right">
                       <p className="text-xl font-black text-blue-700">
-                        R$ {sale.total.toFixed(2)}
+                        R$ {typeof sale.total === 'number' ? sale.total.toFixed(2) : '0.00'}
                       </p>
                       <p className="text-xs text-gray-500">
                         {sale.items.length} {sale.items.length === 1 ? 'item' : 'itens'}

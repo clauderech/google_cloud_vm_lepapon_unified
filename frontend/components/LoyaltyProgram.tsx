@@ -26,7 +26,7 @@ const LoyaltyProgram: React.FC<LoyaltyProgramProps> = ({
     if (loyaltyPoints >= reward.points) {
       const discountAmount = (cartTotal * reward.discount) / 100;
       if (confirm(
-        `Usar ${reward.points} pontos para obter ${reward.discount}% de desconto (R$ ${discountAmount.toFixed(2)})?`
+        `Usar ${reward.points} pontos para obter ${reward.discount}% de desconto (R$ ${(typeof discountAmount === 'number' ? discountAmount.toFixed(2) : '0.00')})?`
       )) {
         onApplyDiscount(reward.discount, reward.points);
       }

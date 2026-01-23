@@ -273,7 +273,7 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
             <span className="text-xs font-bold text-white/90">A Receber</span>
             <DollarSign className="w-4 h-4 text-white/90" />
           </div>
-          <p className="text-xl font-black">R$ {stats.totalReceivable.toFixed(2)}</p>
+          <p className="text-xl font-black">R$ {typeof stats.totalReceivable === 'number' ? stats.totalReceivable.toFixed(2) : '0.00'}</p>
         </div>
 
         <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-4 rounded-xl shadow-lg text-white">
@@ -281,7 +281,7 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
             <span className="text-xs font-bold text-white/90">Atrasado</span>
             <Clock className="w-4 h-4 text-white/90" />
           </div>
-          <p className="text-xl font-black">R$ {stats.totalOverdue.toFixed(2)}</p>
+          <p className="text-xl font-black">R$ {typeof stats.totalOverdue === 'number' ? stats.totalOverdue.toFixed(2) : '0.00'}</p>
         </div>
       </div>
 
