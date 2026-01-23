@@ -1,3 +1,5 @@
+const express = require('express');
+const router = express.Router();
 const SaleModel = require('../models/sale');
 const SaleItemModel = require('../models/sale_item');
 const ProductModel = require('../models/product');
@@ -73,9 +75,7 @@ router.post('/:id/close', async (req, res) => {
 });
 'use strict';
 
-const express = require('express');
 const ComandaModel = require('../models/comanda');
-const router = express.Router();
 
 // Listar todas as comandas
 router.get('/', async (req, res) => {
