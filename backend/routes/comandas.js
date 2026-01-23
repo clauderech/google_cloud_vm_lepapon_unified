@@ -1,3 +1,4 @@
+const CashModel = require('../models/cash');
 const express = require('express');
 const router = express.Router();
 const SaleModel = require('../models/sale');
@@ -80,6 +81,20 @@ function formatDateForMySQL(date) {
 
     // Salva itens em sale_items
     await SaleItemModel.addItems(saleId, items);
+
+    // Registrar movimento de entrada no caixa
+    const cashRegister = await CashModel.getCurrentRegister();
+    if (cashRegister) {
+      await CashModel.addMovement({
+        registerId: cashRegister.id,
+        type: 'entrada',
+        referenceType: 'sale',
+        referenceId: saleId,
+        amount: total,
+        paymentMethod,
+        description: `Venda comanda ${comandaId}`
+      });
+    }
 
     // Atualiza estoque dos produtos
     for (const item of items) {
