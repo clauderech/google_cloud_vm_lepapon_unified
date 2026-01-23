@@ -129,16 +129,25 @@ export const storageService = {
   
   async createComanda(customerName: string, tableNumber?: string): Promise<{ comandaId: string }> {
     if (USE_API) {
+      // Gerar id único: timestamp + random
+      const id = `comanda_${Date.now()}_${Math.floor(Math.random()*100000)}`;
+      const payload = {
+        id,
+        customer_name: customerName,
+        table_number: tableNumber,
+        status: 'open',
+        source: 'pos'
+      };
       const response = await fetch(`${API_URL}/comandas`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customerName, tableNumber })
+        body: JSON.stringify(payload)
       });
-      
       if (!response.ok) throw new Error('Erro ao criar comanda');
-      return response.json();
+      return { comandaId: id };
     }
-    return { comandaId: `comanda_${Date.now()}` };
+    // Fallback local
+    return { comandaId: `comanda_${Date.now()}_${Math.floor(Math.random()*100000)}` };
   },
 
   async updateComanda(comandaId: string, items: CartItem[]): Promise<void> {
