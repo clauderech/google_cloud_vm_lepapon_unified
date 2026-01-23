@@ -22,6 +22,24 @@ const ComandaModel = {
   async getItems(comandaId) {
     return db('comanda_items').where({ comanda_id: comandaId }).select('*');
   }
+  ,
+  async clearItems(comandaId) {
+    return db('comanda_items').where({ comanda_id: comandaId }).del();
+  },
+  async addItems(comandaId, items) {
+    if (!Array.isArray(items) || items.length === 0) return;
+    // Mapeia os itens para o formato correto
+    const mapped = items.map(item => ({
+      comanda_id: comandaId,
+      product_id: item.productId || item.product_id,
+      product_name: item.productName || item.product_name,
+      quantity: item.quantity,
+      unit_price: item.unitPrice || item.unit_price,
+      status: item.status || 'pending',
+      notes: item.notes || null
+    }));
+    return db('comanda_items').insert(mapped);
+  }
 };
 
 module.exports = ComandaModel;

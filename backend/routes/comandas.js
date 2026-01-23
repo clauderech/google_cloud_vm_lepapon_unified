@@ -44,10 +44,22 @@ router.post('/', async (req, res) => {
 // Atualizar comanda
 router.put('/:id', async (req, res) => {
   try {
-    await ComandaModel.update(req.params.id, req.body);
+    console.log('[COMANDA][UPDATE][REQ]', { id: req.params.id, payload: req.body });
+    // Atualiza dados da comanda (exceto itens)
+    const { items, ...comandaData } = req.body;
+    if (Object.keys(comandaData).length > 0) {
+      await ComandaModel.update(req.params.id, comandaData);
+    }
+    // Atualiza itens da comanda se enviados
+    if (Array.isArray(items)) {
+      // Remove itens antigos e insere novos (simples)
+      await ComandaModel.clearItems(req.params.id);
+      await ComandaModel.addItems(req.params.id, items);
+    }
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: 'Erro ao atualizar comanda', details: err.message });
+    console.error('[COMANDA][UPDATE][ERROR]', { id: req.params.id, payload: req.body, error: err.message, stack: err.stack });
+    res.status(500).json({ error: 'Erro ao atualizar comanda', details: err.message, stack: err.stack });
   }
 });
 
