@@ -708,9 +708,24 @@ const App = () => {
 
     const handleCreateComanda = () => {
       if (!newCustomerName.trim()) return alert("Nome do cliente obrigatório");
-      const id = openComanda(newCustomerName);
-      setNewCustomerName('');
-      setSelectedComandaId(id);
+      storageService.createComanda(newCustomerName)
+        .then(({ comandaId }) => {
+          // Adiciona ao estado local após sucesso no backend
+          const newComanda: Comanda = {
+            id: comandaId,
+            customerName: newCustomerName,
+            openedAt: new Date().toISOString(),
+            items: [],
+            total: 0,
+            status: 'open'
+          };
+          setState(prev => ({ ...prev, activeComandas: [...prev.activeComandas, newComanda] }));
+          setNewCustomerName('');
+          setSelectedComandaId(comandaId);
+        })
+        .catch((err) => {
+          alert('Erro ao criar comanda: ' + (err?.message || err));
+        });
     };
 
     const handleSaveComanda = () => {
