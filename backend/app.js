@@ -59,6 +59,10 @@ app.use('/api/sales', salesRouter);
 // Rotas de compras
 const purchasesRouter = require('./routes/purchases');
 app.use('/api/purchases', purchasesRouter);
+
+// Rotas de caixa
+const cashRegisterRouter = require('./routes/cashRegister');
+app.use('/api/cash-register', cashRegisterRouter);
 // Rotas de comandas
 const comandasRouter = require('./routes/comandas');
 app.use('/api/comandas', comandasRouter);
