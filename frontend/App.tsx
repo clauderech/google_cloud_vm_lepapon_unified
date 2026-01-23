@@ -347,18 +347,20 @@ const App = () => {
       });
   };
 
-  const closeComanda = (comandaId: string, paymentMethod: Sale['paymentMethod']) => {
+  const closeComanda = async (comandaId: string, paymentMethod: Sale['paymentMethod']) => {
     const comanda = state.activeComandas.find(c => c.id === comandaId);
     if (!comanda) return;
 
-    // Convert Comanda to Sale (deducts stock inside addSale)
-    addSale(comanda.items, paymentMethod, comanda.customerName);
-
-    // Remove from active list
-    setState(prev => ({
-      ...prev,
-      activeComandas: prev.activeComandas.filter(c => c.id !== comandaId)
-    }));
+    try {
+      await storageService.closeComanda(comandaId, paymentMethod);
+      setState(prev => ({
+        ...prev,
+        activeComandas: prev.activeComandas.filter(c => c.id !== comandaId)
+      }));
+      alert('Comanda fechada com sucesso!');
+    } catch (err: any) {
+      alert('Erro ao fechar comanda: ' + (err?.message || err));
+    }
   };
 
   // --- Shopping List Actions ---
