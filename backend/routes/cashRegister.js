@@ -67,7 +67,22 @@ router.get('/current', async (req, res) => {
     const caixa = await db('cash_registers').whereNull('closed_at').first();
     console.log('[CAIXA][CURRENT][RESULT]', caixa);
     if (caixa) {
-      res.json({ ...caixa, status: 'open' });
+      // Mapear campos para camelCase
+      const mapped = {
+        id: caixa.id,
+        date: caixa.date,
+        initialAmount: caixa.initial_amount,
+        openedBy: caixa.opened_by,
+        openedAt: caixa.opened_at,
+        finalAmount: caixa.final_amount,
+        closedBy: caixa.closed_by,
+        closedAt: caixa.closed_at,
+        notes: caixa.notes,
+        createdAt: caixa.created_at,
+        updatedAt: caixa.updated_at,
+        status: 'open'
+      };
+      res.json(mapped);
     } else {
       res.json(null);
     }
