@@ -31,10 +31,13 @@ router.get('/:id', async (req, res) => {
 // Criar comanda
 router.post('/', async (req, res) => {
   try {
+    console.log('[COMANDA][CREATE][REQ]', { payload: req.body });
     const result = await ComandaModel.create(req.body);
+    console.log('[COMANDA][CREATE][RESULT]', { result });
     res.status(201).json({ success: true, id: result[0] });
   } catch (err) {
-    res.status(500).json({ error: 'Erro ao criar comanda', details: err.message });
+    console.error('[COMANDA][CREATE][ERROR]', { payload: req.body, error: err.message, stack: err.stack });
+    res.status(500).json({ error: 'Erro ao criar comanda', details: err.message, stack: err.stack });
   }
 });
 
