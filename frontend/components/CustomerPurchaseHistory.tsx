@@ -197,9 +197,9 @@ const CustomerPurchaseHistory: React.FC<CustomerPurchaseHistoryProps> = ({
                         <span className="text-gray-700 font-medium">
                           {item.quantity}x {item.productName}
                         </span>
-                        <span className="text-gray-900 font-bold">
-                          R$ {(item.quantity * item.unitPrice).toFixed(2)}
-                        </span>
+                          <span className="text-gray-900 font-bold">
+                            R$ {((item.quantity * (typeof item.unitPrice === 'number' ? item.unitPrice : 0)).toFixed(2))}
+                          </span>
                       </div>
                     ))}
                   </div>
