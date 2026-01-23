@@ -768,10 +768,21 @@ const App = () => {
       }
     };
 
+
+    // Modal de pagamento
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
+
     const handleCloseComanda = () => {
       if (selectedComandaId) {
-        closeComanda(selectedComandaId, 'cash');
-        alert("Conta fechada e estoque atualizado!");
+        setShowPaymentModal(true);
+      }
+    };
+
+    const handleConfirmPayment = async () => {
+      if (selectedComandaId) {
+        await closeComanda(selectedComandaId, paymentMethod);
+        setShowPaymentModal(false);
         setSelectedComandaId(null);
       }
     };
@@ -1052,6 +1063,36 @@ const App = () => {
                   >
                     Fechar Conta
                   </button>
+                      {/* Modal de Forma de Pagamento */}
+                      {showPaymentModal && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                          <div className="bg-white rounded-xl shadow-2xl max-w-xs w-full p-6">
+                            <h3 className="text-lg font-bold mb-4 text-gray-900">Selecione a forma de pagamento</h3>
+                            <div className="space-y-3 mb-4">
+                              <label className="flex items-center space-x-2">
+                                <input type="radio" name="paymentMethod" value="cash" checked={paymentMethod === 'cash'} onChange={() => setPaymentMethod('cash')} />
+                                <span>Dinheiro</span>
+                              </label>
+                              <label className="flex items-center space-x-2">
+                                <input type="radio" name="paymentMethod" value="card" checked={paymentMethod === 'card'} onChange={() => setPaymentMethod('card')} />
+                                <span>Cartão</span>
+                              </label>
+                              <label className="flex items-center space-x-2">
+                                <input type="radio" name="paymentMethod" value="pix" checked={paymentMethod === 'pix'} onChange={() => setPaymentMethod('pix')} />
+                                <span>Pix</span>
+                              </label>
+                              <label className="flex items-center space-x-2">
+                                <input type="radio" name="paymentMethod" value="credit" checked={paymentMethod === 'credit'} onChange={() => setPaymentMethod('credit')} />
+                                <span>Crédito</span>
+                              </label>
+                            </div>
+                            <div className="flex justify-end space-x-2">
+                              <button onClick={() => setShowPaymentModal(false)} className="px-4 py-2 rounded bg-gray-200 text-gray-700 font-bold">Cancelar</button>
+                              <button onClick={handleConfirmPayment} className="px-4 py-2 rounded bg-green-600 text-white font-bold">Confirmar</button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                 </div>
               )}
             </div>
