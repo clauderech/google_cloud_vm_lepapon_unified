@@ -38,7 +38,7 @@ export const storageService = {
           min_stock: product.minStock,
           max_stock: product.maxStock,
           unit: product.unit,
-          supplier_id: product.supplierId,
+          supplier_id: product.supplierId && product.supplierId !== '' ? product.supplierId : null,
           category: product.category,
           description: product.description,
           barcode: product.barcode,
