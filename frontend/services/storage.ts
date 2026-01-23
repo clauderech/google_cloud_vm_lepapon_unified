@@ -364,22 +364,24 @@ function mapShoppingListFromDB(i: any): ShoppingListItem {
 }
 
 function mapComandaFromDB(c: any): Comanda {
+  const items = Array.isArray(c.items) ? c.items.map((item: any) => ({
+    ...item,
+    quantity: typeof item.quantity === 'number' ? item.quantity : parseFloat(item.quantity),
+    unitPrice: typeof item.unit_price === 'number' ? item.unit_price : parseFloat(item.unit_price),
+    productId: item.product_id,
+    productName: item.product_name,
+    status: item.status,
+    notes: item.notes
+  })) : [];
+  const total = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
   return {
     id: c.id,
     customerName: c.customer_name,
     tableNumber: c.table_number,
     openedAt: c.opened_at,
     closedAt: c.closed_at,
-    items: Array.isArray(c.items) ? c.items.map((item: any) => ({
-      ...item,
-      quantity: typeof item.quantity === 'number' ? item.quantity : parseFloat(item.quantity),
-      unitPrice: typeof item.unit_price === 'number' ? item.unit_price : parseFloat(item.unit_price),
-      productId: item.product_id,
-      productName: item.product_name,
-      status: item.status,
-      notes: item.notes
-    })) : [],
-    total: parseFloat(c.total),
+    items,
+    total,
     status: c.status,
     paymentMethod: c.payment_method,
     notes: c.notes
