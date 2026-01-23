@@ -29,18 +29,18 @@ router.post('/:id/close', async (req, res) => {
       status: 'closed',
       payment_method: paymentMethod,
       closed_at: closeDate ? formatDateForMySQL(closeDate) : formatDateForMySQL(new Date()),
-      // Utilitário para formatar datas no padrão MySQL DATETIME
-      function formatDateForMySQL(date) {
-        const d = typeof date === 'string' ? new Date(date) : date;
-        return d.getFullYear() + '-' +
-          String(d.getMonth() + 1).padStart(2, '0') + '-' +
-          String(d.getDate()).padStart(2, '0') + ' ' +
-          String(d.getHours()).padStart(2, '0') + ':' +
-          String(d.getMinutes()).padStart(2, '0') + ':' +
-          String(d.getSeconds()).padStart(2, '0');
-      }
       total
     });
+// Utilitário para formatar datas no padrão MySQL DATETIME
+function formatDateForMySQL(date) {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0') + ' ' +
+    String(d.getHours()).padStart(2, '0') + ':' +
+    String(d.getMinutes()).padStart(2, '0') + ':' +
+    String(d.getSeconds()).padStart(2, '0');
+}
 
     // Se for crediário, não gera venda agora
     if (paymentMethod === 'crediario') {
