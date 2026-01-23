@@ -6,7 +6,9 @@ const { db } = require('../config/knex');
 
 // Abrir caixa
 router.post('/open', async (req, res) => {
-  const { initial_amount, opened_by } = req.body;
+  // Aceita tanto camelCase quanto snake_case
+  const initial_amount = req.body.initial_amount ?? req.body.initialAmount;
+  const opened_by = req.body.opened_by ?? req.body.openedBy;
   try {
     console.log('[CAIXA][OPEN][REQ]', { payload: req.body });
     const caixaAberto = await db('cash_registers').whereNull('closed_at').first();
@@ -15,10 +17,13 @@ router.post('/open', async (req, res) => {
       console.warn('[CAIXA][OPEN][WARN] Já existe caixa aberto:', caixaAberto);
       return res.status(400).json({ error: 'Já existe um caixa aberto', caixaAberto });
     }
+    if (initial_amount == null || opened_by == null) {
+      return res.status(400).json({ error: 'initial_amount e opened_by são obrigatórios' });
+    }
     const [id] = await db('cash_registers').insert({
       date: db.raw('CURDATE()'),
-      initial_amount: initial_amount,
-      opened_by: opened_by,
+      initial_amount,
+      opened_by,
       opened_at: db.fn.now()
     });
     console.log('[CAIXA][OPEN][RESULT]', { id, initial_amount, opened_by, timestamp: new Date().toISOString() });
@@ -61,7 +66,11 @@ router.get('/current', async (req, res) => {
     console.log('[CAIXA][CURRENT][REQ]');
     const caixa = await db('cash_registers').whereNull('closed_at').first();
     console.log('[CAIXA][CURRENT][RESULT]', caixa);
-    res.json(caixa || null);
+    if (caixa) {
+      res.json({ ...caixa, status: 'open' });
+    } else {
+      res.json(null);
+    }
   } catch (err) {
     console.error('[CAIXA][CURRENT][ERROR]', { error: err.message, stack: err.stack });
     res.status(500).json({ error: 'Erro ao consultar caixa atual', details: err.message, stack: err.stack });
