@@ -1,3 +1,76 @@
+const SaleModel = require('../models/sale');
+const SaleItemModel = require('../models/sale_item');
+const ProductModel = require('../models/product');
+// Finalizar comanda (pagamento normal ou crediário)
+router.post('/:id/close', async (req, res) => {
+  /*
+    Espera body:
+    {
+      paymentMethod: 'cash' | 'card' | 'pix' | 'credit' | 'crediario',
+      closeDate?: string (opcional, default: now)
+    }
+  */
+  try {
+    const comandaId = req.params.id;
+    const { paymentMethod, closeDate } = req.body;
+    const comanda = await ComandaModel.getById(comandaId);
+    if (!comanda) return res.status(404).json({ error: 'Comanda não encontrada' });
+    if (comanda.status === 'closed') return res.status(400).json({ error: 'Comanda já está fechada' });
+    const items = await ComandaModel.getItems(comandaId);
+    if (!items || items.length === 0) return res.status(400).json({ error: 'Comanda sem itens' });
+
+    // Calcula total
+    const total = items.reduce((sum, item) => sum + (parseFloat(item.quantity) * parseFloat(item.unit_price)), 0);
+
+    // Atualiza comanda para fechada
+    await ComandaModel.update(comandaId, {
+      status: 'closed',
+      payment_method: paymentMethod,
+      closed_at: closeDate || new Date().toISOString(),
+      total
+    });
+
+    // Se for crediário, não gera venda agora
+    if (paymentMethod === 'crediario') {
+      return res.json({ success: true, comandaId, total, crediario: true });
+    }
+
+    // Gera venda (sales)
+    const saleData = {
+      date: closeDate || new Date().toISOString(),
+      total,
+      subtotal: total,
+      discount: 0,
+      payment_method: paymentMethod,
+      customer_id: comanda.customer_id,
+      customer_name: comanda.customer_name,
+      comanda_id: comandaId,
+      notes: comanda.notes
+    };
+    const [saleId] = await SaleModel.create(saleData);
+
+    // Salva itens em sale_items
+    await SaleItemModel.addItems(saleId, items);
+
+    // Atualiza estoque dos produtos
+    for (const item of items) {
+      const productId = item.product_id || item.productId;
+      const quantity = parseFloat(item.quantity);
+      if (productId && !isNaN(quantity)) {
+        const product = await ProductModel.getById(productId);
+        if (product) {
+          const newStock = (parseFloat(product.stock) || 0) - quantity;
+          await ProductModel.update(productId, { stock: newStock });
+        }
+      }
+    }
+
+    res.json({ success: true, comandaId, saleId, total });
+  } catch (err) {
+    console.error('[COMANDA][CLOSE][ERROR]', { id: req.params.id, error: err.message, stack: err.stack });
+    res.status(500).json({ error: 'Erro ao fechar comanda', details: err.message, stack: err.stack });
+  }
+});
 'use strict';
 
 const express = require('express');
