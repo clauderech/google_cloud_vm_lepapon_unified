@@ -17,6 +17,11 @@ router.get('/', async (req, res) => {
 // Buscar comanda por ID
 router.get('/:id', async (req, res) => {
   try {
+    console.log('[COMANDA][OPEN][INFO]', {
+      id: req.params.id,
+      user: req.user ? req.user.id : undefined,
+      timestamp: new Date().toISOString()
+    });
     const comanda = await ComandaModel.getById(req.params.id);
     if (!comanda) return res.status(404).json({ error: 'Comanda não encontrada' });
     // Buscar itens da comanda
