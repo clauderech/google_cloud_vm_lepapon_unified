@@ -1,4 +1,28 @@
 import React, { useState, useEffect, useMemo } from 'react';
+// Handler global para log detalhado de erros no frontend
+if (typeof window !== 'undefined' && !window.__ERROR_LOGGER_INSTALLED__) {
+  window.__ERROR_LOGGER_INSTALLED__ = true;
+  window.addEventListener('error', (event) => {
+    console.error('[FRONTEND][ERROR][UNCAUGHT]', {
+      message: event.message,
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno,
+      error: event.error ? {
+        message: event.error.message,
+        stack: event.error.stack
+      } : undefined,
+      time: new Date().toISOString()
+    });
+  });
+  window.addEventListener('unhandledrejection', (event) => {
+    console.error('[FRONTEND][ERROR][PROMISE]', {
+      reason: event.reason,
+      stack: event.reason && event.reason.stack,
+      time: new Date().toISOString()
+    });
+  });
+}
 import { 
   LayoutDashboard, 
   ShoppingCart, 
