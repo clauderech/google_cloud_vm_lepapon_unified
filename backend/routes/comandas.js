@@ -3,6 +3,7 @@ const router = express.Router();
 const SaleModel = require('../models/sale');
 const SaleItemModel = require('../models/sale_item');
 const ProductModel = require('../models/product');
+const CrediarioModel = require('../models/crediario');
 // Finalizar comanda (pagamento normal ou crediário)
 router.post('/:id/close', async (req, res) => {
   /*
@@ -42,22 +43,38 @@ function formatDateForMySQL(date) {
     String(d.getSeconds()).padStart(2, '0');
 }
 
-    // Se for crediário, não gera venda agora
-    if (paymentMethod === 'crediario') {
+
+    // Se for crediário (venda a prazo), registra no crediário
+    if (paymentMethod === 'crediario' || paymentMethod === 'credit') {
+      // Descobre mês/ano e data de vencimento (exemplo: último dia do mês)
+      const now = new Date();
+      const monthYear = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+      const dueDate = new Date(now.getFullYear(), now.getMonth() + 1, 0); // último dia do mês
+
+      // Cria ou busca conta mensal
+      const acc = await CrediarioModel.findOrCreateMonthlyAccount(comanda.customer_id, monthYear, dueDate);
+
+      // Registra a compra vinculada à conta mensal
+      await CrediarioModel.addMonthlyPurchase(
+        acc.id,
+        null, // saleId ainda não existe
+        formatDateForMySQL(now),
+        `Comanda ${comandaId}`,
+        total,
+        JSON.stringify(items)
+      );
+
       return res.json({ success: true, comandaId, total, crediario: true });
     }
 
     // Gera venda (sales)
     const saleData = {
-      date: closeDate || new Date().toISOString(),
+      date: closeDate ? formatDateForMySQL(closeDate) : formatDateForMySQL(new Date()),
       total,
-      subtotal: total,
       discount: 0,
       payment_method: paymentMethod,
       customer_id: comanda.customer_id,
-      customer_name: comanda.customer_name,
-      comanda_id: comandaId,
-      notes: comanda.notes
+      customer_name: comanda.customer_name
     };
     const [saleId] = await SaleModel.create(saleData);
 
