@@ -370,7 +370,15 @@ function mapComandaFromDB(c: any): Comanda {
     tableNumber: c.table_number,
     openedAt: c.opened_at,
     closedAt: c.closed_at,
-    items: c.items || [],
+    items: Array.isArray(c.items) ? c.items.map((item: any) => ({
+      ...item,
+      quantity: typeof item.quantity === 'number' ? item.quantity : parseFloat(item.quantity),
+      unitPrice: typeof item.unit_price === 'number' ? item.unit_price : parseFloat(item.unit_price),
+      productId: item.product_id,
+      productName: item.product_name,
+      status: item.status,
+      notes: item.notes
+    })) : [],
     total: parseFloat(c.total),
     status: c.status,
     paymentMethod: c.payment_method,
