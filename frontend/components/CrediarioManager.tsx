@@ -122,9 +122,9 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
                     {acc.customer_phone && <p className="text-xs text-gray-600">{acc.customer_phone}</p>}
                   </div>
                 </td>
-                <td className="p-3 text-right font-bold text-gray-900">R$ {acc.total_amount.toFixed(2)}</td>
-                <td className="p-3 text-right text-green-700 font-bold">R$ {acc.amount_paid.toFixed(2)}</td>
-                <td className="p-3 text-right text-red-700 font-bold">R$ {acc.amount_remaining.toFixed(2)}</td>
+                <td className="p-3 text-right font-bold text-gray-900">R$ {Number(acc.total_amount).toFixed(2)}</td>
+                <td className="p-3 text-right text-green-700 font-bold">R$ {Number(acc.amount_paid).toFixed(2)}</td>
+                <td className="p-3 text-right text-red-700 font-bold">R$ {Number(acc.amount_remaining).toFixed(2)}</td>
                 <td className="p-3 text-center">
                   <span className={`px-2 py-1 rounded text-xs font-bold ${acc.status === 'paid' ? 'bg-green-100 text-green-800' : acc.status === 'active' ? 'bg-blue-100 text-blue-800' : acc.status === 'overdue' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}`}>
                     {acc.status === 'active' ? 'ATIVO' : acc.status === 'overdue' ? 'VENCIDO' : acc.status === 'paid' ? 'PAGO' : 'CANCELADO'}
@@ -164,15 +164,15 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div className="bg-blue-50 p-4 rounded-lg">
                 <p className="text-xs text-blue-700 font-bold mb-1">Total</p>
-                <p className="text-xl font-black text-blue-900">R$ {selectedMonthlyAccount.total_amount.toFixed(2)}</p>
+                <p className="text-xl font-black text-blue-900">R$ {Number(selectedMonthlyAccount.total_amount).toFixed(2)}</p>
               </div>
               <div className="bg-green-50 p-4 rounded-lg">
                 <p className="text-xs text-green-700 font-bold mb-1">Pago</p>
-                <p className="text-xl font-black text-green-900">R$ {selectedMonthlyAccount.amount_paid.toFixed(2)}</p>
+                <p className="text-xl font-black text-green-900">R$ {Number(selectedMonthlyAccount.amount_paid).toFixed(2)}</p>
               </div>
               <div className="bg-red-50 p-4 rounded-lg">
                 <p className="text-xs text-red-700 font-bold mb-1">Restante</p>
-                <p className="text-xl font-black text-red-900">R$ {selectedMonthlyAccount.amount_remaining.toFixed(2)}</p>
+                <p className="text-xl font-black text-red-900">R$ {Number(selectedMonthlyAccount.amount_remaining).toFixed(2)}</p>
               </div>
             </div>
 
