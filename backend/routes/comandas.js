@@ -231,10 +231,12 @@ router.get('/crediario/accounts', async (req, res) => {
   try {
     const { customerId, monthYear } = req.query;
     const db = require('../config/knex').db;
-    let query = db('monthly_accounts');
-    if (customerId) query = query.where('customer_id', customerId);
-    if (monthYear) query = query.where('month_year', monthYear);
-    const accounts = await query.orderBy('due_date', 'desc');
+    let query = db('monthly_accounts')
+      .join('customers', 'monthly_accounts.customer_id', 'customers.id')
+      .select('monthly_accounts.*', 'customers.name as customer_name');
+    if (customerId) query = query.where('monthly_accounts.customer_id', customerId);
+    if (monthYear) query = query.where('monthly_accounts.month_year', monthYear);
+    const accounts = await query.orderBy('monthly_accounts.due_date', 'desc');
     res.json(accounts);
   } catch (err) {
     res.status(500).json({ error: 'Erro ao consultar contas mensais', details: err.message });
