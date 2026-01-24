@@ -70,7 +70,7 @@ const CrediarioModel = {
         status
       });
     },
-  }
+
 };
 
 module.exports = CrediarioModel;
