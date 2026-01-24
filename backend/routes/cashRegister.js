@@ -74,6 +74,15 @@ router.get('/current', async (req, res) => {
     const caixa = await db('cash_registers').whereNull('closed_at').first();
     console.log('[CAIXA][CURRENT][RESULT]', caixa);
     if (caixa) {
+      // Buscar movimentos do caixa
+      const movimentos = await db('cash_movements').where({ cash_register_id: caixa.id });
+      let entradas = 0;
+      let saidas = 0;
+      for (const mov of movimentos) {
+        if (mov.type === 'entrada') entradas += parseFloat(mov.amount);
+        if (mov.type === 'saida') saidas += parseFloat(mov.amount);
+      }
+      const expectedAmount = parseFloat(caixa.initial_amount) + entradas - saidas;
       // Mapear campos para camelCase
       const mapped = {
         id: caixa.id,
@@ -87,7 +96,8 @@ router.get('/current', async (req, res) => {
         notes: caixa.notes,
         createdAt: caixa.created_at,
         updatedAt: caixa.updated_at,
-        status: 'open'
+        status: 'open',
+        expectedAmount
       };
       res.json(mapped);
     } else {
