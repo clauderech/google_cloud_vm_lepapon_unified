@@ -746,6 +746,7 @@ const App = () => {
           const newComanda: Comanda = {
             id: comandaId,
             customerName: newCustomerName,
+            customerId: selectedCustomerId || undefined,
             openedAt: new Date().toISOString(),
             items: [],
             total: 0,
@@ -753,6 +754,7 @@ const App = () => {
           };
           setState(prev => ({ ...prev, activeComandas: [...prev.activeComandas, newComanda] }));
           setNewCustomerName('');
+          setSelectedCustomerId('');
           setSelectedComandaId(comandaId);
         })
         .catch((err) => {
