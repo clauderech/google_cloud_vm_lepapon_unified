@@ -4,8 +4,8 @@ const { db } = require('../config/knex');
 
 const CashModel = {
   async getCurrentRegister() {
-    // Caixa aberto mais recente
-    return db('cash_registers').where({ status: 'open' }).orderBy('opened_at', 'desc').first();
+    // Caixa aberto mais recente (onde closed_at é null)
+    return db('cash_registers').whereNull('closed_at').orderBy('opened_at', 'desc').first();
   },
   async addMovement({ registerId, type, referenceType, referenceId, amount, paymentMethod, description }) {
     return db('cash_movements').insert({

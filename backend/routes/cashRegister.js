@@ -36,9 +36,16 @@ router.post('/open', async (req, res) => {
 
 // Fechar caixa
 router.post('/close', async (req, res) => {
-  const { id, final_amount, closed_by, notes } = req.body;
+  // Aceita tanto id quanto registerId, e tanto final_amount quanto actualAmount
+  const id = req.body.id ?? req.body.registerId;
+  const final_amount = req.body.final_amount ?? req.body.actualAmount;
+  const closed_by = req.body.closed_by ?? req.body.closedBy;
+  const notes = req.body.notes;
   try {
-    console.log('[CAIXA][CLOSE][REQ]', { payload: req.body });
+    console.log('[CAIXA][CLOSE][REQ]', { payload: req.body, id, final_amount, closed_by });
+    if (!id) {
+      return res.status(400).json({ error: 'id (ou registerId) é obrigatório' });
+    }
     const caixa = await db('cash_registers').where({ id }).whereNull('closed_at').first();
     console.log('[CAIXA][CLOSE][QUERY] caixa:', caixa);
     if (!caixa) {
