@@ -100,7 +100,7 @@ export const ReportsView: React.FC = () => {
         filename = 'capacidade_producao.csv';
         csv = 'Produto,Capacidade Máxima,Ingredientes Limitantes\n';
         reportData.forEach((item: any) => {
-          csv += `${item.dishName},${item.maxProducible},${item.limitingIngredients || 'N/A'}\n`;
+          csv += `${item.productName || item.dishName},${item.maxProducible},${item.limitingIngredients || 'N/A'}\n`;
         });
         break;
     }
@@ -389,12 +389,12 @@ export const ReportsView: React.FC = () => {
               <div className="space-y-4">
                 <h3 className="text-xl font-bold text-gray-900">Capacidade de Produção</h3>
                 {reportData.length === 0 ? (
-                  <p className="text-center text-gray-600 py-8">Nenhum prato cadastrado</p>
+                  <p className="text-center text-gray-600 py-8">Nenhum prato ou drink cadastrado</p>
                 ) : (
                   <table className="w-full">
                     <thead className="bg-orange-100">
                       <tr>
-                        <th className="text-left p-3 font-bold text-orange-900 text-sm">Prato</th>
+                        <th className="text-left p-3 font-bold text-orange-900 text-sm">Prato/Drink</th>
                         <th className="text-center p-3 font-bold text-orange-900 text-sm">Capacidade Máxima</th>
                         <th className="text-left p-3 font-bold text-orange-900 text-sm">Ingredientes Limitantes</th>
                       </tr>
@@ -402,7 +402,7 @@ export const ReportsView: React.FC = () => {
                     <tbody className="divide-y divide-gray-200">
                       {reportData.map((item: any, idx: number) => (
                         <tr key={idx} className="hover:bg-gray-50">
-                          <td className="p-3 font-medium text-gray-900">{item.dishName}</td>
+                          <td className="p-3 font-medium text-gray-900">{item.productName || item.dishName}</td>
                           <td className="p-3 text-center">
                             <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-black ${
                               item.maxProducible >= 10

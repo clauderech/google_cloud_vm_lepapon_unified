@@ -38,7 +38,7 @@ export interface RecipeItem {
 export interface Product {
   id: string;
   name: string;
-  type: 'insumo' | 'prato';
+  type: 'insumo' | 'prato' | 'drinks';
   price: number;
   cost: number;
   stock: number;
