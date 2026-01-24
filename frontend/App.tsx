@@ -886,11 +886,9 @@ const App = () => {
                         value={selectedCustomerId}
                         onChange={e => {
                           setSelectedCustomerId(e.target.value);
-                          if (e.target.value) {
-                            const customer = state.customers.find(c => c.id === e.target.value);
-                            if (customer) {
-                              setNewCustomerName(`${customer.nome} ${customer.sobrenome || ''}`.trim());
-                            }
+                          const customer = state.customers.find(c => c.id === e.target.value);
+                          if (customer) {
+                            setNewCustomerName(`${customer.nome} ${customer.sobrenome || ''}`.trim());
                           } else {
                             setNewCustomerName('');
                           }
