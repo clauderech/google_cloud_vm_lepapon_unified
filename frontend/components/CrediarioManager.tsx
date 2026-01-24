@@ -135,9 +135,8 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
   });
 
   useEffect(() => {
-    loadCrediarios();
-    loadUpcomingInstallments();
-  }, [filterStatus]);
+    loadMonthlyAccounts();
+  }, []);
 
   const loadCrediarios = async () => {
     try {
