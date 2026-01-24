@@ -740,7 +740,7 @@ const App = () => {
 
     const handleCreateComanda = () => {
       if (!newCustomerName.trim()) return alert("Nome do cliente obrigatório");
-      storageService.createComanda(newCustomerName)
+      storageService.createComanda(newCustomerName, undefined, selectedCustomerId || null)
         .then(({ comandaId }) => {
           // Adiciona ao estado local após sucesso no backend
           const newComanda: Comanda = {

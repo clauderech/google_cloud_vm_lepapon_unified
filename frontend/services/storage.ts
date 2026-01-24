@@ -131,9 +131,12 @@ export const storageService = {
     if (USE_API) {
       // Gerar id único: timestamp + random
       const id = `comanda_${Date.now()}_${Math.floor(Math.random()*100000)}`;
+      // customerId será passado como argumento extra (hack: arguments[2])
+      const customerId = arguments[2];
       const payload = {
         id,
         customer_name: customerName,
+        customer_id: customerId || null,
         table_number: tableNumber,
         status: 'open',
         source: 'pos'
