@@ -24,7 +24,7 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
 
   // Buscar contas mensais
   const loadMonthlyAccounts = async (customerId?: string, monthYear?: string) => {
-    let url = '/api/crediario/accounts';
+    let url = '/api/comandas/crediario/accounts';
     const params = [];
     if (customerId) params.push(`customerId=${customerId}`);
     if (monthYear) params.push(`monthYear=${monthYear}`);
@@ -36,14 +36,14 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
 
   // Buscar compras mensais
   const loadMonthlyPurchases = async (monthlyAccountId: number) => {
-    const res = await fetch(`/api/crediario/${monthlyAccountId}/purchases`);
+    const res = await fetch(`/api/comandas/crediario/${monthlyAccountId}/purchases`);
     const data = await res.json();
     setMonthlyPurchases(data);
   };
 
   // Buscar pagamentos mensais
   const loadMonthlyPayments = async (monthlyAccountId: number) => {
-    const res = await fetch(`/api/crediario/${monthlyAccountId}/payments`);
+    const res = await fetch(`/api/comandas/crediario/${monthlyAccountId}/payments`);
     const data = await res.json();
     setMonthlyPayments(data);
   };
@@ -51,7 +51,7 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
   // Registrar pagamento mensal
   const handleMonthlyPayment = async () => {
     if (!selectedMonthlyAccount) return;
-    const res = await fetch(`/api/crediario/${selectedMonthlyAccount.id}/pay`, {
+    const res = await fetch(`/api/comandas/crediario/${selectedMonthlyAccount.id}/pay`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(monthlyPayment)
