@@ -7,12 +7,10 @@ const CashModel = {
     // Caixa aberto mais recente (onde closed_at é null)
     return db('cash_registers').whereNull('closed_at').orderBy('opened_at', 'desc').first();
   },
-  async addMovement({ registerId, type, referenceType, referenceId, amount, paymentMethod, description }) {
+  async addMovement({ registerId, type, amount, paymentMethod, description }) {
     return db('cash_movements').insert({
       cash_register_id: registerId,
       type,
-      reference_type: referenceType,
-      reference_id: referenceId,
       amount,
       payment_method: paymentMethod,
       description

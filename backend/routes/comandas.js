@@ -88,8 +88,6 @@ function formatDateForMySQL(date) {
       await CashModel.addMovement({
         registerId: cashRegister.id,
         type: 'entrada',
-        referenceType: 'sale',
-        referenceId: saleId,
         amount: total,
         paymentMethod,
         description: `Venda comanda ${comandaId}`
