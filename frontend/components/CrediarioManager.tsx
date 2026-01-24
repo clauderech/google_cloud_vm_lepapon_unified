@@ -193,7 +193,7 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
                       <tr key={purchase.id} className="hover:bg-white">
                         <td className="p-2 text-gray-900">{new Date(purchase.date).toLocaleDateString()}</td>
                         <td className="p-2 text-gray-900">{purchase.description}</td>
-                        <td className="p-2 text-right font-bold text-gray-900">R$ {purchase.amount.toFixed(2)}</td>
+                        <td className="p-2 text-right font-bold text-gray-900">R$ {Number(purchase.amount).toFixed(2)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -221,7 +221,7 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
                       <tr key={paymen.id} className="hover:bg-white">
                         <td className="p-2 text-gray-900">{new Date(paymen.paymentDate).toLocaleDateString()}</td>
                         <td className="p-2 text-gray-900">{paymen.paymentMethod}</td>
-                        <td className="p-2 text-right font-bold text-green-700">R$ {paymen.amount.toFixed(2)}</td>
+                        <td className="p-2 text-right font-bold text-green-700">R$ {Number(paymen.amount).toFixed(2)}</td>
                         <td className="p-2 text-gray-900">{paymen.receiptNumber}</td>
                         <td className="p-2 text-gray-900">{paymen.receivedBy}</td>
                         <td className="p-2 text-gray-900">{paymen.notes}</td>
