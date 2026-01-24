@@ -191,4 +191,78 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// Registrar pagamento mensal de crediário
+router.post('/crediario/:monthlyAccountId/pay', async (req, res) => {
+  /*
+    Espera body:
+    {
+      paymentDate: string (YYYY-MM-DD ou timestamp),
+      amount: number,
+      paymentMethod: 'cash' | 'card' | 'pix' | 'transfer',
+      receiptNumber?: string,
+      receivedBy?: string,
+      notes?: string
+    }
+  */
+  try {
+    const { monthlyAccountId } = req.params;
+    const { paymentDate, amount, paymentMethod, receiptNumber, receivedBy, notes } = req.body;
+    if (!paymentDate || !amount || !paymentMethod) {
+      return res.status(400).json({ error: 'Campos obrigatórios faltando' });
+    }
+    await CrediarioModel.addMonthlyPayment(
+      monthlyAccountId,
+      paymentDate,
+      amount,
+      paymentMethod,
+      receiptNumber,
+      receivedBy,
+      notes
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[CREDIARIO][MONTHLY][PAY][ERROR]', { error: err.message, stack: err.stack });
+    res.status(500).json({ error: 'Erro ao registrar pagamento mensal', details: err.message });
+  }
+});
+
+// Consultar contas mensais de crediário
+router.get('/crediario/accounts', async (req, res) => {
+  try {
+    const { customerId, monthYear } = req.query;
+    const db = require('../config/knex').db;
+    let query = db('monthly_accounts');
+    if (customerId) query = query.where('customer_id', customerId);
+    if (monthYear) query = query.where('month_year', monthYear);
+    const accounts = await query.orderBy('due_date', 'desc');
+    res.json(accounts);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao consultar contas mensais', details: err.message });
+  }
+});
+
+// Consultar compras mensais de crediário
+router.get('/crediario/:monthlyAccountId/purchases', async (req, res) => {
+  try {
+    const { monthlyAccountId } = req.params;
+    const db = require('../config/knex').db;
+    const purchases = await db('monthly_purchases').where('monthly_account_id', monthlyAccountId).orderBy('purchase_date', 'desc');
+    res.json(purchases);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao consultar compras mensais', details: err.message });
+  }
+});
+
+// Consultar pagamentos mensais de crediário
+router.get('/crediario/:monthlyAccountId/payments', async (req, res) => {
+  try {
+    const { monthlyAccountId } = req.params;
+    const db = require('../config/knex').db;
+    const payments = await db('monthly_payments').where('monthly_account_id', monthlyAccountId).orderBy('payment_date', 'desc');
+    res.json(payments);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao consultar pagamentos mensais', details: err.message });
+  }
+});
+
 module.exports = router;

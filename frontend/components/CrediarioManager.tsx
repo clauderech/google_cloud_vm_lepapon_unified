@@ -49,6 +49,65 @@ interface InstallmentData {
 }
 
 const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
+    // Mensal: contas, compras e pagamentos
+    const [monthlyAccounts, setMonthlyAccounts] = useState<any[]>([]);
+    const [selectedMonthlyAccount, setSelectedMonthlyAccount] = useState<any | null>(null);
+    const [monthlyPurchases, setMonthlyPurchases] = useState<any[]>([]);
+    const [monthlyPayments, setMonthlyPayments] = useState<any[]>([]);
+    const [showMonthlyPaymentModal, setShowMonthlyPaymentModal] = useState(false);
+    const [monthlyPayment, setMonthlyPayment] = useState({
+      amount: 0,
+      paymentMethod: 'cash',
+      paymentDate: '',
+      receiptNumber: '',
+      receivedBy: '',
+      notes: ''
+    });
+
+    // Buscar contas mensais
+    const loadMonthlyAccounts = async (customerId?: string, monthYear?: string) => {
+      let url = '/api/crediario/accounts';
+      const params = [];
+      if (customerId) params.push(`customerId=${customerId}`);
+      if (monthYear) params.push(`monthYear=${monthYear}`);
+      if (params.length) url += '?' + params.join('&');
+      const res = await fetch(url);
+      const data = await res.json();
+      setMonthlyAccounts(data);
+    };
+
+    // Buscar compras mensais
+    const loadMonthlyPurchases = async (monthlyAccountId: number) => {
+      const res = await fetch(`/api/crediario/${monthlyAccountId}/purchases`);
+      const data = await res.json();
+      setMonthlyPurchases(data);
+    };
+
+    // Buscar pagamentos mensais
+    const loadMonthlyPayments = async (monthlyAccountId: number) => {
+      const res = await fetch(`/api/crediario/${monthlyAccountId}/payments`);
+      const data = await res.json();
+      setMonthlyPayments(data);
+    };
+
+    // Registrar pagamento mensal
+    const handleMonthlyPayment = async () => {
+      if (!selectedMonthlyAccount) return;
+      const res = await fetch(`/api/crediario/${selectedMonthlyAccount.id}/pay`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(monthlyPayment)
+      });
+      if (res.ok) {
+        alert('Pagamento mensal registrado com sucesso!');
+        setShowMonthlyPaymentModal(false);
+        setMonthlyPayment({ amount: 0, paymentMethod: 'cash', paymentDate: '', receiptNumber: '', receivedBy: '', notes: '' });
+        loadMonthlyAccounts();
+        loadMonthlyPayments(selectedMonthlyAccount.id);
+      } else {
+        alert('Erro ao registrar pagamento mensal');
+      }
+    };
   const [crediarios, setCrediarios] = useState<CrediarioData[]>([]);
   const [upcomingInstallments, setUpcomingInstallments] = useState<any[]>([]);
   const [selectedCrediario, setSelectedCrediario] = useState<any | null>(null);
