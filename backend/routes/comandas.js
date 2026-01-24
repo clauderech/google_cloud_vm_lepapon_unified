@@ -233,7 +233,7 @@ router.get('/crediario/accounts', async (req, res) => {
     const db = require('../config/knex').db;
     let query = db('monthly_accounts')
       .join('customers', 'monthly_accounts.customer_id', 'customers.id')
-      .select('monthly_accounts.*', 'customers.name as customer_name');
+      .select('monthly_accounts.*', 'customers.nome as customer_name');
     if (customerId) query = query.where('monthly_accounts.customer_id', customerId);
     if (monthYear) query = query.where('monthly_accounts.month_year', monthYear);
     const accounts = await query.orderBy('monthly_accounts.due_date', 'desc');
