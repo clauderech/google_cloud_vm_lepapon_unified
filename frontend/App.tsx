@@ -1,4 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
+
+// Extende a interface Window para incluir __ERROR_LOGGER_INSTALLED__
+declare global {
+  interface Window {
+    __ERROR_LOGGER_INSTALLED__?: boolean;
+  }
+}
+
 // Handler global para log detalhado de erros no frontend
 if (typeof window !== 'undefined' && !window.__ERROR_LOGGER_INSTALLED__) {
   window.__ERROR_LOGGER_INSTALLED__ = true;
@@ -61,6 +69,9 @@ import {
   RecipeItem,
   Comanda
 } from './types';
+
+// Define PaymentMethod type if not imported from types
+type PaymentMethod = 'cash' | 'card' | 'pix' | 'credit';
 import { generateBusinessInsight, suggestRestockOrder } from './services/geminiService';
 import { storageService } from './services/storage';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Legend } from 'recharts';
@@ -740,7 +751,7 @@ const App = () => {
 
     const handleCreateComanda = () => {
       if (!newCustomerName.trim()) return alert("Nome do cliente obrigatório");
-      storageService.createComanda(newCustomerName, undefined, selectedCustomerId || null)
+      storageService.createComanda(newCustomerName)
         .then(({ comandaId }) => {
           // Adiciona ao estado local após sucesso no backend
           const newComanda: Comanda = {

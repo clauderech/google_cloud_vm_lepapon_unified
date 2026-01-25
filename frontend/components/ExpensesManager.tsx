@@ -107,7 +107,7 @@ export const ExpensesManager: React.FC = () => {
   const chartData = Object.entries(categoryTotals).map(([category, amount]) => ({
     name: CATEGORY_LABELS[category as Expense['category']],
     value: amount
-  })).sort((a, b) => b.value - a.value);
+  })).sort((a, b) => Number(b.value) - Number(a.value));
 
   const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
 
@@ -297,7 +297,7 @@ export const ExpensesManager: React.FC = () => {
 
             <div className="space-y-2">
               {chartData.map((item, idx) => {
-                const percentage = ((item.value / totalExpenses) * 100).toFixed(1);
+                const percentage = ((Number(item.value) / Number(totalExpenses)) * 100).toFixed(1);
                 return (
                   <div key={item.name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center gap-3">
@@ -308,7 +308,7 @@ export const ExpensesManager: React.FC = () => {
                       <span className="text-sm font-bold text-gray-700">{item.name}</span>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-black text-gray-900">{financialService.formatCurrency(item.value)}</p>
+                      <p className="text-sm font-black text-gray-900">{financialService.formatCurrency(item.value as number)}</p>
                       <p className="text-xs text-gray-600">{percentage}%</p>
                     </div>
                   </div>

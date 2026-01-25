@@ -315,10 +315,10 @@ function mapCustomerFromDB(c: any): Customer {
   return {
     id: c.id,
     nome: c.nome,
+    sobrenome: c.sobrenome,
     fone: c.fone,
-    email: c.email,
-    endereco: c.endereco,
-    dataCadastro: c.data_cadastro,
+    created_at: c.created_at,
+    updated_at: c.updated_at,
     loyaltyPoints: c.loyalty_points || 0
   };
 }
