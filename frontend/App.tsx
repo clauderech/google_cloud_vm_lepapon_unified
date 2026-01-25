@@ -710,7 +710,7 @@ const App = () => {
       { key: 'drink', label: 'Drink' },
       { key: 'revenda', label: 'Revenda' },
     ];
-    const cardapioProdutos = state.products.filter(p => p.isActive === 1 && p.type === pdvTab);
+    const cardapioProdutos = state.products.filter(p => p.isActive === true && p.type === pdvTab);
     const filteredProducts = cardapioProdutos.filter(p => {
       const termo = searchTerm.toLowerCase();
       return (
