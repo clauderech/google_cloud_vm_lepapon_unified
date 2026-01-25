@@ -698,11 +698,21 @@ const App = () => {
       }
     }, [activeTab, selectedComandaId, state.activeComandas]);
 
-    // Exibir produtos do tipo 'prato' e 'revenda' no cardápio
-    const cardapioProdutos = state.products.filter(p => p.type === 'prato' || p.type === 'revenda');
-    const filteredProducts = cardapioProdutos.filter(p => 
-      p.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // Exibir produtos ativos por tipo com abas no cardápio
+    const [pdvTab, setPdvTab] = useState<'prato' | 'drinks' | 'revenda'>('prato');
+    const tabLabels = [
+      { key: 'prato', label: 'Pratos' },
+      { key: 'drinks', label: 'Drinks' },
+      { key: 'revenda', label: 'Revenda' },
+    ];
+    const cardapioProdutos = state.products.filter(p => (p.isActive !== false) && (p.type === pdvTab));
+    const filteredProducts = cardapioProdutos.filter(p => {
+      const termo = searchTerm.toLowerCase();
+      return (
+        p.name.toLowerCase().includes(termo) ||
+        (p.category && p.category.toLowerCase().includes(termo))
+      );
+    });
 
     const addToCart = (product: Product, maxStock: number) => {
       setCart(prev => {
@@ -813,27 +823,34 @@ const App = () => {
         <div className="flex-1 p-6 overflow-y-auto bg-gray-50 border-r border-gray-200">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900">Cardápio</h2>
+            <div className="flex gap-2">
+              {tabLabels.map(tab => (
+                <button
+                  key={tab.key}
+                  className={`px-3 py-1 rounded-t border-b-2 ${pdvTab === tab.key ? 'border-blue-600 bg-blue-100 font-bold' : 'border-transparent bg-gray-100'}`}
+                  onClick={() => setPdvTab(tab.key as 'prato' | 'drinks' | 'revenda')}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
               <input 
                 type="text"
-                placeholder="Buscar prato..."
+                placeholder={`Buscar ${tabLabels.find(t => t.key === pdvTab)?.label.toLowerCase()}...`}
                 className="pl-10 pr-4 py-2 rounded-lg border border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black bg-white placeholder-gray-600 w-64"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
           </div>
-          
           {/* Product Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filteredProducts.map(product => {
               const maxStock = calculateMaxProduciable(product, state.products);
               const currentInCart = cart.find(c => c.productId === product.id)?.quantity || 0;
-              // If working on a comanda, we need to consider items already saved? 
-              // For simplicity, we just check current stock vs cart.
               const available = maxStock - currentInCart;
-
               return (
                 <button
                   key={product.id}
@@ -1267,8 +1284,8 @@ const App = () => {
                     onChange={e => setRecipeIngId(e.target.value)}
                   >
                     <option value="">Adicionar Insumo...</option>
-                    {state.products.filter(p => p.type === 'insumo').map(p => (
-                      <option key={p.id} value={p.id}>{p.name} ({p.unit})</option>
+                    {state.products.filter(p => p.type === 'insumo' || p.type === 'drinks' || p.type === 'revenda').map(p => (
+                      <option key={p.id} value={p.id}>{p.name} ({p.type})</option>
                     ))}
                   </select>
                   <input 
@@ -1316,7 +1333,7 @@ const App = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {state.products.filter(p => (p.type === 'insumo' || p.type === 'revenda') && (p.isActive !== false)).map(p => (
+                    {state.products.filter(p => p.type === 'insumo' || p.type === 'revenda').map(p => (
                       <tr key={p.id} className="hover:bg-gray-50 text-gray-900">
                         <td className="p-3 font-medium">{p.name}</td>
                         <td className="p-3 text-right font-mono font-bold">
@@ -1389,7 +1406,7 @@ const App = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {state.products.filter(p => (p.type === 'prato' || p.type === 'drinks') && (p.isActive !== false)).map(p => {
+                    {state.products.filter(p => p.type === 'prato' || p.type === 'drinks').map(p => {
                       const maxProd = calculateMaxProduciable(p, state.products);
                       return (
                         <tr key={p.id} className="hover:bg-gray-50 text-gray-900">
@@ -1544,7 +1561,7 @@ const App = () => {
              <label className="block text-xs font-bold text-gray-700 mb-1">Insumo</label>
              <select className="w-full border border-gray-400 p-2 rounded-lg text-black bg-white font-medium" value={newItemId} onChange={e => setNewItemId(e.target.value)}>
                <option value="">Selecione...</option>
-               {state.products.filter(p => p.type === 'insumo').map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+               {state.products.filter(p => p.type === 'insumo' || p.type === 'revenda').map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
              </select>
            </div>
            <div className="w-24">
