@@ -48,7 +48,7 @@ const HelpMenu: React.FC<HelpMenuProps> = ({ isOpen, onClose }) => {
         '1. Faça login com seu usuário e senha',
         '2. Configure seus fornecedores em "Fornecedores"',
         '3. Cadastre seus insumos (matérias-primas)',
-        '4. Crie suas receitas de pratos e drinks',
+        '4. Crie suas receitas de pratos e drink',
         '5. Cadastre seus clientes frequentes',
         '6. Abra o caixa e comece a vender!'
       ],
@@ -92,7 +92,7 @@ const HelpMenu: React.FC<HelpMenuProps> = ({ isOpen, onClose }) => {
         '- Defina estoque mínimo e máximo',
         '- Sistema alerta quando estiver baixo',
         '',
-        '**Pratos/Drinks**: Produtos que você VENDE',
+        '**Pratos/Drink**: Produtos que você VENDE',
         '- Cadastre com nome, preço de venda',
         '- Monte a receita (ficha técnica)',
         '- Estoque calculado automaticamente',

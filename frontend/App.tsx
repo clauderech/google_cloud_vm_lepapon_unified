@@ -108,7 +108,12 @@ const App = () => {
   useEffect(() => {
     const init = async () => {
       const data = await storageService.loadState();
-      setState(data);
+      // Converter isActive numérico para booleano
+      const products = (data.products || []).map((p: any) => ({
+        ...p,
+        isActive: p.isActive === 1 || p.isActive === true
+      }));
+      setState({ ...data, products });
       setLoading(false);
     };
     init();
@@ -174,7 +179,7 @@ const App = () => {
 
   // --- Helper: Calculate Max Possible Stock for a Recipe Product ---
   const calculateMaxProduciable = (product: Product, allProducts: Product[]): number => {
-    if (product.type === 'insumo' || product.type === 'revenda') return product.stock;
+    if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda') return product.stock;
     if (!product.recipe || product.recipe.length === 0) return 0;
 
     let maxCount = Infinity;
@@ -237,8 +242,8 @@ const App = () => {
               ingredient.stock -= (recipeItem.quantity * cartItem.quantity);
             }
           });
-        } else if (productSold.type === 'insumo') {
-          // Direct sale of ingredient (uncommon but possible)
+        } else if (productSold.type === 'insumo' || productSold.type === 'insumo_bebida') {
+          // Venda direta de insumo ou insumo_bebida
           productSold.stock -= cartItem.quantity;
         }
       });
@@ -699,13 +704,13 @@ const App = () => {
     }, [activeTab, selectedComandaId, state.activeComandas]);
 
     // Exibir produtos ativos por tipo com abas no cardápio
-    const [pdvTab, setPdvTab] = useState<'prato' | 'drinks' | 'revenda'>('prato');
+    const [pdvTab, setPdvTab] = useState<'prato' | 'drink' | 'revenda'>('prato');
     const tabLabels = [
       { key: 'prato', label: 'Pratos' },
-      { key: 'drinks', label: 'Drinks' },
+      { key: 'drink', label: 'Drink' },
       { key: 'revenda', label: 'Revenda' },
     ];
-    const cardapioProdutos = state.products.filter(p => (p.isActive !== false) && (p.type === pdvTab));
+    const cardapioProdutos = state.products.filter(p => (p.isActive === true || p.isActive === 1) && (p.type === pdvTab));
     const filteredProducts = cardapioProdutos.filter(p => {
       const termo = searchTerm.toLowerCase();
       return (
@@ -828,7 +833,7 @@ const App = () => {
                 <button
                   key={tab.key}
                   className={`px-3 py-1 rounded-t border-b-2 ${pdvTab === tab.key ? 'border-blue-600 bg-blue-100 font-bold' : 'border-transparent bg-gray-100'}`}
-                  onClick={() => setPdvTab(tab.key as 'prato' | 'drinks' | 'revenda')}
+                  onClick={() => setPdvTab(tab.key as 'prato' | 'drink' | 'revenda')}
                 >
                   {tab.label}
                 </button>
@@ -1131,7 +1136,7 @@ const App = () => {
   };
 
   const Inventory = () => {
-    const [mode, setMode] = useState<'insumo' | 'prato' | 'drinks'>('insumo');
+    const [mode, setMode] = useState<'insumo' | 'insumo_bebida' | 'prato' | 'drink'>('insumo');
     const [newProd, setNewProd] = useState<Partial<Product>>({ 
       category: 'Geral', 
       minStock: 10,
@@ -1141,7 +1146,7 @@ const App = () => {
     const [showForm, setShowForm] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [editProd, setEditProd] = useState<Partial<Product> | null>(null);
-    const [editMode, setEditMode] = useState<'insumo' | 'prato' | 'drinks'>('insumo');
+    const [editMode, setEditMode] = useState<'insumo' | 'insumo_bebida' | 'prato' | 'drink'>('insumo');
         const handleEditProduct = (product: Product) => {
           setEditProd({ ...product });
           setEditMode(product.type);
@@ -1161,6 +1166,7 @@ const App = () => {
             unit: editProd.unit || 'un',
             category: editProd.category || '',
             recipe: editProd.recipe || [],
+            isActive: editProd.isActive ? 1 : 0,
           } as Product;
           setState(prev => ({
             ...prev,
@@ -1198,10 +1204,11 @@ const App = () => {
         ...newProd,
         id: Date.now().toString(),
         type: mode,
-        stock: (mode === 'prato' || mode === 'drinks') ? 0 : (newProd.stock || 0), // Prato e drinks têm estoque calculado
+        stock: (mode === 'prato' || mode === 'drink') ? 0 : (newProd.stock || 0),
         price: Number(newProd.price || 0),
         cost: Number(newProd.cost || 0),
         supplierId: newProd.supplierId || '',
+        isActive: newProd.isActive ? 1 : 0,
       } as Product;
 
       addProduct(productToSave);
@@ -1228,7 +1235,13 @@ const App = () => {
                 onClick={() => setMode('insumo')} 
                 className={`px-4 py-2 rounded-lg font-bold ${mode === 'insumo' ? 'bg-blue-100 text-blue-800' : 'text-gray-600'}`}
               >
-                Insumo (Compra)
+                Insumo (Comida)
+              </button>
+              <button 
+                onClick={() => setMode('insumo_bebida')} 
+                className={`px-4 py-2 rounded-lg font-bold ${mode === 'insumo_bebida' ? 'bg-blue-100 text-blue-800' : 'text-gray-600'}`}
+              >
+                Insumo (Bebida)
               </button>
               <button 
                 onClick={() => setMode('prato')} 
@@ -1237,8 +1250,8 @@ const App = () => {
                 Prato (Venda / Receita)
               </button>
               <button 
-                onClick={() => setMode('drinks')} 
-                className={`px-4 py-2 rounded-lg font-bold ${mode === 'drinks' ? 'bg-blue-100 text-blue-800' : 'text-gray-600'}`}
+                onClick={() => setMode('drink')} 
+                className={`px-4 py-2 rounded-lg font-bold ${mode === 'drink' ? 'bg-blue-100 text-blue-800' : 'text-gray-600'}`}
               >
                 Drink (Receita)
               </button>
@@ -1248,7 +1261,7 @@ const App = () => {
               <input placeholder="Nome" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.name || ''} onChange={e => setNewProd({...newProd, name: e.target.value})} />
               <input placeholder="Categoria" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.category || ''} onChange={e => setNewProd({...newProd, category: e.target.value})} />
               
-              {mode === 'insumo' && (
+              {(mode === 'insumo' || mode === 'insumo_bebida') && (
                 <>
                   <select className="border border-gray-400 p-2 rounded text-black bg-white" value={newProd.unit} onChange={e => setNewProd({...newProd, unit: e.target.value as any})}>
                     <option value="un">Unidade</option>
@@ -1267,14 +1280,14 @@ const App = () => {
                 </>
               )}
 
-              {(mode === 'prato' || mode === 'drinks') && (
+              {(mode === 'prato' || mode === 'drink') && (
                 <>
                   <input type="number" placeholder="Preço de Venda" className="border border-gray-400 p-2 rounded font-bold text-black bg-white placeholder-gray-600" onChange={e => setNewProd({...newProd, price: Number(e.target.value)})} />
                 </>
               )}
             </div>
 
-            {(mode === 'prato' || mode === 'drinks') && (
+            {(mode === 'prato' || mode === 'drink') && (
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4">
                 <h4 className="font-bold text-gray-800 mb-2">Ficha Técnica (Receita)</h4>
                 <div className="flex gap-2 mb-2">
@@ -1284,7 +1297,7 @@ const App = () => {
                     onChange={e => setRecipeIngId(e.target.value)}
                   >
                     <option value="">Adicionar Insumo...</option>
-                    {state.products.filter(p => p.type === 'insumo' || p.type === 'drinks' || p.type === 'revenda').map(p => (
+                    {state.products.filter(p => p.type === 'insumo' || p.type === 'insumo_bebida' || p.type === 'drink' || p.type === 'revenda').map(p => (
                       <option key={p.id} value={p.id}>{p.name} ({p.type})</option>
                     ))}
                   </select>
@@ -1394,7 +1407,7 @@ const App = () => {
           </section>
 
           <section>
-             <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2"><ChefHat className="w-5 h-5" /> Pratos / Drinks (Estoque Calculado)</h3>
+             <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2"><ChefHat className="w-5 h-5" /> Pratos / Drink (Estoque Calculado)</h3>
              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <table className="w-full text-left">
                   <thead className="bg-gray-100 text-gray-900 font-bold text-sm">
@@ -1406,7 +1419,7 @@ const App = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {state.products.filter(p => p.type === 'prato' || p.type === 'drinks').map(p => {
+                    {state.products.filter(p => p.type === 'prato' || p.type === 'drink').map(p => {
                       const maxProd = calculateMaxProduciable(p, state.products);
                       return (
                         <tr key={p.id} className="hover:bg-gray-50 text-gray-900">
@@ -1441,7 +1454,7 @@ const App = () => {
                                   <select className="border border-gray-400 p-2 rounded text-black bg-white" value={editMode} onChange={e => setEditMode(e.target.value as any)}>
                                     <option value="insumo">Insumo</option>
                                     <option value="prato">Prato</option>
-                                    <option value="drinks">Drink</option>
+                                    <option value="drink">Drink</option>
                                   </select>
                                   <input placeholder="Unidade" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={editProd.unit || ''} onChange={e => setEditProd({...editProd, unit: e.target.value as any})} />
                                   <input type="number" placeholder="Preço de Venda" className="border border-gray-400 p-2 rounded font-bold text-black bg-white placeholder-gray-600" value={editProd.price || ''} onChange={e => setEditProd({...editProd, price: Number(e.target.value)})} />
@@ -1453,7 +1466,7 @@ const App = () => {
                                     {state.suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                   </select>
                                 </div>
-                                {(editMode === 'prato' || editMode === 'drinks') && (
+                                {(editMode === 'prato' || editMode === 'drink') && (
                                   <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4">
                                     <h4 className="font-bold text-gray-800 mb-2">Ficha Técnica (Receita)</h4>
                                     <div className="flex gap-2 mb-2">
@@ -1471,7 +1484,7 @@ const App = () => {
                                         }}
                                       >
                                         <option value="">Adicionar Insumo...</option>
-                                        {state.products.filter(p => p.type === 'insumo').map(p => (
+                                        {state.products.filter(p => p.type === 'insumo' || p.type === 'insumo_bebida').map(p => (
                                           <option key={p.id} value={p.id}>{p.name} ({p.unit})</option>
                                         ))}
                                       </select>
