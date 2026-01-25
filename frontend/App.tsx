@@ -1122,6 +1122,41 @@ const App = () => {
       recipe: [] 
     });
     const [showForm, setShowForm] = useState(false);
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [editProd, setEditProd] = useState<Partial<Product> | null>(null);
+    const [editMode, setEditMode] = useState<'insumo' | 'prato' | 'drinks'>('insumo');
+        const handleEditProduct = (product: Product) => {
+          setEditProd({ ...product });
+          setEditMode(product.type);
+          setEditModalOpen(true);
+        };
+
+        const handleEditSave = async () => {
+          if (!editProd?.name) return alert("Nome é obrigatório");
+          const updated: Product = {
+            ...editProd,
+            type: editMode,
+            price: Number(editProd.price || 0),
+            cost: Number(editProd.cost || 0),
+            minStock: Number(editProd.minStock || 0),
+            stock: Number(editProd.stock || 0),
+            supplierId: editProd.supplierId || '',
+            unit: editProd.unit || 'un',
+            category: editProd.category || '',
+            recipe: editProd.recipe || [],
+          } as Product;
+          setState(prev => ({
+            ...prev,
+            products: prev.products.map(p => p.id === updated.id ? updated : p)
+          }));
+          try {
+            await storageService.updateProduct(updated);
+          } catch (err) {
+            alert('Erro ao salvar produto no banco!');
+          }
+          setEditModalOpen(false);
+          setEditProd(null);
+        };
     
     // Recipe Builder States
     const [recipeIngId, setRecipeIngId] = useState('');
@@ -1281,7 +1316,7 @@ const App = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {state.products.filter(p => p.type === 'insumo' || p.type === 'revenda').map(p => (
+                    {state.products.filter(p => (p.type === 'insumo' || p.type === 'revenda') && (p.isActive !== false)).map(p => (
                       <tr key={p.id} className="hover:bg-gray-50 text-gray-900">
                         <td className="p-3 font-medium">{p.name}</td>
                         <td className="p-3 text-right font-mono font-bold">
@@ -1331,6 +1366,9 @@ const App = () => {
                             <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">Baixo</span> : 
                             <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold">OK</span>}
                         </td>
+                        <td className="p-3">
+                          <button className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold hover:bg-blue-200" onClick={() => handleEditProduct(p)}>Editar</button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -1351,7 +1389,7 @@ const App = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {state.products.filter(p => p.type === 'prato' || p.type === 'drinks').map(p => {
+                    {state.products.filter(p => (p.type === 'prato' || p.type === 'drinks') && (p.isActive !== false)).map(p => {
                       const maxProd = calculateMaxProduciable(p, state.products);
                       return (
                         <tr key={p.id} className="hover:bg-gray-50 text-gray-900">
@@ -1365,9 +1403,92 @@ const App = () => {
                           <td className="p-3 text-sm text-gray-700 font-medium max-w-xs truncate">
                             {p.recipe?.map(r => state.products.find(i => i.id === r.ingredientId)?.name).join(', ')}
                           </td>
+                          <td className="p-3">
+                            <button className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold hover:bg-blue-200" onClick={() => handleEditProduct(p)}>Editar</button>
+                          </td>
                         </tr>
                       );
                     })}
+                          {/* Modal de edição de produto */}
+                          {editModalOpen && editProd && (
+                            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                              <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-8 border border-blue-200">
+                                <h3 className="text-xl font-bold mb-4 text-blue-900">Editar Produto</h3>
+                                <div className="grid grid-cols-2 gap-4 mb-4">
+                                  <div className="flex items-center col-span-2">
+                                    <input type="checkbox" id="isActiveEdit" checked={!!editProd.isActive} onChange={e => setEditProd({...editProd, isActive: e.target.checked})} className="mr-2" />
+                                    <label htmlFor="isActiveEdit" className="font-bold text-gray-700">Produto Ativo</label>
+                                  </div>
+                                  <input placeholder="Nome" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={editProd.name || ''} onChange={e => setEditProd({...editProd, name: e.target.value})} />
+                                  <input placeholder="Categoria" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={editProd.category || ''} onChange={e => setEditProd({...editProd, category: e.target.value})} />
+                                  <select className="border border-gray-400 p-2 rounded text-black bg-white" value={editMode} onChange={e => setEditMode(e.target.value as any)}>
+                                    <option value="insumo">Insumo</option>
+                                    <option value="prato">Prato</option>
+                                    <option value="drinks">Drink</option>
+                                  </select>
+                                  <input placeholder="Unidade" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={editProd.unit || ''} onChange={e => setEditProd({...editProd, unit: e.target.value as any})} />
+                                  <input type="number" placeholder="Preço de Venda" className="border border-gray-400 p-2 rounded font-bold text-black bg-white placeholder-gray-600" value={editProd.price || ''} onChange={e => setEditProd({...editProd, price: Number(e.target.value)})} />
+                                  <input type="number" placeholder="Custo de Compra" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={editProd.cost || ''} onChange={e => setEditProd({...editProd, cost: Number(e.target.value)})} />
+                                  <input type="number" placeholder="Estoque" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={editProd.stock || ''} onChange={e => setEditProd({...editProd, stock: Number(e.target.value)})} />
+                                  <input type="number" placeholder="Estoque Mínimo" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={editProd.minStock || ''} onChange={e => setEditProd({...editProd, minStock: Number(e.target.value)})} />
+                                  <select className="border border-gray-400 p-2 rounded text-black bg-white" value={editProd.supplierId || ''} onChange={e => setEditProd({...editProd, supplierId: e.target.value})}>
+                                    <option value="">Fornecedor</option>
+                                    {state.suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                  </select>
+                                </div>
+                                {(editMode === 'prato' || editMode === 'drinks') && (
+                                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4">
+                                    <h4 className="font-bold text-gray-800 mb-2">Ficha Técnica (Receita)</h4>
+                                    <div className="flex gap-2 mb-2">
+                                      <select 
+                                        className="flex-1 border border-gray-400 p-2 rounded text-black bg-white"
+                                        value={''}
+                                        onChange={e => {
+                                          const ingId = e.target.value;
+                                          if (ingId) {
+                                            setEditProd(prev => ({
+                                              ...prev!,
+                                              recipe: [...(prev?.recipe || []), { ingredientId: ingId, quantity: 1 }]
+                                            }));
+                                          }
+                                        }}
+                                      >
+                                        <option value="">Adicionar Insumo...</option>
+                                        {state.products.filter(p => p.type === 'insumo').map(p => (
+                                          <option key={p.id} value={p.id}>{p.name} ({p.unit})</option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                      {editProd.recipe?.map((item, idx) => {
+                                        const ingName = state.products.find(p => p.id === item.ingredientId)?.name;
+                                        return (
+                                          <div key={idx} className="flex justify-between items-center text-sm bg-white p-2 rounded border text-gray-800 font-medium">
+                                            <span>{ingName}</span>
+                                            <input type="number" className="w-20 border border-gray-300 rounded px-2 py-1 text-right font-mono font-bold bg-white" value={item.quantity} min={0} onChange={e => {
+                                              const qty = Number(e.target.value);
+                                              setEditProd(prev => ({
+                                                ...prev!,
+                                                recipe: prev?.recipe?.map((r, i) => i === idx ? { ...r, quantity: qty } : r)
+                                              }));
+                                            }} />
+                                            <button className="text-red-500 px-2" onClick={() => setEditProd(prev => ({
+                                              ...prev!,
+                                              recipe: prev?.recipe?.filter((_, i) => i !== idx)
+                                            }))}>Remover</button>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+                                <div className="flex justify-end gap-2 mt-4">
+                                  <button className="px-4 py-2 rounded bg-gray-200 text-gray-700 font-bold" onClick={() => {setEditModalOpen(false); setEditProd(null);}}>Cancelar</button>
+                                  <button className="px-4 py-2 rounded bg-green-600 text-white font-bold" onClick={handleEditSave}>Salvar</button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                   </tbody>
                 </table>
              </div>
