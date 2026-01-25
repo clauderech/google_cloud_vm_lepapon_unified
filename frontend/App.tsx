@@ -1114,7 +1114,7 @@ const App = () => {
   };
 
   const Inventory = () => {
-    const [mode, setMode] = useState<'insumo' | 'prato'>('insumo');
+    const [mode, setMode] = useState<'insumo' | 'prato' | 'drinks'>('insumo');
     const [newProd, setNewProd] = useState<Partial<Product>>({ 
       category: 'Geral', 
       minStock: 10,
@@ -1146,7 +1146,7 @@ const App = () => {
         ...newProd,
         id: Date.now().toString(),
         type: mode,
-        stock: mode === 'prato' ? 0 : (newProd.stock || 0), // Prato has 0 stock always
+        stock: (mode === 'prato' || mode === 'drinks') ? 0 : (newProd.stock || 0), // Prato e drinks têm estoque calculado
         price: Number(newProd.price || 0),
         cost: Number(newProd.cost || 0),
         supplierId: newProd.supplierId || '',
@@ -1184,6 +1184,12 @@ const App = () => {
               >
                 Prato (Venda / Receita)
               </button>
+              <button 
+                onClick={() => setMode('drinks')} 
+                className={`px-4 py-2 rounded-lg font-bold ${mode === 'drinks' ? 'bg-blue-100 text-blue-800' : 'text-gray-600'}`}
+              >
+                Drink (Receita)
+              </button>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
@@ -1209,14 +1215,14 @@ const App = () => {
                 </>
               )}
 
-              {mode === 'prato' && (
+              {(mode === 'prato' || mode === 'drinks') && (
                 <>
                   <input type="number" placeholder="Preço de Venda" className="border border-gray-400 p-2 rounded font-bold text-black bg-white placeholder-gray-600" onChange={e => setNewProd({...newProd, price: Number(e.target.value)})} />
                 </>
               )}
             </div>
 
-            {mode === 'prato' && (
+            {(mode === 'prato' || mode === 'drinks') && (
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4">
                 <h4 className="font-bold text-gray-800 mb-2">Ficha Técnica (Receita)</h4>
                 <div className="flex gap-2 mb-2">
@@ -1254,7 +1260,7 @@ const App = () => {
             )}
 
             <button onClick={handleSave} className="w-full bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700">
-              Salvar {mode === 'insumo' ? 'Insumo' : 'Prato'}
+              Salvar {mode === 'insumo' ? 'Insumo' : mode === 'prato' ? 'Prato' : 'Drink'}
             </button>
           </div>
         )}
@@ -1333,7 +1339,7 @@ const App = () => {
           </section>
 
           <section>
-             <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2"><ChefHat className="w-5 h-5" /> Pratos / Lanches (Estoque Calculado)</h3>
+             <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2"><ChefHat className="w-5 h-5" /> Pratos / Drinks (Estoque Calculado)</h3>
              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <table className="w-full text-left">
                   <thead className="bg-gray-100 text-gray-900 font-bold text-sm">
@@ -1345,7 +1351,7 @@ const App = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {state.products.filter(p => p.type === 'prato').map(p => {
+                    {state.products.filter(p => p.type === 'prato' || p.type === 'drinks').map(p => {
                       const maxProd = calculateMaxProduciable(p, state.products);
                       return (
                         <tr key={p.id} className="hover:bg-gray-50 text-gray-900">
