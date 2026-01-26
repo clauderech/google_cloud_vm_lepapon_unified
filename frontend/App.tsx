@@ -111,7 +111,7 @@ const App = () => {
       // Converter isActive numérico para booleano
       const products = (data.products || []).map((p: any) => ({
         ...p,
-        isActive: p.isActive === 1 || p.isActive === true ? true : false
+        isActive: p.is_active === 1 || p.is_active === true ? true : false
       }));
       setState({ ...data, products });
       setLoading(false);
