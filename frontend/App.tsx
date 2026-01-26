@@ -1170,6 +1170,7 @@ const App = () => {
             recipe: editProd.recipe || [],
             is_active: editProd.is_active ? 1 : 0,
           } as Product;
+          console.log('[EDIT PRODUTO] Enviando para o DB:', updated);
           setState(prev => ({
             ...prev,
             products: prev.products.map(p => p.id === updated.id ? updated : p)
