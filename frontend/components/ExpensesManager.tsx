@@ -130,10 +130,10 @@ export const ExpensesManager: React.FC = () => {
       </div>
 
       {/* Formulário */}
-      {showForm && (
-        <div className="bg-white p-6 rounded-xl shadow-lg border-2 border-blue-200">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">Registrar Nova Despesa</h3>
-          <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
+        {showForm && (
+          <div className="bg-white p-6 rounded-xl shadow-lg border-2 border-blue-200">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">Registrar Nova Despesa</h3>
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Data</label>
               <input
@@ -281,10 +281,10 @@ export const ExpensesManager: React.FC = () => {
       </div>
 
       {/* Gráfico de Categorias */}
-      {chartData.length > 0 && (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">Despesas por Categoria</h3>
-          <div className="grid grid-cols-2 gap-6">
+        {chartData.length > 0 && (
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">Despesas por Categoria</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />

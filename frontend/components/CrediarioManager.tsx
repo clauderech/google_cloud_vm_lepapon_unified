@@ -75,9 +75,8 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
   const filteredAccounts = monthlyAccounts.filter(acc =>
     acc.customer_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="p-6 max-w-5xl w-full mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           <CreditCard className="text-blue-600" /> Gestão de Crediário Mensal
@@ -101,8 +100,8 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
       </div>
 
       {/* Lista de contas mensais */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
-        <table className="w-full">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto mb-8">
+        <table className="w-full min-w-[600px]">
           <thead className="bg-gray-100">
             <tr>
               <th className="p-3 text-left font-bold text-gray-900 text-sm">Cliente</th>
@@ -179,8 +178,8 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
             {/* Compras mensais */}
             <div className="mb-6">
               <h4 className="font-bold text-gray-900 mb-3">Compras do mês</h4>
-              <div className="bg-gray-50 rounded-lg max-h-60 overflow-y-auto">
-                <table className="w-full text-sm">
+              <div className="bg-gray-50 rounded-lg max-h-60 overflow-y-auto overflow-x-auto">
+                <table className="w-full min-w-[400px] text-sm">
                   <thead className="bg-gray-200 sticky top-0">
                     <tr>
                       <th className="p-2 text-left font-bold text-gray-900">Data</th>
@@ -204,8 +203,8 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
             {/* Pagamentos mensais */}
             <div className="mb-6">
               <h4 className="font-bold text-gray-900 mb-3">Pagamentos do mês</h4>
-              <div className="bg-gray-50 rounded-lg max-h-60 overflow-y-auto">
-                <table className="w-full text-sm">
+              <div className="bg-gray-50 rounded-lg max-h-60 overflow-y-auto overflow-x-auto">
+                <table className="w-full min-w-[400px] text-sm">
                   <thead className="bg-gray-200 sticky top-0">
                     <tr>
                       <th className="p-2 text-left font-bold text-gray-900">Data</th>

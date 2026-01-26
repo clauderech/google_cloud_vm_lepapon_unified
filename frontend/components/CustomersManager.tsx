@@ -74,7 +74,7 @@ const CustomersManager: React.FC<CustomersManagerProps> = ({
   );
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-6 max-w-6xl w-full mx-auto">
       {selectedCustomer && (
         <CustomerPurchaseHistory 
           customer={selectedCustomer}
@@ -176,9 +176,9 @@ const CustomersManager: React.FC<CustomersManagerProps> = ({
       </div>
 
       {/* Lista de Clientes */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[600px]">
             <thead className="bg-gray-100 text-gray-900 font-bold text-sm">
               <tr>
                 <th className="p-4 text-left">Nome</th>

@@ -116,7 +116,7 @@ export const CashRegisterComponent: React.FC = () => {
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto">
+    <div className="p-6 space-y-6 max-w-5xl w-full mx-auto">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-900">Controle de Caixa</h2>
         <button
@@ -298,7 +298,7 @@ export const CashRegisterComponent: React.FC = () => {
 
       {/* Histórico */}
       {showHistory && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
           <div className="p-4 bg-gray-50 border-b border-gray-200">
             <h3 className="text-lg font-bold text-gray-800">Histórico de Caixa (Últimos 30 dias)</h3>
           </div>
@@ -306,7 +306,7 @@ export const CashRegisterComponent: React.FC = () => {
             {history.length === 0 ? (
               <div className="p-8 text-center text-gray-600">Nenhum registro de caixa encontrado</div>
             ) : (
-              <table className="w-full">
+              <table className="w-full min-w-[700px]">
                 <thead className="bg-gray-100">
                   <tr>
                     <th className="text-left p-3 font-bold text-gray-700 text-sm">Abertura</th>

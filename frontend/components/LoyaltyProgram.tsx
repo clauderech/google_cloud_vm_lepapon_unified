@@ -34,7 +34,7 @@ const LoyaltyProgram: React.FC<LoyaltyProgramProps> = ({
   };
 
   return (
-    <div className="bg-gradient-to-br from-amber-50 to-orange-50 p-4 rounded-xl border border-amber-200 shadow-sm">
+    <div className="bg-gradient-to-br from-amber-50 to-orange-50 p-4 rounded-xl border border-amber-200 shadow-sm w-full">
       <div className="flex items-center gap-2 mb-3">
         <Award className="w-5 h-5 text-amber-600" />
         <h3 className="font-bold text-amber-900">Programa Fidelidade</h3>
@@ -105,7 +105,7 @@ const LoyaltyProgram: React.FC<LoyaltyProgramProps> = ({
           {REWARDS.map(reward => (
             <div 
               key={reward.points}
-              className={`flex justify-between text-xs p-2 rounded ${
+              className={`flex flex-col sm:flex-row justify-between text-xs p-2 rounded ${
                 loyaltyPoints >= reward.points 
                   ? 'bg-green-50 text-green-800 font-bold' 
                   : 'bg-gray-50 text-gray-600'

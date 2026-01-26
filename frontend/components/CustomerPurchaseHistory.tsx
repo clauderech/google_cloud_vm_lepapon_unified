@@ -132,7 +132,7 @@ const CustomerPurchaseHistory: React.FC<CustomerPurchaseHistoryProps> = ({
               <Package className="w-4 h-4 text-blue-600" />
               Produtos Favoritos
             </h3>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {stats.favoriteProducts.map((product, idx) => (
                 <div key={idx} className="bg-blue-50 p-3 rounded-lg border border-blue-200">
                   <p className="font-bold text-gray-900 text-sm truncate">{product.name}</p>

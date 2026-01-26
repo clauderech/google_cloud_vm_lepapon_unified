@@ -113,7 +113,7 @@ export const ReportsView: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-6 space-y-6 max-w-7xl w-full mx-auto">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-900">Relatórios Gerenciais</h2>
         {reportData && (
@@ -279,7 +279,7 @@ export const ReportsView: React.FC = () => {
                 {reportData.length === 0 ? (
                   <p className="text-center text-gray-600 py-8">Todos os produtos estão com estoque adequado!</p>
                 ) : (
-                  <table className="w-full">
+                  <table className="w-full min-w-[600px]">
                     <thead className="bg-red-100">
                       <tr>
                         <th className="text-left p-3 font-bold text-red-900 text-sm">Produto</th>
@@ -315,7 +315,7 @@ export const ReportsView: React.FC = () => {
                 {reportData.length === 0 ? (
                   <p className="text-center text-gray-600 py-8">Nenhuma venda registrada</p>
                 ) : (
-                  <table className="w-full">
+                  <table className="w-full min-w-[600px]">
                     <thead className="bg-green-100">
                       <tr>
                         <th className="text-left p-3 font-bold text-green-900 text-sm">Posição</th>
@@ -347,7 +347,7 @@ export const ReportsView: React.FC = () => {
                 {reportData.length === 0 ? (
                   <p className="text-center text-gray-600 py-8">Nenhum produto cadastrado</p>
                 ) : (
-                  <table className="w-full">
+                  <table className="w-full min-w-[600px]">
                     <thead className="bg-purple-100">
                       <tr>
                         <th className="text-left p-3 font-bold text-purple-900 text-sm">Produto</th>
@@ -391,7 +391,7 @@ export const ReportsView: React.FC = () => {
                 {reportData.length === 0 ? (
                   <p className="text-center text-gray-600 py-8">Nenhum prato ou drink cadastrado</p>
                 ) : (
-                  <table className="w-full">
+                  <table className="w-full min-w-[600px]">
                     <thead className="bg-orange-100">
                       <tr>
                         <th className="text-left p-3 font-bold text-orange-900 text-sm">Prato/Drink</th>
