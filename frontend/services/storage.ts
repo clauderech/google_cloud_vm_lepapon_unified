@@ -27,7 +27,7 @@ const LOCAL_STORAGE_KEY = 'lanchonete_app_state_v5';
 export const storageService = {
     async updateProduct(product: Product): Promise<void> {
       if (USE_API) {
-        // Enviar apenas campos essenciais para evitar erro 500
+        // Enviar todos os campos relevantes, incluindo recipe
         const payload = {
           id: product.id,
           name: product.name,
@@ -42,7 +42,8 @@ export const storageService = {
           category: product.category,
           description: product.description,
           barcode: product.barcode,
-          is_active: product.is_active
+          is_active: product.is_active,
+          recipe: product.recipe || []
         };
         const response = await fetch(`${API_URL}/products/${product.id}`, {
           method: 'PUT',
