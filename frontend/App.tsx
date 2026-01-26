@@ -617,7 +617,7 @@ const App = () => {
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <h3 className="text-lg font-bold text-gray-800 mb-4">Top 5 Produtos Vendidos</h3>
             <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={topProducts.filter(Boolean)}>
+              <BarChart data={topProducts}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fill: '#4b5563', fontSize: 11 }} />
                 <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `R$ ${value}`} tick={{ fill: '#4b5563' }} />
@@ -632,7 +632,7 @@ const App = () => {
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie
-                  data={salesByCategory.filter(Boolean)}
+                  data={salesByCategory}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -641,7 +641,7 @@ const App = () => {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {salesByCategory.filter(Boolean).map((entry, index) => (
+                  {salesByCategory.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
@@ -891,8 +891,7 @@ const App = () => {
           </div>
           {/* Product Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredProducts.filter(Boolean).map(product => {
-              if (!product) return null;
+            {filteredProducts.map(product => {
               const maxStock = calculateMaxProduciable(product, state.products);
               const currentInCart = cart.find(c => c.productId === product.id)?.quantity || 0;
               const available = maxStock - currentInCart;
@@ -1786,79 +1785,8 @@ const App = () => {
     );
   };
 
-  // --- Mobile Drawer State ---
-  const [drawerOpen, setDrawerOpen] = useState(false);
-
-  // Drawer menu items (same as sidebar)
-  const drawerMenuItems = [
-    hasPermission('view_dashboard') ? { label: 'Dashboard', icon: LayoutDashboard, view: 'dashboard' } : null,
-    hasPermission('view_pos') ? { label: 'PDV (Vendas)', icon: ShoppingCart, view: 'pos' } : null,
-    hasPermission('view_inventory') ? { label: 'Estoque / Receitas', icon: Package, view: 'inventory' } : null,
-    hasPermission('manage_products') ? { label: 'Clientes', icon: Users, view: 'customers' } : null,
-    hasPermission('view_shopping_list') ? { label: 'Lista de Compras', icon: ClipboardList, view: 'shopping-list' } : null,
-    hasPermission('view_purchases') ? { label: 'Entrada de Notas', icon: Truck, view: 'purchases' } : null,
-    'divider1',
-    hasPermission('view_financial') ? { label: 'Financeiro', icon: TrendingUp, view: 'financial' } : null,
-    hasPermission('view_expenses') ? { label: 'Despesas', icon: Receipt, view: 'expenses' } : null,
-    hasPermission('view_cash_register') ? { label: 'Caixa', icon: Wallet, view: 'cash-register' } : null,
-    hasPermission('view_reports') ? { label: 'Relatórios', icon: FileText, view: 'reports' } : null,
-    'divider2',
-    hasPermission('view_financial') ? { label: 'Crediário', icon: DollarSign, view: 'crediario' } : null,
-  ].filter((item) => typeof item === 'string' || (item && typeof item === 'object'));
-
   return (
     <div className="flex h-screen bg-[#f1f5f9]">
-      {/* Mobile Top Bar & Drawer */}
-      <div className="md:hidden flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200 sticky top-0 z-30">
-        <span className="font-bold text-lg text-blue-900">{
-          (() => {
-            const found = drawerMenuItems.find(i => typeof i === 'object' && i.view === view);
-            if (found && typeof found === 'object') return found.label;
-            return 'Menu';
-          })()
-        }</span>
-        <button onClick={() => setDrawerOpen(true)} className="p-2"><MenuIcon className="w-7 h-7 text-blue-700" /></button>
-      </div>
-      {drawerOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex">
-          <div className="bg-white w-64 h-full shadow-xl flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b">
-              <span className="font-bold text-lg text-blue-900">Menu</span>
-              <button onClick={() => setDrawerOpen(false)}><CloseIcon className="w-6 h-6 text-blue-700" /></button>
-            </div>
-            <nav className="flex flex-col gap-2 p-4">
-              {drawerMenuItems.map((item, idx) => {
-                if (typeof item === 'string' && item.startsWith('divider')) {
-                  return <div key={item+idx} className="my-2 border-t border-gray-200" />;
-                } else if (typeof item === 'object' && item !== null) {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.label}
-                      className={`text-left px-4 py-3 rounded-lg font-bold text-lg ${view === item.view ? 'bg-blue-100 text-blue-800' : 'text-gray-700 hover:bg-gray-100'}`}
-                      onClick={() => { setView(item.view); setDrawerOpen(false); }}
-                    >
-                      <span className="inline-flex items-center gap-2"><Icon className="w-5 h-5" /> {item.label}</span>
-                    </button>
-                  );
-                } else {
-                  return null;
-                }
-              })}
-            </nav>
-            <div className="mt-auto p-4 border-t border-gray-200">
-              <button
-                onClick={handleLogout}
-                className="flex items-center w-full p-3 rounded-lg text-red-600 hover:bg-red-50 transition-colors font-semibold"
-              >
-                <LogOut className="w-5 h-5 mr-3" />
-                <span>Sair</span>
-              </button>
-            </div>
-          </div>
-          <div className="flex-1" onClick={() => setDrawerOpen(false)} />
-        </div>
-      )}
       <aside className="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col">
         <div className="p-6 border-b border-gray-200">
           <h1 className="text-xl font-black text-blue-700 flex items-center gap-2">
