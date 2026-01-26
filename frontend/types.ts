@@ -49,7 +49,7 @@ export interface Product {
   category: string;
   description?: string;
   barcode?: string;
-  isActive?: boolean;
+  is_active?: boolean;
   recipe?: RecipeItem[];
   created_at?: string;
   updated_at?: string;

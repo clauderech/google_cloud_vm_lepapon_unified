@@ -42,7 +42,7 @@ export const storageService = {
           category: product.category,
           description: product.description,
           barcode: product.barcode,
-          is_active: product.isActive
+          is_active: product.is_active
         };
         const response = await fetch(`${API_URL}/products/${product.id}`, {
           method: 'PUT',
@@ -293,7 +293,7 @@ function mapProductFromDB(p: any): Product {
     category: p.category,
     description: p.description,
     barcode: p.barcode,
-    isActive: p.is_active !== false,
+    is_active: p.is_active === 1 || p.is_active === "1",
     recipe: p.recipe || []
   };
 }

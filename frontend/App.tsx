@@ -108,14 +108,10 @@ const App = () => {
   useEffect(() => {
     const init = async () => {
       const data = await storageService.loadState();
-      // Logar como está vindo o campo is_active do banco
-      if (data.products && data.products.length > 0) {
-        console.log('Produtos recebidos do DB (is_active):', data.products.map(p => ({ id: p.id, name: p.name, isActive: p.isActive })));
-      }
-      // Converter isActive numérico para booleano
+      // Converter is_active numérico para booleano
       const products = (data.products || []).map((p: any) => ({
         ...p,
-        isActive: p.isActive === 1 || p.isActive === "1"
+        is_active: p.is_active === 1 || p.is_active === "1"
       }));
       setState({ ...data, products });
       setLoading(false);
@@ -714,7 +710,7 @@ const App = () => {
       { key: 'drink', label: 'Drink' },
       { key: 'revenda', label: 'Revenda' },
     ];
-    const cardapioProdutos = state.products.filter(p => p.isActive === true && p.type === pdvTab);
+    const cardapioProdutos = state.products.filter(p => p.is_active === true && p.type === pdvTab);
     const filteredProducts = cardapioProdutos.filter(p => {
       const termo = searchTerm.toLowerCase();
       return (
@@ -1170,7 +1166,7 @@ const App = () => {
             unit: editProd.unit || 'un',
             category: editProd.category || '',
             recipe: editProd.recipe || [],
-            isActive: editProd.isActive ? 1 : 0,
+            is_active: editProd.is_active ? 1 : 0,
           } as Product;
           setState(prev => ({
             ...prev,
@@ -1212,7 +1208,7 @@ const App = () => {
         price: Number(newProd.price || 0),
         cost: Number(newProd.cost || 0),
         supplierId: newProd.supplierId || '',
-        isActive: newProd.isActive ? 1 : 0,
+        is_active: newProd.is_active ? 1 : 0,
       } as Product;
 
       addProduct(productToSave);
@@ -1450,7 +1446,7 @@ const App = () => {
                                 <h3 className="text-xl font-bold mb-4 text-blue-900">Editar Produto</h3>
                                 <div className="grid grid-cols-2 gap-4 mb-4">
                                   <div className="flex items-center col-span-2">
-                                    <input type="checkbox" id="isActiveEdit" checked={!!editProd.isActive} onChange={e => setEditProd({...editProd, isActive: e.target.checked})} className="mr-2" />
+                                    <input type="checkbox" id="isActiveEdit" checked={!!editProd.is_active} onChange={e => setEditProd({...editProd, is_active: e.target.checked})} className="mr-2" />
                                     <label htmlFor="isActiveEdit" className="font-bold text-gray-700">Produto Ativo</label>
                                   </div>
                                   <input placeholder="Nome" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={editProd.name || ''} onChange={e => setEditProd({...editProd, name: e.target.value})} />
