@@ -1785,8 +1785,79 @@ const App = () => {
     );
   };
 
+  // --- Mobile Drawer State ---
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Drawer menu items (same as sidebar)
+  const drawerMenuItems = [
+    hasPermission('view_dashboard') && { label: 'Dashboard', icon: LayoutDashboard, view: 'dashboard' },
+    hasPermission('view_pos') && { label: 'PDV (Vendas)', icon: ShoppingCart, view: 'pos' },
+    hasPermission('view_inventory') && { label: 'Estoque / Receitas', icon: Package, view: 'inventory' },
+    hasPermission('manage_products') && { label: 'Clientes', icon: Users, view: 'customers' },
+    hasPermission('view_shopping_list') && { label: 'Lista de Compras', icon: ClipboardList, view: 'shopping-list' },
+    hasPermission('view_purchases') && { label: 'Entrada de Notas', icon: Truck, view: 'purchases' },
+    'divider1',
+    hasPermission('view_financial') && { label: 'Financeiro', icon: TrendingUp, view: 'financial' },
+    hasPermission('view_expenses') && { label: 'Despesas', icon: Receipt, view: 'expenses' },
+    hasPermission('view_cash_register') && { label: 'Caixa', icon: Wallet, view: 'cash-register' },
+    hasPermission('view_reports') && { label: 'Relatórios', icon: FileText, view: 'reports' },
+    'divider2',
+    hasPermission('view_financial') && { label: 'Crediário', icon: DollarSign, view: 'crediario' },
+  ].filter(Boolean);
+
   return (
     <div className="flex h-screen bg-[#f1f5f9]">
+      {/* Mobile Top Bar & Drawer */}
+      <div className="md:hidden flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200 sticky top-0 z-30">
+        <span className="font-bold text-lg text-blue-900">{
+          (() => {
+            const found = drawerMenuItems.find(i => typeof i === 'object' && i.view === view);
+            if (found && typeof found === 'object') return found.label;
+            return 'Menu';
+          })()
+        }</span>
+        <button onClick={() => setDrawerOpen(true)} className="p-2"><MenuIcon className="w-7 h-7 text-blue-700" /></button>
+      </div>
+      {drawerOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex">
+          <div className="bg-white w-64 h-full shadow-xl flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b">
+              <span className="font-bold text-lg text-blue-900">Menu</span>
+              <button onClick={() => setDrawerOpen(false)}><CloseIcon className="w-6 h-6 text-blue-700" /></button>
+            </div>
+            <nav className="flex flex-col gap-2 p-4">
+              {drawerMenuItems.map((item, idx) => {
+                if (typeof item === 'string' && item.startsWith('divider')) {
+                  return <div key={item+idx} className="my-2 border-t border-gray-200" />;
+                }
+                if (typeof item === 'object') {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.label}
+                      className={`text-left px-4 py-3 rounded-lg font-bold text-lg ${view === item.view ? 'bg-blue-100 text-blue-800' : 'text-gray-700 hover:bg-gray-100'}`}
+                      onClick={() => { setView(item.view); setDrawerOpen(false); }}
+                    >
+                      <span className="inline-flex items-center gap-2"><Icon className="w-5 h-5" /> {item.label}</span>
+                    </button>
+                  );
+                }
+                return null;
+              })}
+            </nav>
+            <div className="mt-auto p-4 border-t border-gray-200">
+              <button
+                onClick={handleLogout}
+                className="flex items-center w-full p-3 rounded-lg text-red-600 hover:bg-red-50 transition-colors font-semibold"
+              >
+                <LogOut className="w-5 h-5 mr-3" />
+                <span>Sair</span>
+              </button>
+            </div>
+          </div>
+          <div className="flex-1" onClick={() => setDrawerOpen(false)} />
+        </div>
+      )}
       <aside className="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col">
         <div className="p-6 border-b border-gray-200">
           <h1 className="text-xl font-black text-blue-700 flex items-center gap-2">
