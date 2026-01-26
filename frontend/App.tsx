@@ -1541,6 +1541,8 @@ const App = () => {
                                   <input placeholder="Categoria" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={editProd.category || ''} onChange={e => setEditProd({...editProd, category: e.target.value})} />
                                   <select className="border border-gray-400 p-2 rounded text-black bg-white" value={editMode} onChange={e => setEditMode(e.target.value as any)}>
                                     <option value="insumo">Insumo</option>
+                                    <option value="insumo_bebida">Insumo Bebida</option>
+                                    <option value="revenda">Revenda</option>
                                     <option value="prato">Prato</option>
                                     <option value="drink">Drink</option>
                                   </select>
