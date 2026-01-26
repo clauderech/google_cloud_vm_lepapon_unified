@@ -1790,20 +1790,20 @@ const App = () => {
 
   // Drawer menu items (same as sidebar)
   const drawerMenuItems = [
-    hasPermission('view_dashboard') && { label: 'Dashboard', icon: LayoutDashboard, view: 'dashboard' },
-    hasPermission('view_pos') && { label: 'PDV (Vendas)', icon: ShoppingCart, view: 'pos' },
-    hasPermission('view_inventory') && { label: 'Estoque / Receitas', icon: Package, view: 'inventory' },
-    hasPermission('manage_products') && { label: 'Clientes', icon: Users, view: 'customers' },
-    hasPermission('view_shopping_list') && { label: 'Lista de Compras', icon: ClipboardList, view: 'shopping-list' },
-    hasPermission('view_purchases') && { label: 'Entrada de Notas', icon: Truck, view: 'purchases' },
+    hasPermission('view_dashboard') ? { label: 'Dashboard', icon: LayoutDashboard, view: 'dashboard' } : null,
+    hasPermission('view_pos') ? { label: 'PDV (Vendas)', icon: ShoppingCart, view: 'pos' } : null,
+    hasPermission('view_inventory') ? { label: 'Estoque / Receitas', icon: Package, view: 'inventory' } : null,
+    hasPermission('manage_products') ? { label: 'Clientes', icon: Users, view: 'customers' } : null,
+    hasPermission('view_shopping_list') ? { label: 'Lista de Compras', icon: ClipboardList, view: 'shopping-list' } : null,
+    hasPermission('view_purchases') ? { label: 'Entrada de Notas', icon: Truck, view: 'purchases' } : null,
     'divider1',
-    hasPermission('view_financial') && { label: 'Financeiro', icon: TrendingUp, view: 'financial' },
-    hasPermission('view_expenses') && { label: 'Despesas', icon: Receipt, view: 'expenses' },
-    hasPermission('view_cash_register') && { label: 'Caixa', icon: Wallet, view: 'cash-register' },
-    hasPermission('view_reports') && { label: 'Relatórios', icon: FileText, view: 'reports' },
+    hasPermission('view_financial') ? { label: 'Financeiro', icon: TrendingUp, view: 'financial' } : null,
+    hasPermission('view_expenses') ? { label: 'Despesas', icon: Receipt, view: 'expenses' } : null,
+    hasPermission('view_cash_register') ? { label: 'Caixa', icon: Wallet, view: 'cash-register' } : null,
+    hasPermission('view_reports') ? { label: 'Relatórios', icon: FileText, view: 'reports' } : null,
     'divider2',
-    hasPermission('view_financial') && { label: 'Crediário', icon: DollarSign, view: 'crediario' },
-  ].filter(Boolean);
+    hasPermission('view_financial') ? { label: 'Crediário', icon: DollarSign, view: 'crediario' } : null,
+  ].filter((item) => typeof item === 'string' || (item && typeof item === 'object'));
 
   return (
     <div className="flex h-screen bg-[#f1f5f9]">
