@@ -89,17 +89,17 @@ import Login from './components/Login';
 import { useAuth } from './hooks/useAuth';
 
 const App = () => {
+      // Menu de navegação global para mobile
+      const adminMenu = [
+        { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { key: 'pos', label: 'PDV', icon: ShoppingCart },
+        { key: 'inventory', label: 'Estoque', icon: Package },
+        { key: 'customers', label: 'Clientes', icon: Truck },
+        { key: 'financial', label: 'Financeiro', icon: TrendingUp },
+        { key: 'reports', label: 'Relatórios', icon: HelpCircle },
+      ];
     // Estado do menu mobile
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    // Abas globais para navegação
-    const mainTabs = [
-      { key: 'dashboard', label: 'Dashboard' },
-      { key: 'pdv', label: 'PDV' },
-      { key: 'comandas', label: 'Comandas' },
-      { key: 'produtos', label: 'Produtos' },
-      { key: 'relatorios', label: 'Relatórios' },
-      { key: 'config', label: 'Configurações' },
-    ];
   // --- Authentication ---
   const { user, isAuthenticated, login, logout, hasPermission } = useAuth();
   
@@ -842,12 +842,13 @@ const App = () => {
     const customerLoyaltyPoints = selectedCustomer?.loyaltyPoints || 0;
 
     return (
-      <>
-        {/* Mobile Menu Global */}
-        <div className="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200">
-          <span className="font-bold text-lg text-blue-900">Menu</span>
+      <div className="h-screen flex flex-col md:flex-row overflow-hidden">
+        {/* Mobile Menu Button - Global Navigation */}
+        <div className="md:hidden flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200">
+          <span className="font-bold text-lg text-blue-900">{adminMenu.find(m => m.key === view)?.label || 'Menu'}</span>
           <button onClick={() => setMobileMenuOpen(true)} className="p-2"><MenuIcon className="w-7 h-7 text-blue-700" /></button>
         </div>
+        {/* Mobile Drawer - Global Navigation */}
         {mobileMenuOpen && (
           <div className="fixed inset-0 z-50 bg-black/40 flex">
             <div className="bg-white w-64 h-full shadow-xl flex flex-col">
@@ -856,13 +857,14 @@ const App = () => {
                 <button onClick={() => setMobileMenuOpen(false)}><CloseIcon className="w-6 h-6 text-blue-700" /></button>
               </div>
               <nav className="flex flex-col gap-2 p-4">
-                {mainTabs.map(tab => (
+                {adminMenu.map(item => (
                   <button
-                    key={tab.key}
-                    className={`text-left px-4 py-3 rounded-lg font-bold text-lg ${view === tab.key ? 'bg-blue-100 text-blue-800' : 'text-gray-700 hover:bg-gray-100'}`}
-                    onClick={() => { setView(tab.key as PageView); setMobileMenuOpen(false); }}
+                    key={item.key}
+                    className={`flex items-center gap-3 text-left px-4 py-3 rounded-lg font-bold text-lg ${view === item.key ? 'bg-blue-100 text-blue-800' : 'text-gray-700 hover:bg-gray-100'}`}
+                    onClick={() => { setView(item.key as PageView); setMobileMenuOpen(false); }}
                   >
-                    {tab.label}
+                    <item.icon className="w-5 h-5" />
+                    {item.label}
                   </button>
                 ))}
               </nav>
@@ -870,8 +872,6 @@ const App = () => {
             <div className="flex-1" onClick={() => setMobileMenuOpen(false)} />
           </div>
         )}
-        {/* Conteúdo principal */}
-        <div className="h-screen flex flex-col md:flex-row overflow-hidden pt-12 md:pt-0">
         {/* Left Side: Products */}
         <div className="flex-1 p-6 overflow-y-auto bg-gray-50 border-r border-gray-200">
           {/* Desktop Tabs & Search */}
@@ -1181,7 +1181,6 @@ const App = () => {
           )}
         </div>
       </div>
-      </>
     );
   };
 
