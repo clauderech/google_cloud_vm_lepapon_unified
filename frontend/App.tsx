@@ -108,10 +108,14 @@ const App = () => {
   useEffect(() => {
     const init = async () => {
       const data = await storageService.loadState();
+      // Logar como está vindo o campo is_active do banco
+      if (data.products && data.products.length > 0) {
+        console.log('Produtos recebidos do DB (is_active):', data.products.map(p => ({ id: p.id, name: p.name, is_active: p.is_active })));
+      }
       // Converter is_active numérico para booleano
       const products = (data.products || []).map((p: any) => ({
         ...p,
-        is_active: p.is_active === 1 || p.is_active === "1"
+        is_active: p.is_active === true ? true : false
       }));
       setState({ ...data, products });
       setLoading(false);
