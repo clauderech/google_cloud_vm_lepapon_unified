@@ -1829,8 +1829,7 @@ const App = () => {
               {drawerMenuItems.map((item, idx) => {
                 if (typeof item === 'string' && item.startsWith('divider')) {
                   return <div key={item+idx} className="my-2 border-t border-gray-200" />;
-                }
-                if (typeof item === 'object') {
+                } else if (typeof item === 'object' && item !== null) {
                   const Icon = item.icon;
                   return (
                     <button
@@ -1841,8 +1840,9 @@ const App = () => {
                       <span className="inline-flex items-center gap-2"><Icon className="w-5 h-5" /> {item.label}</span>
                     </button>
                   );
+                } else {
+                  return null;
                 }
-                return null;
               })}
             </nav>
             <div className="mt-auto p-4 border-t border-gray-200">
