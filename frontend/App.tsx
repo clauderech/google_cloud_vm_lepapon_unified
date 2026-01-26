@@ -1327,6 +1327,8 @@ const App = () => {
                   </select>
                   <input 
                     type="number" 
+                    step="any"
+                    min="0.01"
                     placeholder="Qtd" 
                     className="w-24 border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600"
                     value={recipeQty}
