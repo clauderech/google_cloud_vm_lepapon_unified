@@ -108,10 +108,6 @@ const App = () => {
   useEffect(() => {
     const init = async () => {
       const data = await storageService.loadState();
-      // Logar como está vindo o campo is_active do banco
-      if (data.products && data.products.length > 0) {
-        console.log('Produtos recebidos do DB (is_active):', data.products.map(p => ({ id: p.id, name: p.name, is_active: p.is_active })));
-      }
       // Converter is_active numérico para booleano
       const products = (data.products || []).map((p: any) => ({
         ...p,
@@ -1140,7 +1136,9 @@ const App = () => {
   };
 
   const Inventory = () => {
-    const [mode, setMode] = useState<'insumo' | 'insumo_bebida' | 'prato' | 'drink'>('insumo');
+    const [mode, setMode] = useState<'insumo' | 'insumo_bebida' | 'prato' | 'drink' | 'revenda'>('insumo');
+    const [tab, setTab] = useState<'insumo' | 'insumo_bebida' | 'prato' | 'drink' | 'revenda'>('insumo');
+    const [searchTerm, setSearchTerm] = useState('');
     const [newProd, setNewProd] = useState<Partial<Product>>({ 
       category: 'Geral', 
       minStock: 10,
@@ -1230,6 +1228,28 @@ const App = () => {
           >
             <Plus className="w-4 h-4" /> Novo Item
           </button>
+        </div>
+        {/* Tabs de tipos de produto */}
+        <div className="flex gap-2 mb-4">
+          {['insumo', 'insumo_bebida', 'prato', 'drink', 'revenda'].map(tipo => (
+            <button
+              key={tipo}
+              className={`px-4 py-2 rounded-lg font-bold capitalize ${tab === tipo ? 'bg-blue-100 text-blue-800' : 'text-gray-600 bg-gray-50'}`}
+              onClick={() => setTab(tipo as any)}
+            >
+              {tipo.replace('_', ' ')}
+            </button>
+          ))}
+        </div>
+        {/* Input de pesquisa */}
+        <div className="mb-4">
+          <input
+            type="text"
+            placeholder="Pesquisar por nome ou categoria..."
+            className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600 w-full max-w-md"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
         </div>
 
         {showForm && (
@@ -1337,20 +1357,32 @@ const App = () => {
         {/* List View */}
         <div className="space-y-8">
           <section>
-             <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2"><Package className="w-5 h-5" /> Insumos (Estoque Controlado)</h3>
-             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <table className="w-full text-left">
-                  <thead className="bg-gray-100 text-gray-900 font-bold text-sm">
-                    <tr>
-                      <th className="p-3">Nome</th>
-                      <th className="p-3 text-right">Estoque</th>
-                      <th className="p-3">Unidade</th>
-                      <th className="p-3 text-right">Custo</th>
-                      <th className="p-3">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {state.products.filter(p => p.type === 'insumo' || p.type === 'revenda').map(p => (
+            <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+              <Package className="w-5 h-5" /> {tab.charAt(0).toUpperCase() + tab.slice(1).replace('_', ' ')}
+            </h3>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <table className="w-full text-left">
+                <thead className="bg-gray-100 text-gray-900 font-bold text-sm">
+                  <tr>
+                    <th className="p-3">Nome</th>
+                    <th className="p-3 text-right">Estoque</th>
+                    <th className="p-3">Unidade</th>
+                    <th className="p-3 text-right">Custo</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {state.products
+                    .filter(p => p.type === tab)
+                    .filter(p => {
+                      const termo = searchTerm.toLowerCase();
+                      return (
+                        p.name.toLowerCase().includes(termo) ||
+                        (p.category && p.category.toLowerCase().includes(termo))
+                      );
+                    })
+                    .map(p => (
                       <tr key={p.id} className="hover:bg-gray-50 text-gray-900">
                         <td className="p-3 font-medium">{p.name}</td>
                         <td className="p-3 text-right font-mono font-bold">
@@ -1405,9 +1437,9 @@ const App = () => {
                         </td>
                       </tr>
                     ))}
-                  </tbody>
-                </table>
-             </div>
+                </tbody>
+              </table>
+            </div>
           </section>
 
           <section>
