@@ -915,6 +915,7 @@ const App = () => {
                       ? 'bg-gray-100 border-gray-200 opacity-60 cursor-not-allowed'
                       : 'bg-white border-gray-200 hover:shadow-md hover:border-blue-300'
                   }`}
+                  style={{ minWidth: '250px' }}
                 >
                   <div className="flex justify-between items-start mb-2">
                     <span className="font-bold text-gray-900 line-clamp-1">{product.name}</span>
