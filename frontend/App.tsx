@@ -901,11 +901,14 @@ const App = () => {
           </div>
           {/* Product Grid */}
           <div
-            className="grid grid-cols-1 gap-4"
+            className="grid gap-4"
             style={{
-              ...(window.innerWidth === 1280 && window.innerHeight === 1024
-                ? { gridTemplateColumns: '1fr' }
-                : {})
+              gridTemplateColumns:
+                window.innerWidth === 1280 && window.innerHeight === 1024
+                  ? '1fr'
+                  : window.innerWidth > 1280
+                    ? '1fr 1fr'
+                    : '1fr'
             }}
           >
             {filteredProducts.map(product => {
