@@ -5,6 +5,7 @@ const SaleModel = require('../models/sale');
 const SaleItemModel = require('../models/sale_item');
 const ProductModel = require('../models/product');
 const CrediarioModel = require('../models/crediario');
+const CozinhaItem = require('../models/cozinha_item');
 // Finalizar comanda (pagamento normal ou crediário)
 router.post('/:id/close', async (req, res) => {
   /*
@@ -107,6 +108,24 @@ function formatDateForMySQL(date) {
       }
     }
 
+    // Integração com cozinha: registrar itens do tipo 'prato' na cozinha_items
+    for (const item of items) {
+      const productId = item.product_id || item.productId;
+      if (!productId) continue;
+      const product = await ProductModel.getById(productId);
+      if (product && product.type === 'prato') {
+        await CozinhaItem.create({
+          comanda_id: comandaId,
+          product_id: productId,
+          quantidade: item.quantity,
+          status: 'pending',
+          observacao: item.notes || null,
+          prioridade: 'normal',
+          responsavel: null
+        });
+      }
+    }
+
     res.json({ success: true, comandaId, saleId, total });
   } catch (err) {
     console.error('[COMANDA][CLOSE][ERROR]', { id: req.params.id, error: err.message, stack: err.stack });
@@ -173,6 +192,22 @@ router.put('/:id', async (req, res) => {
       // Remove itens antigos e insere novos (simples)
       await ComandaModel.clearItems(req.params.id);
       await ComandaModel.addItems(req.params.id, items);
+      for (const item of items) {
+        const productId = item.productId || item.product_id;
+        if (!productId) continue;
+        const product = await ProductModel.getById(productId);
+        if (product && product.type === 'prato') {
+          await CozinhaItem.create({
+            comanda_id: req.params.id,
+            product_id: productId,
+            quantidade: item.quantity,
+            status: 'pending',
+            observacao: item.notes || null,
+            prioridade: 'normal',
+            responsavel: null
+          });
+        }
+      }
     }
     res.json({ success: true });
   } catch (err) {
