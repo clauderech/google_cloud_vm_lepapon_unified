@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS cozinha_items (
   id INT AUTO_INCREMENT PRIMARY KEY,
   comanda_id VARCHAR(50) NOT NULL,
-  product_id INT NOT NULL,
+  product_id VARCHAR(50) NOT NULL,
   quantidade INT NOT NULL,
   status VARCHAR(32) NOT NULL DEFAULT 'pending',
   observacao VARCHAR(255),
