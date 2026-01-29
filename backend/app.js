@@ -1,4 +1,3 @@
-
 'use strict';
 
 // Carregar .env do caminho absoluto do servidor
@@ -69,6 +68,10 @@ app.use('/api/comandas', comandasRouter);
 // Rota de estado inicial
 const initialStateRouter = require('./routes/initialState');
 app.use('/api/initial-state', initialStateRouter);
+
+// Rotas de cozinha
+const cozinhaRouter = require('./routes/cozinha');
+app.use('/api/cozinha', cozinhaRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {
