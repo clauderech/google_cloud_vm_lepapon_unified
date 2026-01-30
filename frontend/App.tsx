@@ -693,6 +693,43 @@ const App = () => {
 
   const POS = () => {
     const [cart, setCart] = useState<CartItem[]>([]);
+    // --- Modal de Observação para Prato ---
+    const [showPratoModal, setShowPratoModal] = useState(false);
+    const [pratoSelecionado, setPratoSelecionado] = useState<Product | null>(null);
+    const [pratoQtd, setPratoQtd] = useState(1);
+    const [pratoObs, setPratoObs] = useState('');
+
+    const handlePratoClick = (product: Product, maxStock: number) => {
+      setPratoSelecionado(product);
+      setPratoQtd(1);
+      setPratoObs('');
+      setShowPratoModal(true);
+    };
+
+    const handleAddPratoToCart = () => {
+      if (!pratoSelecionado) return;
+      setCart(prev => {
+        const existing = prev.find(item => item.productId === pratoSelecionado.id && item.notes === pratoObs);
+        if (existing) {
+          return prev.map(item =>
+            item.productId === pratoSelecionado.id && item.notes === pratoObs
+              ? { ...item, quantity: item.quantity + pratoQtd }
+              : item
+          );
+        }
+        return [
+          ...prev,
+          {
+            productId: pratoSelecionado.id,
+            productName: pratoSelecionado.name,
+            quantity: pratoQtd,
+            unitPrice: pratoSelecionado.price,
+            notes: pratoObs
+          }
+        ];
+      });
+      setShowPratoModal(false);
+    };
     const [searchTerm, setSearchTerm] = useState('');
     const [activeTab, setActiveTab] = useState<'quick' | 'comandas'>('comandas');
     
@@ -843,6 +880,37 @@ const App = () => {
 
     return (
       <div className="h-screen flex flex-col md:flex-row overflow-hidden">
+        {/* Modal de Observação para Prato */}
+        {showPratoModal && pratoSelecionado && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-xs w-full p-6">
+              <h3 className="text-lg font-bold mb-4 text-gray-900">Adicionar Observação</h3>
+              <div className="mb-4">
+                <div className="font-bold text-blue-700 text-lg mb-2">{pratoSelecionado.name}</div>
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={pratoQtd}
+                  onChange={e => setPratoQtd(Number(e.target.value))}
+                  className="w-20 border border-gray-400 p-2 rounded-lg text-black bg-white mr-2"
+                />
+                <span className="text-gray-700 font-medium">unidades</span>
+              </div>
+              <textarea
+                className="w-full border border-gray-400 p-2 rounded-lg text-black bg-white mb-4"
+                placeholder="Observações (ex: sem ervilha, pouco sal...)"
+                value={pratoObs}
+                onChange={e => setPratoObs(e.target.value)}
+                rows={3}
+              />
+              <div className="flex justify-end space-x-2">
+                <button onClick={() => setShowPratoModal(false)} className="px-4 py-2 rounded bg-gray-200 text-gray-700 font-bold">Cancelar</button>
+                <button onClick={handleAddPratoToCart} className="px-4 py-2 rounded bg-blue-600 text-white font-bold">Adicionar</button>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Mobile Menu Button - Global Navigation */}
         <div className="md:hidden flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200">
           <span className="font-bold text-lg text-blue-900">{adminMenu.find(m => m.key === view)?.label || 'Menu'}</span>
@@ -918,7 +986,7 @@ const App = () => {
               return (
                 <button
                   key={product.id}
-                  onClick={() => addToCart(product, maxStock)}
+                  onClick={() => product.type === 'prato' ? handlePratoClick(product, maxStock) : addToCart(product, maxStock)}
                   disabled={available <= 0 || (activeTab === 'comandas' && !selectedComandaId)}
                   className={`p-4 rounded-xl border text-left transition-all ${
                     available <= 0 || (activeTab === 'comandas' && !selectedComandaId)
@@ -1378,12 +1446,20 @@ const App = () => {
                 <div className="flex gap-2 mb-2">
                   <select 
                     className="flex-1 border border-gray-400 p-2 rounded text-black bg-white"
-                    value={recipeIngId}
-                    onChange={e => setRecipeIngId(e.target.value)}
+                    value={''}
+                    onChange={e => {
+                      const ingId = e.target.value;
+                      if (ingId) {
+                        setNewProd(prev => ({
+                          ...prev!,
+                          recipe: [...(prev?.recipe || []), { ingredientId: ingId, quantity: 1 }]
+                        }));
+                      }
+                    }}
                   >
                     <option value="">Adicionar Insumo...</option>
-                    {state.products.filter(p => p.type === 'insumo' || p.type === 'insumo_bebida' || p.type === 'drink' || p.type === 'revenda').map(p => (
-                      <option key={p.id} value={p.id}>{p.name} ({p.type})</option>
+                    {state.products.filter(p => p.type === 'insumo' || p.type === 'insumo_bebida').map(p => (
+                      <option key={p.id} value={p.id}>{p.name} ({p.unit})</option>
                     ))}
                   </select>
                   <input 
@@ -1401,7 +1477,7 @@ const App = () => {
                   {newProd.recipe?.map((item, idx) => {
                     const ingName = state.products.find(p => p.id === item.ingredientId)?.name;
                     return (
-                      <div key={idx} className="flex justify-between text-sm bg-white p-2 rounded border text-gray-800 font-medium">
+                      <div key={idx} className="flex justify-between items-center text-sm bg-white p-2 rounded border text-gray-800 font-medium">
                         <span>{ingName}</span>
                         <span>{item.quantity}</span>
                       </div>
@@ -1808,6 +1884,7 @@ const App = () => {
     );
   };
 
+
   return (
     <div className="flex h-screen bg-[#f1f5f9]">
       <aside className="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col">
@@ -1882,3 +1959,9 @@ const App = () => {
 };
 
 export default App;
+// setCart é um setter de estado para o carrinho de compras no PDV (POS).
+// Ele deve ser definido via useState<CartItem[]> no componente POS.
+// Portanto, não é necessário implementar manualmente essa função aqui.
+// Se precisar usar setCart fora do POS, passe-a como prop ou mova o estado para um contexto global.
+// Remova esta função placeholder.
+
