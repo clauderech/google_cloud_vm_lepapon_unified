@@ -4,6 +4,7 @@ const express = require('express');
 const ProductModel = require('../models/product');
 const router = express.Router();
 
+
 // Listar todos os produtos
 router.get('/', async (req, res) => {
   try {
@@ -11,6 +12,19 @@ router.get('/', async (req, res) => {
     res.json(products);
   } catch (err) {
     res.status(500).json({ error: 'Erro ao listar produtos', details: err.message });
+  }
+});
+
+// Listar apenas produtos do tipo 'prato' com campos id e name
+router.get('/pratos', async (req, res) => {
+  try {
+    const products = await ProductModel.list();
+    const pratos = products
+      .filter(p => p.type === 'prato')
+      .map(p => ({ id: p.id, name: p.name }));
+    res.json(pratos);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao listar pratos', details: err.message });
   }
 });
 
