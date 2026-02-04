@@ -809,7 +809,7 @@ async function logSecurityEvent(eventType, userId, phoneNumber, details) {
   }
 }
 
-export default {
+export {
   extractTextFromMessage,
   extractMediaFromMessage,
   parseWebhookPayload,

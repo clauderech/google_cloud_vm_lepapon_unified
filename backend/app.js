@@ -1,7 +1,6 @@
-'use strict';
 
-// Carregar .env do caminho absoluto do servidor
-require('dotenv').config({ path: '/var/www/google_cloud_vm_lepapon_unified/.env' });
+import dotenv from 'dotenv';
+dotenv.config({ path: '/var/www/google_cloud_vm_lepapon_unified/.env' });
 
 import express from 'express';
 import cors from 'cors';
