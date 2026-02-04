@@ -1,11 +1,11 @@
+'use strict';
 
-import dotenv from 'dotenv';
-dotenv.config();
+// Carregar .env do caminho absoluto do servidor
+require('dotenv').config({ path: '/var/www/google_cloud_vm_lepapon_unified/.env' });
 
 import express from 'express';
 import cors from 'cors';
-import pkg from 'body-parser';
-const { json, urlencoded } = pkg;
+import { json, urlencoded } from 'body-parser';
 import knex from 'knex';
 
 // Importar config
@@ -53,33 +53,33 @@ app.use((req, res, next) => {
   next();
 });
 // Rotas de produtos
-import productsRouter from './routes/products.js';
+import productsRouter from './routes/products';
 app.use('/api/products', productsRouter);
 // Rotas de fornecedores
-import suppliersRouter from './routes/suppliers.js';
+import suppliersRouter from './routes/suppliers';
 app.use('/api/suppliers', suppliersRouter);
 // Rotas de clientes
-import customersRouter from './routes/customers.js';
+import customersRouter from './routes/customers';
 app.use('/api/customers', customersRouter);
 // Rotas de vendas
-import salesRouter from './routes/sales.js';
+import salesRouter from './routes/sales';
 app.use('/api/sales', salesRouter);
 // Rotas de compras
-import purchasesRouter from './routes/purchases.js';
+import purchasesRouter from './routes/purchases';
 app.use('/api/purchases', purchasesRouter);
 
 // Rotas de caixa
-import cashRegisterRouter from './routes/cashRegister.js';
+import cashRegisterRouter from './routes/cashRegister';
 app.use('/api/cash-register', cashRegisterRouter);
 // Rotas de comandas
-import comandasRouter from './routes/comandas.js';
+import comandasRouter from './routes/comandas';
 app.use('/api/comandas', comandasRouter);
 // Rota de estado inicial
-import initialStateRouter from './routes/initialState.js';
+import initialStateRouter from './routes/initialState';
 app.use('/api/initial-state', initialStateRouter);
 
 // Rotas de cozinha
-import cozinhaRouter from './routes/cozinha.js';
+import cozinhaRouter from './routes/cozinha';
 app.use('/api/cozinha', cozinhaRouter);
 
 // Health check
