@@ -1,10 +1,8 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
+'use strict';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const path = require('path');
 
-export default {
+module.exports = {
   apps: [
     {
       name: 'webhook-whatsapp-meta',
