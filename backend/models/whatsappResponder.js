@@ -2,7 +2,7 @@
 
 import { db } from '../config/knex.js';
 import { createQueue } from './asyncQueue.js';
-import { buildTemplateComponentsFromEnv, sendTemplateMessage, sendTextMessage } from './whatsappCloudApi';
+import { buildTemplateComponentsFromEnv, sendTemplateMessage, sendTextMessage } from './whatsappCloudApi.js';
 
 function toInt(value, fallback) {
   const parsed = Number.parseInt(String(value), 10);
