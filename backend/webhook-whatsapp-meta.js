@@ -5,4 +5,4 @@
 
 'use strict';
 
-module.exports = require('./routes/webhook-whatsapp-meta');
+export { default } from "./routes/webhook-whatsapp-meta";

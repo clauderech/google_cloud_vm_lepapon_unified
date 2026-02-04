@@ -2,11 +2,11 @@
 // Cliente WebSocket para escutar eventos "new_order" do LePapon
 // Uso: node wsNewOrderClient.js ou importe como módulo
 
-const WebSocket = require('ws');
-const path = require('path');
-const ComandaModel = require(path.join(__dirname, '../models/comanda'));
-const CustomerModel = require(path.join(__dirname, '../models/customer'));
-const ProductModel = require(path.join(__dirname, '../models/product'));
+import WebSocket from 'ws';
+import { join } from 'path';
+const ComandaModel = require(join(__dirname, '../models/comanda'));
+const CustomerModel = require(join(__dirname, '../models/customer'));
+const ProductModel = require(join(__dirname, '../models/product'));
 
 const WS_URL = process.env.LEPAPON_WS_URL || 'ws://lepapon.com.br:3001';
 const TOKEN = process.env.LEPAPON_WS_TOKEN || 'SEU_TOKEN_AQUI';
@@ -49,7 +49,9 @@ function createWebSocketClient() {
             }
         } catch (e) {
             // Se não encontrar, deixa vazio
+            console.log('[WS] Erro ao buscar produto id:', item.id, e.message);
         }
+        console.log(`[WS] Adicionando item: id=${item.id}, nome=${productName || 'N/A'}, qtde=${item.Qtde}, price=${price || 'N/A'}`);
         items.push({
           product_id: item.id,
           product_name: productName,
@@ -129,7 +131,7 @@ if (require.main === module) {
   createWebSocketClient();
 }
 
-module.exports = { createWebSocketClient };
+export default { createWebSocketClient };
 
 function formatDateForMySQL(date) {
   const d = typeof date === 'string' ? new Date(date) : date;

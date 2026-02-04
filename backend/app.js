@@ -3,13 +3,13 @@
 // Carregar .env do caminho absoluto do servidor
 require('dotenv').config({ path: '/var/www/google_cloud_vm_lepapon_unified/.env' });
 
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const knex = require('knex');
+import express from 'express';
+import cors from 'cors';
+import { json, urlencoded } from 'body-parser';
+import knex from 'knex';
 
 // Importar config
-const { buildKnexConfig } = require('./config/knex');
+import { buildKnexConfig } from './config/knex';
 
 // Inicializar Express
 const app = express();
@@ -29,8 +29,8 @@ app.use(cors({
   origin: process.env.CORS_ORIGIN || '*',
   credentials: true
 }));
-app.use(bodyParser.json({ limit: '10mb' }));
-app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
+app.use(json({ limit: '10mb' }));
+app.use(urlencoded({ limit: '10mb', extended: true }));
 
 // Inicializar banco de dados
 let db;
@@ -53,33 +53,33 @@ app.use((req, res, next) => {
   next();
 });
 // Rotas de produtos
-const productsRouter = require('./routes/products');
+import productsRouter from './routes/products';
 app.use('/api/products', productsRouter);
 // Rotas de fornecedores
-const suppliersRouter = require('./routes/suppliers');
+import suppliersRouter from './routes/suppliers';
 app.use('/api/suppliers', suppliersRouter);
 // Rotas de clientes
-const customersRouter = require('./routes/customers');
+import customersRouter from './routes/customers';
 app.use('/api/customers', customersRouter);
 // Rotas de vendas
-const salesRouter = require('./routes/sales');
+import salesRouter from './routes/sales';
 app.use('/api/sales', salesRouter);
 // Rotas de compras
-const purchasesRouter = require('./routes/purchases');
+import purchasesRouter from './routes/purchases';
 app.use('/api/purchases', purchasesRouter);
 
 // Rotas de caixa
-const cashRegisterRouter = require('./routes/cashRegister');
+import cashRegisterRouter from './routes/cashRegister';
 app.use('/api/cash-register', cashRegisterRouter);
 // Rotas de comandas
-const comandasRouter = require('./routes/comandas');
+import comandasRouter from './routes/comandas';
 app.use('/api/comandas', comandasRouter);
 // Rota de estado inicial
-const initialStateRouter = require('./routes/initialState');
+import initialStateRouter from './routes/initialState';
 app.use('/api/initial-state', initialStateRouter);
 
 // Rotas de cozinha
-const cozinhaRouter = require('./routes/cozinha');
+import cozinhaRouter from './routes/cozinha';
 app.use('/api/cozinha', cozinhaRouter);
 
 // Health check
@@ -117,4 +117,4 @@ app.listen(PORT, () => {
   console.log(`[SERVER] Ambiente: ${process.env.NODE_ENV || 'development'}`);
 });
 
-module.exports = app;
+export default app;

@@ -1,6 +1,6 @@
 'use strict';
 
-const { createQueue } = require('./asyncQueue');
+import { createQueue } from './asyncQueue';
 
 function toInt(value, fallback) {
   if (value === undefined || value === null) return fallback;
@@ -103,7 +103,7 @@ function createWebhookBatcher({
   };
 }
 
-module.exports = {
+export default {
   createWebhookBatcher,
   toInt,
 };

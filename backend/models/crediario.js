@@ -1,6 +1,6 @@
 'use strict';
 
-const { db } = require('../config/knex');
+import { db } from '../config/knex';
 
 const CrediarioModel = {
     async addMonthlyPayment(monthlyAccountId, paymentDate, amount, paymentMethod, receiptNumber, receivedBy, notes) {
@@ -73,4 +73,4 @@ const CrediarioModel = {
 
 };
 
-module.exports = CrediarioModel;
+export default CrediarioModel;

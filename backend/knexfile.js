@@ -2,11 +2,9 @@
 
 require('dotenv').config();
 
-const { buildKnexConfig } = require('./config/knex');
+import { buildKnexConfig } from './config/knex';
 
 // O Knex CLI procura por `knexfile.js`. Exportamos a mesma config
 // para dev/prod por simplicidade (controlada por variáveis de ambiente).
-module.exports = {
-  development: buildKnexConfig(),
-  production: buildKnexConfig(),
-};
+export const development = buildKnexConfig();
+export const production = buildKnexConfig();

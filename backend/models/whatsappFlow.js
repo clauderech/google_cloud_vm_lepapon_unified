@@ -1,8 +1,8 @@
 'use strict';
 
-const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
+import { createHmac, timingSafeEqual, privateDecrypt, constants, createDecipheriv, createCipheriv } from 'crypto';
+import { existsSync, readFileSync } from 'fs';
+import { isAbsolute, resolve } from 'path';
 
 /**
  * Descriptografa e processa dados de Flow do WhatsApp Meta
@@ -22,13 +22,12 @@ class WhatsAppFlowProcessor {
       throw new Error('WHATSAPP_APP_SECRET não configurado');
     }
 
-    const hash = crypto
-      .createHmac('sha256', this.appSecret)
+    const hash = createHmac('sha256', this.appSecret)
       .update(payload)
       .digest('hex');
 
     const expectedSignature = `sha256=${hash}`;
-    return crypto.timingSafeEqual(
+    return timingSafeEqual(
       Buffer.from(expectedSignature),
       Buffer.from(xHubSignature)
     );
@@ -44,25 +43,25 @@ class WhatsAppFlowProcessor {
 
     // Resolver caminho relativo se necessário
     let keyPath = this.privateKeyPath;
-    if (!path.isAbsolute(keyPath)) {
-      keyPath = path.resolve(__dirname, keyPath);
+    if (!isAbsolute(keyPath)) {
+      keyPath = resolve(__dirname, keyPath);
     }
 
     console.log('[Flow] Usando chave privada em:', keyPath);
 
-    if (!fs.existsSync(keyPath)) {
+    if (!existsSync(keyPath)) {
       throw new Error(`Arquivo de chave privada não encontrado: ${keyPath}`);
     }
 
     try {
       // Lê a chave privada
-      const privateKey = fs.readFileSync(keyPath, 'utf8');
+      const privateKey = readFileSync(keyPath, 'utf8');
 
       // Descriptografa a chave AES usando RSA com OAEP SHA-256
-      const decryptedAesKey = crypto.privateDecrypt(
+      const decryptedAesKey = privateDecrypt(
         {
           key: privateKey,
-          padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+          padding: constants.RSA_PKCS1_OAEP_PADDING,
           oaepHash: 'sha256',
         },
         Buffer.from(encryptedAesKey, 'base64')
@@ -79,7 +78,7 @@ class WhatsAppFlowProcessor {
       console.log('[Flow] Dados criptografados (sem tag):', encrypted_flow_data_body.length, 'bytes');
       console.log('[Flow] Tag de autenticação:', encrypted_flow_data_tag.length, 'bytes');
 
-      const decipher = crypto.createDecipheriv(
+      const decipher = createDecipheriv(
         'aes-128-gcm',
         decryptedAesKey,
         Buffer.from(initialVector, 'base64')
@@ -145,21 +144,21 @@ class WhatsAppFlowProcessor {
     }
 
     let keyPath = this.privateKeyPath;
-    if (!path.isAbsolute(keyPath)) {
-      keyPath = path.resolve(__dirname, keyPath);
+    if (!isAbsolute(keyPath)) {
+      keyPath = resolve(__dirname, keyPath);
     }
 
-    if (!fs.existsSync(keyPath)) {
+    if (!existsSync(keyPath)) {
       throw new Error(`Arquivo de chave privada não encontrado: ${keyPath}`);
     }
 
     try {
-      const privateKey = fs.readFileSync(keyPath, 'utf8');
+      const privateKey = readFileSync(keyPath, 'utf8');
 
-      const decryptedAesKey = crypto.privateDecrypt(
+      const decryptedAesKey = privateDecrypt(
         {
           key: privateKey,
-          padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+          padding: constants.RSA_PKCS1_OAEP_PADDING,
           oaepHash: 'sha256',
         },
         Buffer.from(encryptedAesKey, 'base64')
@@ -192,7 +191,7 @@ class WhatsAppFlowProcessor {
       console.log('[Flow] IV invertido:', flippedIv.toString('base64'));
 
       // Encripta usando AES-128-GCM
-      const cipher = crypto.createCipheriv(
+      const cipher = createCipheriv(
         'aes-128-gcm',
         aesKeyBuffer,
         flippedIv
@@ -221,7 +220,7 @@ class WhatsAppFlowProcessor {
   }
 }
 
-module.exports = {
+export default {
   WhatsAppFlowProcessor,
   createFlowProcessor: (options) => new WhatsAppFlowProcessor(options),
 };

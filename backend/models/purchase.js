@@ -1,6 +1,6 @@
 'use strict';
 
-const { db } = require('../config/knex');
+import { db } from '../config/knex';
 
 const PurchaseModel = {
   async list() {
@@ -20,4 +20,4 @@ const PurchaseModel = {
   }
 };
 
-module.exports = PurchaseModel;
+export default PurchaseModel;

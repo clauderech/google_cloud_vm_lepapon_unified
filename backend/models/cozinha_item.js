@@ -1,4 +1,4 @@
-const db = require('../config/knex').db;
+import { db } from '../config/knex';
 
 const CozinhaItem = {
   async create(data) {
@@ -21,4 +21,4 @@ const CozinhaItem = {
   }
 };
 
-module.exports = CozinhaItem;
+export default CozinhaItem;
