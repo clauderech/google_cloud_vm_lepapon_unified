@@ -2,7 +2,7 @@
 
 import { join } from 'path';
 
-export const apps = [
+const apps = [
   {
     name: 'webhook-whatsapp-meta',
     script: './processwhatsapp.js',
@@ -71,7 +71,7 @@ export const apps = [
     },
   },
 ];
-export const deploy = {
+const deploy = {
   production: {
     user: process.env.DEPLOY_USER || 'deploy',
     host: process.env.DEPLOY_HOST || 'your-server.com',
@@ -80,4 +80,8 @@ export const deploy = {
     path: '/var/www/your-app',
     'post-deploy': 'npm install && npm run build',
   },
+
+export default {
+  apps,
+  deploy
 };
