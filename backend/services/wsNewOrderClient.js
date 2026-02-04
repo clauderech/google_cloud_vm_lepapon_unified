@@ -39,20 +39,22 @@ function createWebSocketClient() {
       // Montar itens (buscar nome do produto se necessário)
       const items = [];
       for (const item of (novo.itensPedido || [])) {
-        let productName = item.nome_produto || null;
-        if (!productName && item.id) {
-          try {
+        let productName = null;
+        let price = null;
+        try {
             const product = await ProductModel.getById(item.id);
-            if (product && product.name) productName = product.name;
-          } catch (e) {
+            if (product) {
+                productName = product.name;
+                price = product.price;
+            }
+        } catch (e) {
             // Se não encontrar, deixa vazio
-          }
         }
         items.push({
           product_id: item.id,
-          product_name: productName || 'Produto',
+          product_name: productName,
           quantity: item.Qtde,
-          unit_price: null,
+          unit_price: price,
           notes: item.Obs || null,
           status: 'pending'
         });
