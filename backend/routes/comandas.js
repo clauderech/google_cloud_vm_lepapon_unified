@@ -1,11 +1,11 @@
-import CashModel from '../models/cash.js';
-import express from 'express';
+const CashModel = require('../models/cash');
+const express = require('express');
 const router = express.Router();
-import SaleModel from '../models/sale.js';
-import SaleItemModel from '../models/sale_item.js';
-import ProductModel from '../models/product.js';
-import CrediarioModel from '../models/crediario.js';
-import CozinhaItem from '../models/cozinha_item.js';
+const SaleModel = require('../models/sale');
+const SaleItemModel = require('../models/sale_item');
+const ProductModel = require('../models/product');
+const CrediarioModel = require('../models/crediario');
+const CozinhaItem = require('../models/cozinha_item');
 // Finalizar comanda (pagamento normal ou crediário)
 router.post('/:id/close', async (req, res) => {
   /*
@@ -301,4 +301,4 @@ router.get('/crediario/:monthlyAccountId/payments', async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;

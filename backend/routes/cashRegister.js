@@ -1,6 +1,6 @@
 
-import express from 'express';
-import { db } from '../config/knex.js';
+const express = require('express');
+const { db } = require('../config/knex');
 const router = express.Router();
 
 // Abrir caixa
@@ -164,4 +164,4 @@ router.post('/:id/movements', async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;

@@ -47,30 +47,30 @@ app.use((req, res, next) => {
 const productsRouter = require('./routes/products');
 app.use('/api/products', productsRouter);
 // Rotas de fornecedores
-import suppliersRouter from './routes/suppliers.js';
+const suppliersRouter = require('./routes/suppliers');
 app.use('/api/suppliers', suppliersRouter);
 // Rotas de clientes
-import customersRouter from './routes/customers.js';
+const customersRouter = require('./routes/customers');
 app.use('/api/customers', customersRouter);
 // Rotas de vendas
-import salesRouter from './routes/sales.js';
+const salesRouter = require('./routes/sales');
 app.use('/api/sales', salesRouter);
 // Rotas de compras
-import purchasesRouter from './routes/purchases.js';
+const purchasesRouter = require('./routes/purchases');
 app.use('/api/purchases', purchasesRouter);
 
 // Rotas de caixa
-import cashRegisterRouter from './routes/cashRegister.js';
+const cashRegisterRouter = require('./routes/cashRegister');
 app.use('/api/cash-register', cashRegisterRouter);
 // Rotas de comandas
-import comandasRouter from './routes/comandas.js';
+const comandasRouter = require('./routes/comandas');
 app.use('/api/comandas', comandasRouter);
 // Rota de estado inicial
-import initialStateRouter from './routes/initialState.js';
+const initialStateRouter = require('./routes/initialState');
 app.use('/api/initial-state', initialStateRouter);
 
 // Rotas de cozinha
-import cozinhaRouter from './routes/cozinha.js';
+const cozinhaRouter = require('./routes/cozinha');
 app.use('/api/cozinha', cozinhaRouter);
 
 // Health check
@@ -108,4 +108,3 @@ app.listen(PORT, () => {
   console.log(`[SERVER] Ambiente: ${process.env.NODE_ENV || 'development'}`);
 });
 
-export default app;

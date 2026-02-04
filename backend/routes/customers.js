@@ -1,6 +1,6 @@
 
-import express from 'express';
-import CustomerModel from '../models/customer.js';
+const express = require('express');
+const CustomerModel = require('../models/customer');
 const router = express.Router();
 
 // Listar todos os clientes
@@ -54,4 +54,4 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;

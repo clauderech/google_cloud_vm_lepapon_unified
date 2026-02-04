@@ -1,11 +1,11 @@
 
-import express from 'express';
-import ProductModel from '../models/product.js';
-import SupplierModel from '../models/supplier.js';
-import CustomerModel from '../models/customer.js';
-import SaleModel from '../models/sale.js';
-import PurchaseModel from '../models/purchase.js';
-import ComandaModel from '../models/comanda.js';
+const express = require('express');
+const ProductModel = require('../models/product');
+const SupplierModel = require('../models/supplier');
+const CustomerModel = require('../models/customer');
+const SaleModel = require('../models/sale');
+const PurchaseModel = require('../models/purchase');
+const ComandaModel = require('../models/comanda');
 const router = express.Router();
 
 router.get('/', async (req, res) => {
@@ -41,4 +41,4 @@ router.get('/', async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;

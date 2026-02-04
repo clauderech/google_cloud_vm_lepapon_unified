@@ -1,6 +1,6 @@
 
-import express from 'express';
-import SupplierModel from '../models/supplier.js';
+const express = require('express');
+const SupplierModel = require('../models/supplier');
 const router = express.Router();
 
 // Listar todos os fornecedores
@@ -54,4 +54,4 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;
