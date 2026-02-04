@@ -3,10 +3,9 @@
 // Uso: node wsNewOrderClient.js ou importe como módulo
 
 import WebSocket from 'ws';
-import { join } from 'path';
-const ComandaModel = require(join(__dirname, '../models/comanda'));
-const CustomerModel = require(join(__dirname, '../models/customer'));
-const ProductModel = require(join(__dirname, '../models/product'));
+import ComandaModel from '../models/comanda.js';
+import CustomerModel from '../models/customer.js';
+import ProductModel from '../models/product.js';
 
 const WS_URL = process.env.LEPAPON_WS_URL || 'ws://lepapon.com.br:3001';
 const TOKEN = process.env.LEPAPON_WS_TOKEN || 'SEU_TOKEN_AQUI';
@@ -127,7 +126,7 @@ function createWebSocketClient() {
 }
 
 // Se rodar diretamente, inicia o cliente
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   createWebSocketClient();
 }
 
