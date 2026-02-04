@@ -1,6 +1,6 @@
 'use strict';
 
-import { db } from '../config/knex';
+import { db } from '../config/knex.js';
 
 const CrediarioModel = {
     async addMonthlyPayment(monthlyAccountId, paymentDate, amount, paymentMethod, receiptNumber, receivedBy, notes) {

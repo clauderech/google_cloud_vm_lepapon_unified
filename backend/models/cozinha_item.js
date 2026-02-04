@@ -1,4 +1,4 @@
-import { db } from '../config/knex';
+import { db } from '../config/knex.js';
 
 const CozinhaItem = {
   async create(data) {

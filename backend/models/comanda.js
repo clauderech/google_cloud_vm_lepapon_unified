@@ -1,6 +1,6 @@
 'use strict';
 
-import { db } from '../config/knex';
+import { db } from '../config/knex.js';
 
 const ComandaModel = {
   async list() {
