@@ -14,7 +14,7 @@ console.log('DEBUG ENV: WHATSAPP_FLOW_PRIVATE_KEY_PATH =', process.env.WHATSAPP_
 
 import express, { json } from 'express';
 
-import webhookRoutes from './routes/webhook-whatsapp-meta';
+import webhookRoutes from './routes/webhook-whatsapp-meta.js';
 
 const PORT = Number.parseInt(process.env.PORT || '3000', 10);
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || '';
