@@ -82,7 +82,7 @@ function createWebSocketClient() {
     ws.on('message', (data) => {
       try {
         const msg = JSON.parse(data);
-        if (msg.event === 'new_order' && msg.data && msg.data.session_id) {
+        if (msg.event === 'custom_message' && msg.data && msg.data.session_id) {
           console.log(`[WS] Novo pedido recebido! session_id: ${msg.data.session_id}`);
           handleNewOrder(msg);
         } else {
