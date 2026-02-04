@@ -1,6 +1,6 @@
 'use strict';
 
-import { db } from '../config/knex';
+import { db } from '../config/knex.js';
 
 function extractTextFromMessage(message) {
   const type = message?.type;

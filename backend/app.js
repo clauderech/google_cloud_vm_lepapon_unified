@@ -5,7 +5,8 @@ require('dotenv').config({ path: '/var/www/google_cloud_vm_lepapon_unified/.env'
 
 import express from 'express';
 import cors from 'cors';
-import { json, urlencoded } from 'body-parser';
+import pkg from 'body-parser';
+const { json, urlencoded } = pkg;
 import knex from 'knex';
 
 // Importar config
