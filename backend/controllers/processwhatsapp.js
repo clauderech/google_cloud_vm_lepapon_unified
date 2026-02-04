@@ -1,7 +1,6 @@
-'use strict';
 
-const { 
-  parseWebhookPayload, 
+import {
+  parseWebhookPayload,
   persistParsedWebhook,
   getUserIdByIdentifier,
   persistUserIdentification,
@@ -15,14 +14,21 @@ const {
   updateOrderFromFlow,
   validateFlowTokenOwnership,
   logSecurityEvent,
-} = require('../models/processwhatsapp');
-const { createWebhookBatcher, toInt } = require('../models/webhookBatcher');
-const { enqueueFirstResponse, enqueueOrderAck } = require('../models/whatsappResponder');
-const { createFlowProcessor } = require('../models/whatsappFlow');
-const { createFlowScreenNavigator, CATEGORY_PRODUCTS } = require('../models/whatsappFlowScreens');
-const { sendCatalogMessage, sendFlowMessage } = require('../models/whatsappCloudApi');
-const { createQueue } = require('../models/asyncQueue');
-const { createSessionStore } = require('../models/sessionStore');
+} from '../models/processwhatsapp.js';
+import webhookBatcherModule from '../models/webhookBatcher.js';
+const { createWebhookBatcher, toInt } = webhookBatcherModule;
+import whatsappResponderModule from '../models/whatsappResponder.js';
+const { enqueueFirstResponse, enqueueOrderAck } = whatsappResponderModule;
+import whatsappFlowModule from '../models/whatsappFlow.js';
+const { createFlowProcessor } = whatsappFlowModule;
+import whatsappFlowScreensModule from '../models/whatsappFlowScreens.js';
+const { createFlowScreenNavigator, CATEGORY_PRODUCTS } = whatsappFlowScreensModule;
+import whatsappCloudApiModule from '../models/whatsappCloudApi.js';
+const { sendCatalogMessage, sendFlowMessage } = whatsappCloudApiModule;
+import asyncQueueModule from '../models/asyncQueue.js';
+const { createQueue } = asyncQueueModule;
+import sessionStoreModule from '../models/sessionStore.js';
+const { createSessionStore } = sessionStoreModule;
 
 const webhookBatcher = createWebhookBatcher({
   persistFn: persistParsedWebhook,
