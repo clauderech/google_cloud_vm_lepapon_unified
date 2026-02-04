@@ -44,8 +44,11 @@ function createWebSocketClient() {
         notes: item.Obs || null,
         status: 'pending'
       }));
+      // Gerar id único para a comanda
+      const comandaId = `comanda_${Date.now()}_${Math.floor(Math.random()*100000)}`;
       // Criar comanda
       const comandaPayload = {
+        id: comandaId,
         customer_id,
         customer_name,
         total,
@@ -53,7 +56,7 @@ function createWebSocketClient() {
         opened_at,
         notes
       };
-      const [comandaId] = await ComandaModel.create(comandaPayload);
+      const [createdId] = await ComandaModel.create(comandaPayload);
       await ComandaModel.addItems(comandaId, items);
       console.log(`[WS] Comanda criada automaticamente para telefone ${sessionId} (comandaId: ${comandaId})`);
     } catch (err) {
