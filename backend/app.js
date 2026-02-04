@@ -53,7 +53,7 @@ app.use((req, res, next) => {
   next();
 });
 // Rotas de produtos
-import productsRouter from './routes/products';
+import productsRouter from './routes/products.js';
 app.use('/api/products', productsRouter);
 // Rotas de fornecedores
 import suppliersRouter from './routes/suppliers';
