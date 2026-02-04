@@ -33,7 +33,7 @@ function createWebSocketClient() {
       const customer_id = customer ? customer.id : null;
       const customer_name = customer ? customer.nome : (novo.itensPedido?.[0]?.nome_cliente || '');
       const total = novo.valorTotal || 0;
-      const opened_at = novo.timestamp || new Date().toISOString();
+      const opened_at = formatDateForMySQL(novo.timestamp || new Date());
       const notes = novo.itensPedido?.[0]?.Obs || '';
       // Montar itens
       const items = (novo.itensPedido || []).map(item => ({
@@ -112,3 +112,13 @@ if (require.main === module) {
 }
 
 module.exports = { createWebSocketClient };
+
+function formatDateForMySQL(date) {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0') + ' ' +
+    String(d.getHours()).padStart(2, '0') + ':' +
+    String(d.getMinutes()).padStart(2, '0') + ':' +
+    String(d.getSeconds()).padStart(2, '0');
+}
