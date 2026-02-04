@@ -1,6 +1,5 @@
-'use strict';
 
-import { join } from 'path';
+const { join } = require('path');
 
 const apps = [
   {
