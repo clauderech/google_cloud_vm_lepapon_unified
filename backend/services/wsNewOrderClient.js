@@ -2,10 +2,10 @@
 // Cliente WebSocket para escutar eventos "new_order" do LePapon
 // Uso: node wsNewOrderClient.js ou importe como módulo
 
-import WebSocket from 'ws';
-import ComandaModel from '../models/comanda.js';
-import CustomerModel from '../models/customer.js';
-import ProductModel from '../models/product.js';
+const WebSocket = require('ws');
+const ComandaModel = require('../models/comanda');
+const CustomerModel = require('../models/customer');
+const ProductModel = require('../models/product');
 
 const WS_URL = process.env.LEPAPON_WS_URL || 'ws://lepapon.com.br:3001';
 const TOKEN = process.env.LEPAPON_WS_TOKEN || 'SEU_TOKEN_AQUI';
@@ -126,11 +126,11 @@ function createWebSocketClient() {
 }
 
 // Se rodar diretamente, inicia o cliente
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (require.main === module) {
   createWebSocketClient();
 }
 
-export default { createWebSocketClient };
+module.exports = { createWebSocketClient };
 
 function formatDateForMySQL(date) {
   const d = typeof date === 'string' ? new Date(date) : date;

@@ -1,8 +1,9 @@
-'use strict';
+"use strict";
 
-import { join } from 'path';
+const { join } = require('path');
 
-export const apps = [
+module.exports = {
+  apps: [
   {
     name: 'webhook-whatsapp-meta',
     script: './processwhatsapp.js',
@@ -69,15 +70,16 @@ export const apps = [
     env: {
       NODE_ENV: 'development',
     },
-  },
-];
-export const deploy = {
-  production: {
-    user: process.env.DEPLOY_USER || 'deploy',
-    host: process.env.DEPLOY_HOST || 'your-server.com',
-    ref: 'origin/main',
-    repo: 'git@github.com:your-repo/your-project.git',
-    path: '/var/www/your-app',
-    'post-deploy': 'npm install && npm run build',
-  },
+  }
+],
+  deploy: {
+    production: {
+      user: process.env.DEPLOY_USER || 'deploy',
+      host: process.env.DEPLOY_HOST || 'your-server.com',
+      ref: 'origin/main',
+      repo: 'git@github.com:your-repo/your-project.git',
+      path: '/var/www/your-app',
+      'post-deploy': 'npm install && npm run build',
+    },
+  }
 };

@@ -1,47 +1,37 @@
 'use strict';
 
 // Carregar .env do caminho absoluto do servidor
-import dotenv from 'dotenv';
-dotenv.config({ path: '/var/www/google_cloud_vm_lepapon_unified/.env' });
+require('dotenv').config({ path: '/var/www/google_cloud_vm_lepapon_unified/.env' });
 
-import express from 'express';
-import cors from 'cors';
-import bodyParser from 'body-parser';
-import knex from 'knex';
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const knex = require('knex');
 
-// Importar config
-import { buildKnexConfig } from './config/knex.js';
+const { buildKnexConfig } = require('./config/knex');
 
-// Inicializar Express
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Iniciar cliente WebSocket para eventos new_order
-import { createWebSocketClient } from './services/wsNewOrderClient.js';
 try {
+  const { createWebSocketClient } = require('./services/wsNewOrderClient');
   createWebSocketClient();
   console.log('[WS] Cliente WebSocket new_order iniciado');
 } catch (err) {
   console.error('[WS] Falha ao iniciar cliente WebSocket:', err.message);
 }
 
-// Middlewares
 app.use(cors({
   origin: process.env.CORS_ORIGIN || '*',
   credentials: true
 }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(json({ limit: '10mb' }));
-app.use(urlencoded({ limit: '10mb', extended: true }));
 
-// Inicializar banco de dados
 let db;
 try {
-  // LOG TEMPORÁRIO PARA DEBUG DO .ENV
   console.log('DEBUG ENV: NODE_ENV =', process.env.NODE_ENV);
   console.log('DEBUG ENV: WHATSAPP_FLOW_PRIVATE_KEY_PATH =', process.env.WHATSAPP_FLOW_PRIVATE_KEY_PATH);
-  // FIM DO LOG TEMPORÁRIO
   const knexConfig = buildKnexConfig();
   db = knex(knexConfig);
   console.log('[DB] Conectado ao banco de dados lepapon_unified_db');
@@ -50,13 +40,11 @@ try {
   process.exit(1);
 }
 
-// Middleware para injetar db nas rotas
 app.use((req, res, next) => {
   req.db = db;
   next();
 });
-// Rotas de produtos
-import productsRouter from './routes/products.js';
+const productsRouter = require('./routes/products');
 app.use('/api/products', productsRouter);
 // Rotas de fornecedores
 import suppliersRouter from './routes/suppliers.js';
