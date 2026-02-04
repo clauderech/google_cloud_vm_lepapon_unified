@@ -6,6 +6,7 @@ const WebSocket = require('ws');
 const path = require('path');
 const ComandaModel = require(path.join(__dirname, '../models/comanda'));
 const CustomerModel = require(path.join(__dirname, '../models/customer'));
+const ProductModel = require(path.join(__dirname, '../models/product'));
 
 const WS_URL = process.env.LEPAPON_WS_URL || 'ws://lepapon.com.br:3001';
 const TOKEN = process.env.LEPAPON_WS_TOKEN || 'SEU_TOKEN_AQUI';
@@ -35,15 +36,27 @@ function createWebSocketClient() {
       const total = novo.valorTotal || 0;
       const opened_at = formatDateForMySQL(novo.timestamp || new Date());
       const notes = novo.itensPedido?.[0]?.Obs || '';
-      // Montar itens
-      const items = (novo.itensPedido || []).map(item => ({
-        product_id: item.id,
-        product_name: item.nome_produto || null,
-        quantity: item.Qtde,
-        unit_price: null,
-        notes: item.Obs || null,
-        status: 'pending'
-      }));
+      // Montar itens (buscar nome do produto se necessário)
+      const items = [];
+      for (const item of (novo.itensPedido || [])) {
+        let productName = item.nome_produto || null;
+        if (!productName && item.id) {
+          try {
+            const product = await ProductModel.getById(item.id);
+            if (product && product.name) productName = product.name;
+          } catch (e) {
+            // Se não encontrar, deixa vazio
+          }
+        }
+        items.push({
+          product_id: item.id,
+          product_name: productName || 'Produto',
+          quantity: item.Qtde,
+          unit_price: null,
+          notes: item.Obs || null,
+          status: 'pending'
+        });
+      }
       // Gerar id único para a comanda
       const comandaId = `comanda_${Date.now()}_${Math.floor(Math.random()*100000)}`;
       // Criar comanda
