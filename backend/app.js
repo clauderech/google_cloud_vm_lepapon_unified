@@ -1,6 +1,6 @@
 
 import dotenv from 'dotenv';
-dotenv.config({ path: '/var/www/google_cloud_vm_lepapon_unified/.env' });
+dotenv.config();
 
 import express from 'express';
 import cors from 'cors';
