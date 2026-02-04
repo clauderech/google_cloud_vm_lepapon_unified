@@ -1,4 +1,4 @@
-'use strict';
+
 
 /**
  * Remove campos redundantes/desnecessários de whatsapp_order_items
@@ -20,7 +20,7 @@
  * - created_at, updated_at: Timestamps
  */
 
-exports.up = async function up(knex) {
+export async function up(knex) {
   const hasColumn = await knex.schema.hasColumn('whatsapp_order_items', 'product_name');
   
   if (hasColumn) {
@@ -35,7 +35,7 @@ exports.up = async function up(knex) {
   }
 };
 
-exports.down = async function down(knex) {
+export async function down(knex) {
   const hasColumn = await knex.schema.hasColumn('whatsapp_order_items', 'product_name');
   
   if (!hasColumn) {

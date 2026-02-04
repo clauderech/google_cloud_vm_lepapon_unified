@@ -1,7 +1,6 @@
-'use strict';
 
-const express = require('express');
-const SaleModel = require('../models/sale');
+import express from 'express';
+import SaleModel from '../models/sale.js';
 const router = express.Router();
 
 // Listar todas as vendas
@@ -55,4 +54,4 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

@@ -1,7 +1,6 @@
-'use strict';
 
-const express = require('express');
-const SupplierModel = require('../models/supplier');
+import express from 'express';
+import SupplierModel from '../models/supplier.js';
 const router = express.Router();
 
 // Listar todos os fornecedores
@@ -55,4 +54,4 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

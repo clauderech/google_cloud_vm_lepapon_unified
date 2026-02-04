@@ -65,4 +65,4 @@ class StockSyncService {
   }
 }
 
-module.exports = StockSyncService;
+export default StockSyncService;

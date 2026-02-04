@@ -1,11 +1,11 @@
-'use strict';
+
 
 /**
  * Garante idempotência do "first response" (evita enviar o template duas vezes
  * para a mesma mensagem caso o webhook seja reenviado).
  */
 
-exports.up = async function up(knex) {
+export async function up(knex) {
   const hasTable = await knex.schema.hasTable('whatsapp_first_responses');
   if (hasTable) return;
 
@@ -16,8 +16,8 @@ exports.up = async function up(knex) {
 
     table.unique(['wa_message_id']);
   });
-};
+}
 
-exports.down = async function down(knex) {
+export async function down(knex) {
   await knex.schema.dropTableIfExists('whatsapp_first_responses');
-};
+}

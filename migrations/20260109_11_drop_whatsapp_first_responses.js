@@ -1,11 +1,11 @@
-'use strict';
+
 
 /**
  * Remove tabela obsoleta whatsapp_first_responses
  * Agora usamos whatsapp_messages com status de entrega
  */
 
-exports.up = async function up(knex) {
+export async function up(knex) {
   const hasTable = await knex.schema.hasTable('whatsapp_first_responses');
   
   if (hasTable) {
@@ -14,7 +14,7 @@ exports.up = async function up(knex) {
   }
 };
 
-exports.down = async function down(knex) {
+export async function down(knex) {
   // Não recriamos a tabela obsoleta
   return Promise.resolve();
-};
+}

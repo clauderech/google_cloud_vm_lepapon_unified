@@ -1,7 +1,7 @@
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
 /**
  * Importa produtos do catálogo CSV para whatsapp_catalog_products
@@ -9,6 +9,7 @@ const path = require('path');
  */
 
 exports.up = async function up(knex) {
+export async function up(knex) {
   const hasData = await knex('whatsapp_catalog_products').count('* as count').first();
   
   if (hasData?.count > 0) {
@@ -75,6 +76,7 @@ exports.up = async function up(knex) {
 };
 
 exports.down = async function down(knex) {
+export async function down(knex) {
   await knex('whatsapp_catalog_products').delete();
 };
 

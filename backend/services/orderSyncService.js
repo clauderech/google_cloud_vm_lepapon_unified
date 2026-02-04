@@ -62,4 +62,4 @@ class OrderSyncService {
   }
 }
 
-module.exports = OrderSyncService;
+export default OrderSyncService;

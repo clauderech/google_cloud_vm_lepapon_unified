@@ -1,11 +1,11 @@
-'use strict';
+
 
 /**
  * Cria tabela de mapeamento bidirecional de IDs
  * Rastreia transições: Phone → Username → Business-Scoped ID
  */
 
-exports.up = async function up(knex) {
+export async function up(knex) {
   const hasTable = await knex.schema.hasTable('whatsapp_user_identification_map');
   
   if (!hasTable) {
@@ -43,6 +43,6 @@ exports.up = async function up(knex) {
   }
 };
 
-exports.down = async function down(knex) {
+export async function down(knex) {
   await knex.schema.dropTableIfExists('whatsapp_user_identification_map');
-};
+}

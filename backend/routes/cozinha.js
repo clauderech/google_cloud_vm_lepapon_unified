@@ -1,6 +1,7 @@
-const express = require('express');
+
+import express from 'express';
 const router = express.Router();
-const CozinhaItem = require('../models/cozinha_item');
+import CozinhaItem from '../models/cozinha_item.js';
 
 // Listar itens do painel (filtros: prioridade, status, responsável)
 router.get('/items', async (req, res) => {
@@ -30,4 +31,4 @@ router.get('/items/:id/history', async (req, res) => {
   res.json(history);
 });
 
-module.exports = router;
+export default router;

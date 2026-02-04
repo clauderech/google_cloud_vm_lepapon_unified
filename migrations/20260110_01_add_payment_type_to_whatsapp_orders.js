@@ -1,10 +1,10 @@
-'use strict';
+
 
 /**
  * Adiciona coluna payment_type à tabela whatsapp_orders
  */
 
-exports.up = async function up(knex) {
+export async function up(knex) {
   const hasColumn = await knex.schema.hasColumn('whatsapp_orders', 'payment_type');
   
   if (!hasColumn) {
@@ -25,7 +25,7 @@ exports.up = async function up(knex) {
   }
 };
 
-exports.down = async function down(knex) {
+export async function down(knex) {
   const hasColumn = await knex.schema.hasColumn('whatsapp_orders', 'payment_type');
   
   if (hasColumn) {

@@ -1,7 +1,6 @@
-'use strict';
 
-const express = require('express');
-const ProductModel = require('../models/product');
+import express from 'express';
+import ProductModel from '../models/product.js';
 const router = express.Router();
 
 
@@ -80,4 +79,4 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

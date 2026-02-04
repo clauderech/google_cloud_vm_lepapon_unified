@@ -1,4 +1,4 @@
-'use strict';
+
 
 /**
  * Cria tabela para persistir interações com buttons e lists do WhatsApp
@@ -15,7 +15,7 @@
  * - created_at: Data de criação
  */
 
-exports.up = async function up(knex) {
+export async function up(knex) {
   const hasTable = await knex.schema.hasTable('whatsapp_interactions');
   
   if (!hasTable) {
@@ -57,7 +57,7 @@ exports.up = async function up(knex) {
   }
 };
 
-exports.down = async function down(knex) {
+export async function down(knex) {
   console.log('[Migration] Removendo tabela whatsapp_interactions');
   await knex.schema.dropTableIfExists('whatsapp_interactions');
 };

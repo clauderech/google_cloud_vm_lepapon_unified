@@ -1,11 +1,11 @@
-'use strict';
+
 
 /**
  * Cria tabela de log de auditoria de segurança
  * Rastreia tentativas suspeitas de acesso, violações de token, etc
  */
 
-exports.up = async function up(knex) {
+export async function up(knex) {
   const hasTable = await knex.schema.hasTable('security_audit_log');
   
   if (!hasTable) {
@@ -51,6 +51,6 @@ exports.up = async function up(knex) {
   }
 };
 
-exports.down = async function down(knex) {
+export async function down(knex) {
   await knex.schema.dropTableIfExists('security_audit_log');
-};
+}

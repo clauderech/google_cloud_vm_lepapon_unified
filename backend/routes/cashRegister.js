@@ -1,8 +1,7 @@
-'use strict';
 
-const express = require('express');
+import express from 'express';
+import { db } from '../config/knex.js';
 const router = express.Router();
-const { db } = require('../config/knex');
 
 // Abrir caixa
 router.post('/open', async (req, res) => {
@@ -165,4 +164,4 @@ router.post('/:id/movements', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

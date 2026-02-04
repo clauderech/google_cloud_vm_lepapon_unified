@@ -62,4 +62,4 @@ class UserSyncService {
   }
 }
 
-module.exports = UserSyncService;
+export default UserSyncService;

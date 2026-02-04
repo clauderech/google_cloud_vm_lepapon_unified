@@ -1,11 +1,11 @@
-'use strict';
+
 
 /**
  * Cria tabela de sessões ativas de usuário
  * Substitui SessionStore em memória, com persistência
  */
 
-exports.up = async function up(knex) {
+export async function up(knex) {
   const hasTable = await knex.schema.hasTable('whatsapp_sessions');
   
   if (!hasTable) {
@@ -44,6 +44,6 @@ exports.up = async function up(knex) {
   }
 };
 
-exports.down = async function down(knex) {
+export async function down(knex) {
   await knex.schema.dropTableIfExists('whatsapp_sessions');
-};
+}

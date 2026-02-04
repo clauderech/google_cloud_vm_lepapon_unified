@@ -1,10 +1,10 @@
-'use strict';
+
 
 /**
  * Cria tabelas para persistir mensagens e statuses do WhatsApp Cloud API.
  */
 
-exports.up = async function up(knex) {
+export async function up(knex) {
   const hasMessages = await knex.schema.hasTable('whatsapp_messages');
   if (!hasMessages) {
     await knex.schema.createTable('whatsapp_messages', (table) => {
@@ -49,7 +49,7 @@ exports.up = async function up(knex) {
   }
 };
 
-exports.down = async function down(knex) {
+export async function down(knex) {
   await knex.schema.dropTableIfExists('whatsapp_statuses');
   await knex.schema.dropTableIfExists('whatsapp_messages');
-};
+}

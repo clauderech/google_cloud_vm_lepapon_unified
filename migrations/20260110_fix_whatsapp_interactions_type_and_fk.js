@@ -1,4 +1,4 @@
-'use strict';
+
 
 /**
  * Corrige tipo de dado e foreign key em whatsapp_interactions
@@ -9,7 +9,7 @@
  * - Garante referencial integrity com CASCADE delete
  */
 
-exports.up = async function up(knex) {
+export async function up(knex) {
   const hasTable = await knex.schema.hasTable('whatsapp_interactions');
   
   if (hasTable) {
@@ -46,7 +46,7 @@ exports.up = async function up(knex) {
   }
 };
 
-exports.down = async function down(knex) {
+export async function down(knex) {
   const hasTable = await knex.schema.hasTable('whatsapp_interactions');
   
   if (hasTable) {

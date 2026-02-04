@@ -1,11 +1,11 @@
-'use strict';
+
 
 /**
  * Cria tabela para rastrear sessões de Flow
  * Mapeia flow_token (identificador da sessão) com user_id e order_id
  */
 
-exports.up = async function up(knex) {
+export async function up(knex) {
   const hasTable = await knex.schema.hasTable('whatsapp_flow_sessions');
   
   if (!hasTable) {
@@ -54,6 +54,6 @@ exports.up = async function up(knex) {
   }
 };
 
-exports.down = async function down(knex) {
+export async function down(knex) {
   await knex.schema.dropTableIfExists('whatsapp_flow_sessions');
-};
+}

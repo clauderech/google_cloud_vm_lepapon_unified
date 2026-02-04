@@ -1,11 +1,11 @@
-'use strict';
+
 
 /**
  * Atualiza tabela whatsapp_messages com novo status de entrega
  * Adiciona relacionamento com user_id
  */
 
-exports.up = async function up(knex) {
+export async function up(knex) {
   const hasColumn = await knex.schema.hasColumn('whatsapp_messages', 'delivery_status');
   
   if (!hasColumn) {
@@ -42,7 +42,7 @@ exports.up = async function up(knex) {
   }
 };
 
-exports.down = async function down(knex) {
+export async function down(knex) {
   const hasColumn = await knex.schema.hasColumn('whatsapp_messages', 'delivery_status');
   
   if (hasColumn) {

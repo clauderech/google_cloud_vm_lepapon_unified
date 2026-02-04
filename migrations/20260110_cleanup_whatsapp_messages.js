@@ -1,4 +1,4 @@
-'use strict';
+
 
 /**
  * Remove campos desnecessários da tabela whatsapp_messages
@@ -22,7 +22,7 @@
  * - interactive: Persistido em whatsapp_flow_sessions ou whatsapp_interactions
  */
 
-exports.up = async function up(knex) {
+export async function up(knex) {
   const hasColumn = await knex.schema.hasColumn('whatsapp_messages', 'wa_from');
   
   if (hasColumn) {
@@ -33,7 +33,7 @@ exports.up = async function up(knex) {
   }
 };
 
-exports.down = async function down(knex) {
+export async function down(knex) {
   const hasColumn = await knex.schema.hasColumn('whatsapp_messages', 'wa_from');
   
   if (!hasColumn) {

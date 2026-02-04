@@ -1,10 +1,10 @@
-'use strict';
+
 
 /**
  * Cria tabela de itens de pedidos
  */
 
-exports.up = async function up(knex) {
+export async function up(knex) {
   const hasTable = await knex.schema.hasTable('whatsapp_order_items');
   
   if (!hasTable) {
@@ -45,6 +45,6 @@ exports.up = async function up(knex) {
   }
 };
 
-exports.down = async function down(knex) {
+export async function down(knex) {
   await knex.schema.dropTableIfExists('whatsapp_order_items');
-};
+}

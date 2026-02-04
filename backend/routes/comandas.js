@@ -1,11 +1,11 @@
-const CashModel = require('../models/cash');
-const express = require('express');
+import CashModel from '../models/cash.js';
+import express from 'express';
 const router = express.Router();
-const SaleModel = require('../models/sale');
-const SaleItemModel = require('../models/sale_item');
-const ProductModel = require('../models/product');
-const CrediarioModel = require('../models/crediario');
-const CozinhaItem = require('../models/cozinha_item');
+import SaleModel from '../models/sale.js';
+import SaleItemModel from '../models/sale_item.js';
+import ProductModel from '../models/product.js';
+import CrediarioModel from '../models/crediario.js';
+import CozinhaItem from '../models/cozinha_item.js';
 // Finalizar comanda (pagamento normal ou crediário)
 router.post('/:id/close', async (req, res) => {
   /*
@@ -132,9 +132,8 @@ function formatDateForMySQL(date) {
     res.status(500).json({ error: 'Erro ao fechar comanda', details: err.message, stack: err.stack });
   }
 });
-'use strict';
 
-const ComandaModel = require('../models/comanda');
+import ComandaModel from '../models/comanda.js';
 
 // Listar todas as comandas
 router.get('/', async (req, res) => {
@@ -265,7 +264,7 @@ router.post('/crediario/:monthlyAccountId/pay', async (req, res) => {
 router.get('/crediario/accounts', async (req, res) => {
   try {
     const { customerId, monthYear } = req.query;
-    const db = require('../config/knex').db;
+    const { db } = await import('../config/knex.js');
     let query = db('monthly_accounts')
       .join('customers', 'monthly_accounts.customer_id', 'customers.id')
       .select('monthly_accounts.*', 'customers.nome as customer_name');
@@ -282,7 +281,7 @@ router.get('/crediario/accounts', async (req, res) => {
 router.get('/crediario/:monthlyAccountId/purchases', async (req, res) => {
   try {
     const { monthlyAccountId } = req.params;
-    const db = require('../config/knex').db;
+    const { db } = await import('../config/knex.js');
     const purchases = await db('monthly_purchases').where('monthly_account_id', monthlyAccountId).orderBy('purchase_date', 'desc');
     res.json(purchases);
   } catch (err) {
@@ -294,7 +293,7 @@ router.get('/crediario/:monthlyAccountId/purchases', async (req, res) => {
 router.get('/crediario/:monthlyAccountId/payments', async (req, res) => {
   try {
     const { monthlyAccountId } = req.params;
-    const db = require('../config/knex').db;
+    const { db } = await import('../config/knex.js');
     const payments = await db('monthly_payments').where('monthly_account_id', monthlyAccountId).orderBy('payment_date', 'desc');
     res.json(payments);
   } catch (err) {
@@ -302,4 +301,4 @@ router.get('/crediario/:monthlyAccountId/payments', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

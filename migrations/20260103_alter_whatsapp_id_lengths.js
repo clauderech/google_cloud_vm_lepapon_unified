@@ -1,4 +1,4 @@
-'use strict';
+
 
 /**
  * Ajusta o tamanho dos IDs do WhatsApp (wamid...) para evitar ER_DATA_TOO_LONG.
@@ -57,12 +57,13 @@ async function alterFirstResponses(knex) {
   });
 }
 
-exports.up = async function up(knex) {
+
+export async function up(knex) {
   await alterMessages(knex);
   await alterStatuses(knex);
   await alterFirstResponses(knex);
-};
+}
 
-exports.down = async function down(knex) {
+export async function down(knex) {
   // Não reduzimos de volta para evitar perder dados.
-};
+}

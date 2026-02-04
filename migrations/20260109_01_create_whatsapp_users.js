@@ -1,11 +1,11 @@
-'use strict';
+
 
 /**
  * Cria tabela de usuários/contatos do WhatsApp
  * Core table para identificação com suporte a business-scoped user IDs
  */
 
-exports.up = async function up(knex) {
+export async function up(knex) {
   const hasTable = await knex.schema.hasTable('whatsapp_users');
   
   if (!hasTable) {
@@ -47,6 +47,6 @@ exports.up = async function up(knex) {
   }
 };
 
-exports.down = async function down(knex) {
+export async function down(knex) {
   await knex.schema.dropTableIfExists('whatsapp_users');
-};
+}

@@ -1,10 +1,10 @@
-'use strict';
+
 
 /**
  * Cria tabela de agregações analíticas para ML e relatórios
  */
 
-exports.up = async function up(knex) {
+export async function up(knex) {
   const hasTable = await knex.schema.hasTable('whatsapp_analytics');
   
   if (!hasTable) {
@@ -53,6 +53,6 @@ exports.up = async function up(knex) {
   }
 };
 
-exports.down = async function down(knex) {
+export async function down(knex) {
   await knex.schema.dropTableIfExists('whatsapp_analytics');
-};
+}

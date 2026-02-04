@@ -1,6 +1,5 @@
-'use strict';
 
-const knex = require('knex');
+import knex from 'knex';
 
 function parseBoolean(value) {
   if (value === undefined || value === null) return false;
@@ -55,9 +54,7 @@ function buildKnexConfig() {
   };
 }
 
+
 const db = knex(buildKnexConfig());
 
-module.exports = {
-  db,
-  buildKnexConfig,
-};
+export { db, buildKnexConfig };

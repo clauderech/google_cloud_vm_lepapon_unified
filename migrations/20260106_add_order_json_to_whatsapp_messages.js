@@ -1,4 +1,4 @@
-'use strict';
+
 
 /**
  * NO-OP
@@ -7,10 +7,10 @@
  * na tabela `whatsapp_messages`, porém neste momento não queremos modificar o DB.
  */
 
-exports.up = async function up(_knex) {
+export async function up(_knex) {
   // intencionalmente vazio
-};
+}
 
-exports.down = async function down(_knex) {
+export async function down(_knex) {
   // intencionalmente vazio
-};
+}

@@ -1,7 +1,6 @@
-'use strict';
 
-const express = require('express');
-const PurchaseModel = require('../models/purchase');
+import express from 'express';
+import PurchaseModel from '../models/purchase.js';
 const router = express.Router();
 
 // Listar todas as compras
@@ -55,4 +54,4 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
