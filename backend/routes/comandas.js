@@ -133,7 +133,7 @@ function formatDateForMySQL(date) {
   }
 });
 
-import ComandaModel from '../models/comanda.js';
+const ComandaModel = require('../models/comanda');
 
 // Listar todas as comandas
 router.get('/', async (req, res) => {
@@ -264,7 +264,7 @@ router.post('/crediario/:monthlyAccountId/pay', async (req, res) => {
 router.get('/crediario/accounts', async (req, res) => {
   try {
     const { customerId, monthYear } = req.query;
-    const { db } = await import('../config/knex.js');
+    const { db } = require('../config/knex');
     let query = db('monthly_accounts')
       .join('customers', 'monthly_accounts.customer_id', 'customers.id')
       .select('monthly_accounts.*', 'customers.nome as customer_name');
@@ -281,7 +281,7 @@ router.get('/crediario/accounts', async (req, res) => {
 router.get('/crediario/:monthlyAccountId/purchases', async (req, res) => {
   try {
     const { monthlyAccountId } = req.params;
-    const { db } = await import('../config/knex.js');
+    const { db } = require('../config/knex');
     const purchases = await db('monthly_purchases').where('monthly_account_id', monthlyAccountId).orderBy('purchase_date', 'desc');
     res.json(purchases);
   } catch (err) {
@@ -293,7 +293,7 @@ router.get('/crediario/:monthlyAccountId/purchases', async (req, res) => {
 router.get('/crediario/:monthlyAccountId/payments', async (req, res) => {
   try {
     const { monthlyAccountId } = req.params;
-    const { db } = await import('../config/knex.js');
+    const { db } = require('../config/knex');
     const payments = await db('monthly_payments').where('monthly_account_id', monthlyAccountId).orderBy('payment_date', 'desc');
     res.json(payments);
   } catch (err) {
