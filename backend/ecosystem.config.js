@@ -80,8 +80,9 @@ const deploy = {
     path: '/var/www/your-app',
     'post-deploy': 'npm install && npm run build',
   },
+};
 
-export default {
+module.exports = {
   apps,
   deploy
 };
