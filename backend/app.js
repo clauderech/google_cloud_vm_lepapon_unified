@@ -15,6 +15,15 @@ const { buildKnexConfig } = require('./config/knex');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Iniciar cliente WebSocket para eventos new_order
+try {
+  const { createWebSocketClient } = require('./services/wsNewOrderClient');
+  createWebSocketClient();
+  console.log('[WS] Cliente WebSocket new_order iniciado');
+} catch (err) {
+  console.error('[WS] Falha ao iniciar cliente WebSocket:', err.message);
+}
+
 // Middlewares
 app.use(cors({
   origin: process.env.CORS_ORIGIN || '*',
