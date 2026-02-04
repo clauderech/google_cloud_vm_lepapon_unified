@@ -6,7 +6,7 @@ module.exports = {
   apps: [
   {
     name: 'webhook-whatsapp-meta',
-    script: './processwhatsapp.js',
+    script: './backend/processwhatsapp.js',
     cwd: __dirname,
     exec_mode: 'fork',
     instances: 1,
@@ -30,7 +30,7 @@ module.exports = {
   },
   {
     name: 'app-server',
-    script: './app.js',
+    script: './backend/app.js',
     cwd: __dirname,
     exec_mode: 'fork',
     instances: 1,
