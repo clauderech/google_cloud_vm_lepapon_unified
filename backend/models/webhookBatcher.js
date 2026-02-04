@@ -1,6 +1,6 @@
 'use strict';
 
-import { createQueue } from './asyncQueue';
+import { createQueue } from './asyncQueue.js';
 
 function toInt(value, fallback) {
   if (value === undefined || value === null) return fallback;
