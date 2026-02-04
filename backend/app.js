@@ -1,11 +1,12 @@
 'use strict';
 
 // Carregar .env do caminho absoluto do servidor
-require('dotenv').config({ path: '/var/www/google_cloud_vm_lepapon_unified/.env' });
+import dotenv from 'dotenv';
+dotenv.config({ path: '/var/www/google_cloud_vm_lepapon_unified/.env' });
 
 import express from 'express';
 import cors from 'cors';
-import { json, urlencoded } from 'body-parser';
+import bodyParser from 'body-parser';
 import knex from 'knex';
 
 // Importar config
@@ -16,8 +17,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Iniciar cliente WebSocket para eventos new_order
+import { createWebSocketClient } from './services/wsNewOrderClient.js';
 try {
-  const { createWebSocketClient } = require('./services/wsNewOrderClient');
   createWebSocketClient();
   console.log('[WS] Cliente WebSocket new_order iniciado');
 } catch (err) {
@@ -29,6 +30,8 @@ app.use(cors({
   origin: process.env.CORS_ORIGIN || '*',
   credentials: true
 }));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(json({ limit: '10mb' }));
 app.use(urlencoded({ limit: '10mb', extended: true }));
 
