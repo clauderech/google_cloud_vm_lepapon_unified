@@ -582,7 +582,7 @@ async function handleWebhookEvent(req, res) {
   }
 }
 
-module.exports = {
+export {
   handleVerifyWebhook,
   handleWebhookEvent,
 };
