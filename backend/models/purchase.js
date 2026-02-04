@@ -1,6 +1,6 @@
 'use strict';
 
-import { db } from '../config/knex';
+import { db } from '../config/knex.js';
 
 const PurchaseModel = {
   async list() {

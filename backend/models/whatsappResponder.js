@@ -1,7 +1,7 @@
 'use strict';
 
-import { db } from '../config/knex';
-import { createQueue } from './asyncQueue';
+import { db } from '../config/knex.js';
+import { createQueue } from './asyncQueue.js';
 import { buildTemplateComponentsFromEnv, sendTemplateMessage, sendTextMessage } from './whatsappCloudApi';
 
 function toInt(value, fallback) {
