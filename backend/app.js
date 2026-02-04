@@ -56,30 +56,30 @@ app.use((req, res, next) => {
 import productsRouter from './routes/products.js';
 app.use('/api/products', productsRouter);
 // Rotas de fornecedores
-import suppliersRouter from './routes/suppliers';
+import suppliersRouter from './routes/suppliers.js';
 app.use('/api/suppliers', suppliersRouter);
 // Rotas de clientes
-import customersRouter from './routes/customers';
+import customersRouter from './routes/customers.js';
 app.use('/api/customers', customersRouter);
 // Rotas de vendas
-import salesRouter from './routes/sales';
+import salesRouter from './routes/sales.js';
 app.use('/api/sales', salesRouter);
 // Rotas de compras
-import purchasesRouter from './routes/purchases';
+import purchasesRouter from './routes/purchases.js';
 app.use('/api/purchases', purchasesRouter);
 
 // Rotas de caixa
-import cashRegisterRouter from './routes/cashRegister';
+import cashRegisterRouter from './routes/cashRegister.js';
 app.use('/api/cash-register', cashRegisterRouter);
 // Rotas de comandas
-import comandasRouter from './routes/comandas';
+import comandasRouter from './routes/comandas.js';
 app.use('/api/comandas', comandasRouter);
 // Rota de estado inicial
-import initialStateRouter from './routes/initialState';
+import initialStateRouter from './routes/initialState.js';
 app.use('/api/initial-state', initialStateRouter);
 
 // Rotas de cozinha
-import cozinhaRouter from './routes/cozinha';
+import cozinhaRouter from './routes/cozinha.js';
 app.use('/api/cozinha', cozinhaRouter);
 
 // Health check
