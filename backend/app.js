@@ -9,7 +9,7 @@ import { json, urlencoded } from 'body-parser';
 import knex from 'knex';
 
 // Importar config
-import { buildKnexConfig } from './config/knex';
+import { buildKnexConfig } from './config/knex.js';
 
 // Inicializar Express
 const app = express();
