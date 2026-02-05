@@ -3,9 +3,10 @@
 // Uso: node wsNewOrderClient.js ou importe como módulo
 
 const WebSocket = require('ws');
-const ComandaModel = require('../models/comanda');
-const CustomerModel = require('../models/customer');
-const ProductModel = require('../models/product');
+const path = require('path');
+const ComandaModel = require(path.join(__dirname, '../models/comanda'));
+const CustomerModel = require(path.join(__dirname, '../models/customer'));
+const ProductModel = require(path.join(__dirname, '../models/product'));
 
 const WS_URL = process.env.LEPAPON_WS_URL || 'ws://lepapon.com.br:3001';
 const TOKEN = process.env.LEPAPON_WS_TOKEN || 'SEU_TOKEN_AQUI';
@@ -41,17 +42,16 @@ function createWebSocketClient() {
         let productName = null;
         let price = null;
         try {
-            const product = await ProductModel.getById(item.id);
+            const productId = String(item.id);
+            const product = await ProductModel.getById(productId);
             if (product) {
+            console.log('[WS] Produto encontrado no banco:', product);
                 productName = product.name;
                 price = product.price;
             }
-            console.log('[WS] Produto encontrado no banco:', product);
         } catch (e) {
             // Se não encontrar, deixa vazio
-            console.log('[WS] Erro ao buscar produto id:', item.id, e.message);
         }
-        console.log(`[WS] Adicionando item: id=${item.id}, nome=${productName || 'N/A'}, qtde=${item.Qtde}, price=${price || 'N/A'}`);
         items.push({
           product_id: item.id,
           product_name: productName,
