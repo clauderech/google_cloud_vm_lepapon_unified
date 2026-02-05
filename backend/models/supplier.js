@@ -1,5 +1,5 @@
 
-const db = require('../config/knex');
+const { db } = require('../config/knex');
 
 const SupplierModel = {
   async list() {
