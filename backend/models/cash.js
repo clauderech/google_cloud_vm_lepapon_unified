@@ -1,6 +1,5 @@
-'use strict';
 
-import { db } from '../config/knex.js';
+const { db } = require('../config/knex');
 
 const CashModel = {
   async getCurrentRegister() {
@@ -18,4 +17,4 @@ const CashModel = {
   }
 };
 
-export default CashModel;
+module.exports = CashModel;
