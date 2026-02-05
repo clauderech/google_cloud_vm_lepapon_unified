@@ -1,8 +1,7 @@
-'use strict';
 
-import { db } from '../config/knex.js';
-import { createQueue } from './asyncQueue.js';
-import { buildTemplateComponentsFromEnv, sendTemplateMessage, sendTextMessage } from './whatsappCloudApi.js';
+const { db } = require('../config/knex');
+const { createQueue } = require('./asyncQueue');
+const { buildTemplateComponentsFromEnv, sendTemplateMessage, sendTextMessage } = require('./whatsappCloudApi');
 
 function toInt(value, fallback) {
   const parsed = Number.parseInt(String(value), 10);
@@ -76,7 +75,8 @@ function enqueueOrderAck({ waMessageId, to, body }) {
   });
 }
 
-export default {
+
+module.exports = {
   enqueueFirstResponse,
   enqueueOrderAck,
   outboundQueue,
