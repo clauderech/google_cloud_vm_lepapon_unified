@@ -20,4 +20,4 @@ const SupplierModel = {
   }
 };
 
-export default SupplierModel;
+module.exports = SupplierModel;

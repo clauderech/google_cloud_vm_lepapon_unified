@@ -50,6 +50,7 @@ function createWebSocketClient() {
                 price = product.price;
             }
         } catch (e) {
+          console.warn('[WS] Produto não encontrado no banco:', productId);
             // Se não encontrar, deixa vazio
         }
         items.push({
