@@ -46,7 +46,7 @@ function createWebSocketClient() {
                 productName = product.name;
                 price = product.price;
             }
-            console.log('[WS] Produto encontrado no banco:', item.id, productName, price);
+            console.log('[WS] Produto encontrado no banco:', product);
         } catch (e) {
             // Se não encontrar, deixa vazio
             console.log('[WS] Erro ao buscar produto id:', item.id, e.message);
