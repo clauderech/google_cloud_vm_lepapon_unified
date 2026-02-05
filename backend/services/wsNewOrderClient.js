@@ -29,6 +29,7 @@ function createWebSocketClient() {
       console.log('[WS] Buscando cliente para telefone:', sessionId);
       try {
         customer = await CustomerModel.findByPhone(sessionId);
+        console.log('[WS] Cliente encontrado:', customer.nome, 'ID:', customer.id);
       } catch (e) {
         // Se não existir, segue sem customer
       }
