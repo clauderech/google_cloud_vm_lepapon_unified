@@ -1,6 +1,6 @@
 'use strict';
 
-import { db } from '../config/knex.js';
+const { db } = require('../config/knex');
 
 function extractTextFromMessage(message) {
   const type = message?.type;
@@ -809,7 +809,7 @@ async function logSecurityEvent(eventType, userId, phoneNumber, details) {
   }
 }
 
-export {
+module.exports = {
   extractTextFromMessage,
   extractMediaFromMessage,
   parseWebhookPayload,
