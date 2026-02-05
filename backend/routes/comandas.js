@@ -168,7 +168,12 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     console.log('[COMANDA][CREATE][REQ]', { payload: req.body });
-    const result = await ComandaModel.create(req.body);
+    // Garante que customer_fone será preenchido se houver customer ou telefone no body
+    const comandaPayload = {
+      ...req.body,
+      customer_fone: req.body.customer_fone || (req.body.customer ? req.body.customer.phone : undefined)
+    };
+    const result = await ComandaModel.create(comandaPayload);
     console.log('[COMANDA][CREATE][RESULT]', { result });
     res.status(201).json({ success: true, id: result[0] });
   } catch (err) {

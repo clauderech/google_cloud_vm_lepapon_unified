@@ -26,6 +26,7 @@ function createWebSocketClient() {
       }
       // Buscar cliente pelo telefone
       let customer = null;
+      console.log('[WS] Buscando cliente para telefone:', sessionId);
       try {
         customer = await CustomerModel.findByPhone(sessionId);
       } catch (e) {
@@ -62,13 +63,32 @@ function createWebSocketClient() {
           status: 'pending'
         });
       }
-      // Gerar id único para a comanda
-      const comandaId = `comanda_${Date.now()}_${Math.floor(Math.random()*100000)}`;
-      // Criar comanda
+      // Verificar se já existe comanda aberta ou fechada recente para o mesmo telefone
+      const recentComanda = await ComandaModel.findRecentByFone(sessionId, 10);
+      let comandaId;
+      if (recentComanda) {
+        if (recentComanda.status === 'open') {
+          // Se aberta, só adiciona os itens
+          comandaId = recentComanda.id;
+          await ComandaModel.addItems(comandaId, items);
+          console.log(`[WS] Itens adicionados à comanda aberta existente para telefone ${sessionId} (comandaId: ${comandaId})`);
+          return;
+        } else if (recentComanda.status === 'closed') {
+          // Se fechada, mas updated_at < 10h, reabrir e adicionar itens
+          comandaId = recentComanda.id;
+          await ComandaModel.update(comandaId, { status: 'open', opened_at: opened_at });
+          await ComandaModel.addItems(comandaId, items);
+          console.log(`[WS] Comanda reaberta e itens adicionados para telefone ${sessionId} (comandaId: ${comandaId})`);
+          return;
+        }
+      }
+      // Caso não exista comanda recente, criar nova
+      comandaId = `comanda_${Date.now()}_${Math.floor(Math.random()*100000)}`;
       const comandaPayload = {
         id: comandaId,
         customer_id,
         customer_name,
+        customer_fone: sessionId,
         total,
         status: 'open',
         opened_at,
@@ -76,7 +96,7 @@ function createWebSocketClient() {
       };
       const [createdId] = await ComandaModel.create(comandaPayload);
       await ComandaModel.addItems(comandaId, items);
-      console.log(`[WS] Comanda criada automaticamente para telefone ${sessionId} (comandaId: ${comandaId})`);
+      console.log(`[WS] Nova comanda criada para telefone ${sessionId} (comandaId: ${comandaId})`);
     } catch (err) {
       console.error('[WS] Erro ao criar comanda via new_order:', err.message, err.stack);
     }

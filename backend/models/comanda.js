@@ -1,3 +1,13 @@
+  async findRecentByFone(customer_fone, maxHours = 10) {
+    // Busca comanda do mesmo telefone atualizada há menos de maxHours
+    const now = new Date();
+    const cutoff = new Date(now.getTime() - maxHours * 60 * 60 * 1000);
+    return db('comandas')
+      .where({ customer_fone })
+      .andWhere('updated_at', '>=', cutoff)
+      .orderBy('updated_at', 'desc')
+      .first();
+  },
 'use strict';
 
 const { db } = require('../config/knex');
