@@ -12,8 +12,8 @@ const CustomerModel = {
     return db('customers').insert(data);
   },
 
-  async findByPhone(phone) {
-    return db('customers').where({ phone }).first();
+  async findByPhone(fone) {
+    return db('customers').where({ fone }).first();
   },
   async update(id, data) {
     return db('customers').where({ id }).update(data);
