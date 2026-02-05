@@ -1,6 +1,5 @@
-'use strict';
 
-import { db } from '../config/knex.js';
+const db = require('../config/knex');
 
 const SupplierModel = {
   async list() {
