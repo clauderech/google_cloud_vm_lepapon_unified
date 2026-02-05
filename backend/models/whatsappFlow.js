@@ -1,8 +1,8 @@
 'use strict';
 
-import { createHmac, timingSafeEqual, privateDecrypt, constants, createDecipheriv, createCipheriv } from 'crypto';
-import { existsSync, readFileSync } from 'fs';
-import { isAbsolute, resolve } from 'path';
+const { createHmac, timingSafeEqual, privateDecrypt, constants, createDecipheriv, createCipheriv } = require('crypto');
+const { existsSync, readFileSync } = require('fs');
+const { isAbsolute, resolve } = require('path');
 
 /**
  * Descriptografa e processa dados de Flow do WhatsApp Meta
@@ -220,7 +220,7 @@ class WhatsAppFlowProcessor {
   }
 }
 
-export default {
+module.exports = {
   WhatsAppFlowProcessor,
   createFlowProcessor: (options) => new WhatsAppFlowProcessor(options),
 };
