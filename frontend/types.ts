@@ -9,9 +9,17 @@ export interface Customer {
   nome: string;
   sobrenome?: string;
   fone?: string;
+  phone?: string; // Alias para compatibilidade
   loyaltyPoints?: number;
   created_at?: string;
   updated_at?: string;
+}
+
+// Interface para dropdown de clientes formatado
+export interface CustomerDropdownItem {
+  id: string;
+  displayName: string; // formato: id_nome_sobrenome
+  originalData: Customer;
 }
 
 export interface Supplier {
@@ -109,6 +117,7 @@ export interface Comanda {
   id: string;
   customerId?: string;
   customerName: string;
+  customerFone?: string; // Adicionado para compatibilidade com backend
   tableNumber?: string;
   openedAt: string;
   closedAt?: string;

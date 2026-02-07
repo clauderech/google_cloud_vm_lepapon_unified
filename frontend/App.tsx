@@ -64,7 +64,8 @@ import {
   Sale, 
   Purchase, 
   Supplier,
-  Customer, 
+  Customer,
+  CustomerDropdownItem,
   PageView, 
   CartItem, 
   ShoppingListItem,
@@ -107,6 +108,13 @@ const App = () => {
   const [view, setView] = useState<PageView>('dashboard');
   const [loading, setLoading] = useState(true);
   const [showHelp, setShowHelp] = useState(false);
+  const [customersDropdown, setCustomersDropdown] = useState<CustomerDropdownItem[]>([]);
+  
+  // Estados para funcionalidades de comanda
+  const [selectedComandaCustomerId, setSelectedComandaCustomerId] = useState<string>('');
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelingComandaId, setCancelingComandaId] = useState<string | null>(null);
+  
   const [state, setState] = useState<AppState>({
     products: [],
     suppliers: [],
@@ -357,15 +365,15 @@ const App = () => {
     return newComanda.id;
   };
 
-  const updateComanda = (comandaId: string, items: CartItem[]) => {
-    storageService.updateComanda(comandaId, items)
+  const updateComanda = (comandaId: string, items: CartItem[], customerId?: string) => {
+    storageService.updateComanda(comandaId, items, customerId)
       .then(() => {
         setState(prev => ({
           ...prev,
           activeComandas: prev.activeComandas.map(c => {
             if (c.id === comandaId) {
               const total = items.reduce((acc, i) => acc + (i.quantity * i.unitPrice), 0);
-              return { ...c, items, total };
+              return { ...c, items, total, customer_id: customerId };
             }
             return c;
           })
@@ -391,6 +399,45 @@ const App = () => {
       alert('Erro ao fechar comanda: ' + (err?.message || err));
     }
   };
+
+  // --- Novas Funcionalidades de Comanda ---
+  
+  const loadCustomersDropdown = async () => {
+    try {
+      const dropdown = await storageService.getCustomersDropdown();
+      setCustomersDropdown(dropdown);
+    } catch (err) {
+      console.error('Erro ao carregar dropdown de clientes:', err);
+    }
+  };
+
+  const handleCancelComanda = async (comandaId: string) => {
+    try {
+      const result = await storageService.cancelComanda(comandaId);
+      setState(prev => ({
+        ...prev,
+        activeComandas: prev.activeComandas.filter(c => c.id !== comandaId)
+      }));
+      setShowCancelModal(false);
+      setCancelingComandaId(null);
+      alert(`Comanda cancelada com sucesso! ${result.itemsReverted ? `${result.itemsReverted} itens tiveram estoque revertido.` : ''}`);
+    } catch (err: any) {
+      alert('Erro ao cancelar comanda: ' + (err?.message || err));
+    }
+  };
+
+  const updateComandaCustomerId = (comandaId: string, customerId: string) => {
+    const comanda = state.activeComandas.find(c => c.id === comandaId);
+    if (comanda) {
+      updateComanda(comandaId, comanda.items, customerId);
+      setSelectedComandaCustomerId(customerId);
+    }
+  };
+
+  // Carregar dropdown de clientes ao montar o componente
+  useEffect(() => {
+    loadCustomersDropdown();
+  }, []);
 
   // --- Shopping List Actions ---
   const addToShoppingList = (productId: string, quantity: number) => {
@@ -741,6 +788,8 @@ const App = () => {
     const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
     const [appliedDiscount, setAppliedDiscount] = useState<{ percent: number; pointsUsed: number } | null>(null);
 
+    // Funcionalidades movidas para nível App - removendo duplicação
+
     // Reset cart when switching modes or comandas
     useEffect(() => {
       if (activeTab === 'comandas' && selectedComandaId) {
@@ -1086,23 +1135,69 @@ const App = () => {
 
                 <div className="grid grid-cols-1 gap-3">
                   {state.activeComandas.map(comanda => (
-                    <button 
+                    <div 
                       key={comanda.id}
-                      onClick={() => setSelectedComandaId(comanda.id)}
-                      className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:border-blue-400 text-left group transition-all"
+                      className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:border-blue-400 transition-all"
                     >
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="font-bold text-gray-900 text-lg group-hover:text-blue-700">{comanda.customerName}</span>
-                        <span className="bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded">Aberta</span>
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <span className="font-bold text-gray-900 text-lg">{comanda.customerName}</span>
+                          <div className="flex justify-between items-center mt-2">
+                            <div className="flex items-center gap-1 text-sm text-gray-600">
+                              <Clock className="w-3 h-3" />
+                              {new Date(comanda.openedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </div>
+                            <span className="font-black text-gray-900 text-lg">R$ {comanda.total.toFixed(2)}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2 ml-3">
+                          <span className="bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded">Aberta</span>
+                          <button
+                            onClick={() => {
+                              setCancelingComandaId(comanda.id);
+                              setShowCancelModal(true);
+                            }}
+                            className="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
+                            title="Cancelar Comanda"
+                          >
+                            ✕
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex justify-between items-end text-sm text-gray-600">
-                         <div className="flex items-center gap-1">
-                           <Clock className="w-3 h-3" />
-                           {new Date(comanda.openedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                         </div>
-                         <span className="font-black text-gray-900 text-lg">R$ {comanda.total.toFixed(2)}</span>
+
+                      {/* Dropdown de Cliente no Card */}
+                      <div className="mb-3">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Cliente:
+                        </label>
+                        <select
+                          value={comanda.customer_id || ''}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            updateComandaCustomerId(comanda.id, e.target.value);
+                          }}
+                          className="w-full p-1.5 text-sm border border-gray-300 rounded-md bg-white"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <option value="">Selecionar cliente...</option>
+                          {customersDropdown.map((customer) => (
+                            <option key={customer.id} value={customer.id}>
+                              {customer.display_name}
+                            </option>
+                          ))}
+                        </select>
+                        {comanda.customer_id && (
+                          <p className="text-xs text-blue-600 mt-1">ID: {comanda.customer_id}</p>
+                        )}
                       </div>
-                    </button>
+
+                      <button
+                        onClick={() => setSelectedComandaId(comanda.id)}
+                        className="w-full bg-blue-500 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
+                      >
+                        Editar Comanda
+                      </button>
+                    </div>
                   ))}
                   {state.activeComandas.length === 0 && (
                     <p className="text-center text-gray-400 mt-8">Nenhuma comanda aberta.</p>
@@ -1115,9 +1210,46 @@ const App = () => {
             {(activeTab === 'quick' || selectedComandaId) && (
               <div className="flex flex-col h-full">
                  {activeTab === 'comandas' && selectedComanda && (
-                   <div className="bg-blue-100 p-3 flex justify-between items-center border-b border-blue-200">
-                      <span className="font-bold text-blue-900">{selectedComanda.customerName}</span>
-                      <button onClick={() => setSelectedComandaId(null)} className="text-xs font-bold text-blue-700 hover:underline">Voltar</button>
+                   <div className="bg-blue-100 p-3 border-b border-blue-200">
+                      <div className="flex justify-between items-start mb-3">
+                        <span className="font-bold text-blue-900">{selectedComanda.customerName}</span>
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => {
+                              setCancelingComandaId(selectedComanda.id);
+                              setShowCancelModal(true);
+                            }}
+                            className="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
+                          >
+                            Cancelar
+                          </button>
+                          <button 
+                            onClick={() => setSelectedComandaId(null)} 
+                            className="text-xs font-bold text-blue-700 hover:underline"
+                          >
+                            Voltar
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {/* Dropdown de Cliente na Comanda */}
+                      <div className="mb-2">
+                        <label className="block text-xs font-medium text-blue-700 mb-1">
+                          Cliente ID:
+                        </label>
+                        <select
+                          value={selectedComanda.customer_id || ''}
+                          onChange={(e) => updateComandaCustomerId(selectedComanda.id, e.target.value)}
+                          className="w-full p-2 text-sm border border-blue-300 rounded-md bg-white"
+                        >
+                          <option value="">Selecionar cliente...</option>
+                          {customersDropdown.map((customer) => (
+                            <option key={customer.id} value={customer.id}>
+                              {customer.display_name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                    </div>
                  )}
                  
@@ -1954,14 +2086,44 @@ const App = () => {
 
       {/* Help Menu */}
       <HelpMenu isOpen={showHelp} onClose={() => setShowHelp(false)} />
+      
+      {/* Modal de Cancelamento de Comanda */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Cancelar Comanda</h3>
+            <p className="text-gray-700 mb-6">
+              Tem certeza que deseja <strong>cancelar</strong> esta comanda? 
+              <br />
+              <br />
+              O estoque dos produtos será revertido e os itens serão removidos da cozinha.
+              <br />
+              <strong>Esta ação não pode ser desfeita.</strong>
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setCancelingComandaId(null);
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Não
+              </button>
+              <button
+                onClick={() => handleCancelComanda(cancelingComandaId!)}
+                className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+              >
+                Sim, Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default App;
-// setCart é um setter de estado para o carrinho de compras no PDV (POS).
-// Ele deve ser definido via useState<CartItem[]> no componente POS.
-// Portanto, não é necessário implementar manualmente essa função aqui.
-// Se precisar usar setCart fora do POS, passe-a como prop ou mova o estado para um contexto global.
-// Remova esta função placeholder.
+
 

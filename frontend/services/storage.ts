@@ -9,6 +9,7 @@ import type {
   Product, 
   Supplier, 
   Customer,
+  CustomerDropdownItem,
   Sale, 
   Purchase, 
   ShoppingListItem, 
@@ -154,12 +155,17 @@ export const storageService = {
     return { comandaId: `comanda_${Date.now()}_${Math.floor(Math.random()*100000)}` };
   },
 
-  async updateComanda(comandaId: string, items: CartItem[]): Promise<void> {
+  async updateComanda(comandaId: string, items: CartItem[], customerId?: string): Promise<void> {
     if (USE_API) {
+      const payload: any = { items };
+      if (customerId !== undefined) {
+        payload.customer_id = customerId || null;
+      }
+      
       const response = await fetch(`${API_URL}/comandas/${comandaId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items })
+        body: JSON.stringify(payload)
       });
       
       if (!response.ok) throw new Error('Erro ao atualizar comanda');
@@ -178,6 +184,38 @@ export const storageService = {
       return response.json();
     }
     return { saleId: `sale_${Date.now()}` };
+  },
+
+  async cancelComanda(comandaId: string): Promise<{ success: boolean; message?: string; itemsReverted?: number }> {
+    if (USE_API) {
+      const response = await fetch(`${API_URL}/comandas/${comandaId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Erro ao cancelar comanda');
+      }
+      
+      return response.json();
+    }
+    return { success: true, message: 'Comanda cancelada (modo local)' };
+  },
+
+  async getCustomersDropdown(): Promise<CustomerDropdownItem[]> {
+    if (USE_API) {
+      const response = await fetch(`${API_URL}/customers/dropdown`);
+      if (!response.ok) throw new Error('Erro ao carregar dropdown de clientes');
+      return response.json();
+    }
+    // Fallback local: formatar clientes existentes
+    const customers = await this.loadInitialState().then(state => state.customers);
+    return customers.map(customer => ({
+      id: customer.id,
+      displayName: `${customer.id}_${customer.nome}${customer.sobrenome ? '_' + customer.sobrenome : ''}`.replace(/\s+/g, '_'),
+      originalData: customer
+    }));
   },
 
   // =========================================
@@ -272,7 +310,8 @@ export const storageService = {
       
       if (!response.ok) throw new Error('Erro ao remover da lista');
     }
-  }
+  },
+
 };
 
 // =========================================
