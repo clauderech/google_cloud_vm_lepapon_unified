@@ -7,10 +7,37 @@ const path = require('path');
 const ComandaModel = require(path.join(__dirname, '../models/comanda'));
 const CustomerModel = require(path.join(__dirname, '../models/customer'));
 const ProductModel = require(path.join(__dirname, '../models/product'));
+const CozinhaItem = require(path.join(__dirname, '../models/cozinha_item'));
 
 const WS_URL = process.env.LEPAPON_WS_URL || 'ws://lepapon.com.br:3001';
 const TOKEN = process.env.LEPAPON_WS_TOKEN || 'SEU_TOKEN_AQUI';
 const RECONNECT_DELAY = 5000; // ms
+
+// Helper para enviar itens do tipo 'prato' para a cozinha
+async function sendPratosToKitchen(items, comandaId) {
+  try {
+    for (const item of items) {
+      const productId = item.product_id;
+      if (!productId) continue;
+      
+      const product = await ProductModel.getById(productId);
+      if (product && product.type === 'prato') {
+        await CozinhaItem.create({
+          comanda_id: comandaId,
+          product_id: productId,
+          quantidade: item.quantity,
+          status: 'pending',
+          observacao: item.notes || null,
+          prioridade: 'normal',
+          responsavel: null
+        });
+        console.log(`[WS][COZINHA] Prato adicionado à cozinha: ${product.name} (qty: ${item.quantity})`);
+      }
+    }
+  } catch (error) {
+    console.error('[WS][COZINHA][ERROR]', { error: error.message, comandaId });
+  }
+}
 
 function createWebSocketClient() {
   let ws;
@@ -72,6 +99,8 @@ function createWebSocketClient() {
           // Se aberta, só adiciona os itens
           comandaId = recentComanda.id;
           await ComandaModel.addItems(comandaId, items);
+          // Enviar pratos para cozinha
+          await sendPratosToKitchen(items, comandaId);
           console.log(`[WS] Itens adicionados à comanda aberta existente para telefone ${sessionId} (comandaId: ${comandaId})`);
           return;
         } else if (recentComanda.status === 'closed') {
@@ -79,6 +108,8 @@ function createWebSocketClient() {
           comandaId = recentComanda.id;
           await ComandaModel.update(comandaId, { status: 'open', opened_at: opened_at });
           await ComandaModel.addItems(comandaId, items);
+          // Enviar pratos para cozinha
+          await sendPratosToKitchen(items, comandaId);
           console.log(`[WS] Comanda reaberta e itens adicionados para telefone ${sessionId} (comandaId: ${comandaId})`);
           return;
         }
@@ -97,6 +128,8 @@ function createWebSocketClient() {
       };
       const [createdId] = await ComandaModel.create(comandaPayload);
       await ComandaModel.addItems(comandaId, items);
+      // Enviar pratos para cozinha
+      await sendPratosToKitchen(items, comandaId);
       console.log(`[WS] Nova comanda criada para telefone ${sessionId} (comandaId: ${comandaId})`);
     } catch (err) {
       console.error('[WS] Erro ao criar comanda via new_order:', err.message, err.stack);

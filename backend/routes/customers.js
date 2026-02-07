@@ -13,6 +13,19 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Dropdown de clientes formatado (id_nome_sobrenome)
+router.get('/dropdown', async (req, res) => {
+  try {
+    console.log('[CUSTOMER][DROPDOWN][REQ]', { timestamp: new Date().toISOString() });
+    const dropdownCustomers = await CustomerModel.listForDropdown();
+    console.log('[CUSTOMER][DROPDOWN][SUCCESS]', { count: dropdownCustomers.length });
+    res.json(dropdownCustomers);
+  } catch (err) {
+    console.error('[CUSTOMER][DROPDOWN][ERROR]', { error: err.message, stack: err.stack });
+    res.status(500).json({ error: 'Erro ao carregar dropdown de clientes', details: err.message });
+  }
+});
+
 // Buscar cliente por ID
 router.get('/:id', async (req, res) => {
   try {

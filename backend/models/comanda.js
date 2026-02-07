@@ -1,6 +1,7 @@
 "use strict";
 
 const { db } = require('../config/knex');
+const CustomerModel = require('./customer');
 
 const ComandaModel = {
   async list() {
@@ -50,6 +51,34 @@ const ComandaModel = {
       .andWhere('updated_at', '>=', cutoff)
       .orderBy('updated_at', 'desc')
       .first();
+  },
+
+  async validateAndPopulateCustomer(customer_id) {
+    // Valida customer_id e retorna dados para populate
+    if (!customer_id) {
+      return { isValid: true, customer_name: null };
+    }
+    
+    try {
+      const customer = await CustomerModel.getById(customer_id);
+      if (!customer) {
+        return { 
+          isValid: false, 
+          error: `Cliente não encontrado: ${customer_id}` 
+        };
+      }
+      
+      return {
+        isValid: true,
+        customer_name: customer.nome,
+        customer_data: customer
+      };
+    } catch (error) {
+      return {
+        isValid: false,
+        error: `Erro ao validar cliente: ${error.message}`
+      };
+    }
   }
 };
 

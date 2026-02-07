@@ -188,6 +188,28 @@ router.put('/:id', async (req, res) => {
     console.log('[COMANDA][UPDATE][REQ]', { id: req.params.id, payload: req.body });
     // Atualiza dados da comanda (exceto itens)
     const { items, ...comandaData } = req.body;
+    
+    // Validação e auto-população de customer_id se fornecido
+    if (comandaData.hasOwnProperty('customer_id')) {
+      const validation = await ComandaModel.validateAndPopulateCustomer(comandaData.customer_id);
+      
+      if (!validation.isValid) {
+        return res.status(400).json({ 
+          error: 'Erro ao validar cliente', 
+          details: validation.error 
+        });
+      }
+      
+      // Auto-populate customer_name se customer_id válido
+      if (validation.customer_name) {
+        comandaData.customer_name = validation.customer_name;
+        console.log('[COMANDA][UPDATE][CUSTOMER]', { 
+          customer_id: comandaData.customer_id, 
+          customer_name: validation.customer_name 
+        });
+      }
+    }
+    
     if (Object.keys(comandaData).length > 0) {
       await ComandaModel.update(req.params.id, comandaData);
     }
@@ -195,7 +217,29 @@ router.put('/:id', async (req, res) => {
     if (Array.isArray(items)) {
       // Remove itens antigos e insere novos (simples)
       await ComandaModel.clearItems(req.params.id);
+      
+      // CORREÇÃO: Remove itens antigos da cozinha para evitar duplicação
+      try {
+        const { db } = require('../config/knex');
+        const deletedCozinhaItems = await db('cozinha_items')
+          .where({ comanda_id: req.params.id })
+          .del();
+        
+        if (deletedCozinhaItems > 0) {
+          console.log('[COMANDA][UPDATE][COZINHA_CLEAR]', { 
+            comandaId: req.params.id, 
+            removedItems: deletedCozinhaItems 
+          });
+        }
+      } catch (cozinhaError) {
+        console.warn('[COMANDA][UPDATE][COZINHA_CLEAR_WARNING]', { 
+          error: cozinhaError.message 
+        });
+      }
+      
       await ComandaModel.addItems(req.params.id, items);
+      
+      // Adiciona novos itens do tipo 'prato' na cozinha
       for (const item of items) {
         const productId = item.productId || item.product_id;
         if (!productId) continue;
@@ -223,10 +267,90 @@ router.put('/:id', async (req, res) => {
 // Remover comanda
 router.delete('/:id', async (req, res) => {
   try {
+    console.log('[COMANDA][DELETE][REQ]', { id: req.params.id });
+    
+    // Verifica se comanda existe
+    const comanda = await ComandaModel.getById(req.params.id);
+    if (!comanda) {
+      return res.status(404).json({ error: 'Comanda não encontrada' });
+    }
+    
+    // Valida que apenas comandas abertas podem ser deletadas
+    if (comanda.status !== 'open') {
+      return res.status(400).json({ 
+        error: 'Apenas comandas abertas podem ser deletadas', 
+        currentStatus: comanda.status 
+      });
+    }
+    
+    // Busca itens da comanda para reverter estoque
+    const items = await ComandaModel.getItems(req.params.id);
+    console.log('[COMANDA][DELETE][ITEMS]', { comandaId: req.params.id, itemCount: items.length });
+    
+    // Reverte estoque dos produtos
+    for (const item of items) {
+      const productId = item.product_id || item.productId;
+      const quantity = parseFloat(item.quantity);
+      
+      if (productId && !isNaN(quantity)) {
+        const product = await ProductModel.getById(productId);
+        if (product) {
+          // Reverte estoque (adiciona de volta a quantidade)
+          const newStock = (parseFloat(product.stock) || 0) + quantity;
+          await ProductModel.update(productId, { stock: newStock });
+          console.log('[COMANDA][DELETE][STOCK_REVERT]', { 
+            productId, 
+            quantity, 
+            oldStock: product.stock, 
+            newStock 
+          });
+        }
+      }
+    }
+    
+    // Remove itens da cozinha se existirem
+    try {
+      const { db } = require('../config/knex');
+      const deletedCozinhaItems = await db('cozinha_items')
+        .where({ comanda_id: req.params.id })
+        .del();
+      
+      if (deletedCozinhaItems > 0) {
+        console.log('[COMANDA][DELETE][COZINHA]', { 
+          comandaId: req.params.id, 
+          removedItems: deletedCozinhaItems 
+        });
+      }
+    } catch (cozinhaError) {
+      console.warn('[COMANDA][DELETE][COZINHA_WARNING]', { 
+        error: cozinhaError.message 
+      });
+    }
+    
+    // Remove todos os itens da comanda
+    await ComandaModel.clearItems(req.params.id);
+    
+    // Remove a comanda
     await ComandaModel.remove(req.params.id);
-    res.json({ success: true });
+    
+    console.log('[COMANDA][DELETE][SUCCESS]', { 
+      comandaId: req.params.id,
+      itemsReverted: items.length
+    });
+    
+    res.json({ 
+      success: true, 
+      message: 'Comanda cancelada com sucesso',
+      itemsReverted: items.length
+    });
+    
   } catch (err) {
-    res.status(500).json({ error: 'Erro ao remover comanda', details: err.message });
+    console.error('[COMANDA][DELETE][ERROR]', { 
+      id: req.params.id, 
+      error: err.message, 
+      stack: err.stack 
+    });
+    res.status(500).json({ error: 'Erro ao cancelar comanda', details: err.message });
   }
 });
 
