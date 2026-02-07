@@ -404,7 +404,9 @@ const App = () => {
   
   const loadCustomersDropdown = async () => {
     try {
+      console.log('[DEBUG] Carregando dropdown de clientes...');
       const dropdown = await storageService.getCustomersDropdown();
+      console.log('[DEBUG] Dropdown carregado:', dropdown);
       setCustomersDropdown(dropdown);
     } catch (err) {
       console.error('Erro ao carregar dropdown de clientes:', err);
@@ -1180,11 +1182,15 @@ const App = () => {
                           onClick={(e) => e.stopPropagation()}
                         >
                           <option value="">Selecionar cliente...</option>
-                          {customersDropdown.map((customer) => (
-                            <option key={customer.id} value={customer.id}>
-                              {customer.display_name}
-                            </option>
-                          ))}
+                          {customersDropdown.length === 0 ? (
+                            <option disabled>Carregando clientes...</option>
+                          ) : (
+                            customersDropdown.map((customer) => (
+                              <option key={customer.id} value={customer.id}>
+                                {customer.displayName}
+                              </option>
+                            ))
+                          )}
                         </select>
                         {comanda.customer_id && (
                           <p className="text-xs text-blue-600 mt-1">ID: {comanda.customer_id}</p>
@@ -1243,11 +1249,15 @@ const App = () => {
                           className="w-full p-2 text-sm border border-blue-300 rounded-md bg-white"
                         >
                           <option value="">Selecionar cliente...</option>
-                          {customersDropdown.map((customer) => (
-                            <option key={customer.id} value={customer.id}>
-                              {customer.display_name}
-                            </option>
-                          ))}
+                          {customersDropdown.length === 0 ? (
+                            <option disabled>Carregando clientes...</option>
+                          ) : (
+                            customersDropdown.map((customer) => (
+                              <option key={customer.id} value={customer.id}>
+                                {customer.displayName}
+                              </option>
+                            ))
+                          )}
                         </select>
                       </div>
                    </div>

@@ -204,18 +204,33 @@ export const storageService = {
   },
 
   async getCustomersDropdown(): Promise<CustomerDropdownItem[]> {
+    console.log('[DEBUG] getCustomersDropdown - USE_API:', USE_API);
     if (USE_API) {
-      const response = await fetch(`${API_URL}/customers/dropdown`);
-      if (!response.ok) throw new Error('Erro ao carregar dropdown de clientes');
-      return response.json();
+      try {
+        console.log('[DEBUG] Tentando buscar via API:', `${API_URL}/customers/dropdown`);
+        const response = await fetch(`${API_URL}/customers/dropdown`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const result = await response.json();
+        console.log('[DEBUG] Resultado da API:', result);
+        return result;
+      } catch (error) {
+        console.error('[DEBUG] Erro na API, usando fallback local:', error);
+      }
     }
     // Fallback local: formatar clientes existentes
-    const customers = await this.loadInitialState().then(state => state.customers);
-    return customers.map(customer => ({
+    console.log('[DEBUG] Usando fallback local');
+    const state = await this.loadInitialState();
+    console.log('[DEBUG] Estado carregado:', state);
+    const customers = state.customers || [];
+    console.log('[DEBUG] Clientes encontrados:', customers);
+    
+    const formatted = customers.map(customer => ({
       id: customer.id,
       displayName: `${customer.id}_${customer.nome}${customer.sobrenome ? '_' + customer.sobrenome : ''}`.replace(/\s+/g, '_'),
       originalData: customer
     }));
+    console.log('[DEBUG] Clientes formatados:', formatted);
+    return formatted;
   },
 
   // =========================================
