@@ -789,6 +789,12 @@ const App = () => {
     // Customer Selection and Loyalty
     const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
     const [appliedDiscount, setAppliedDiscount] = useState<{ percent: number; pointsUsed: number } | null>(null);
+  
+    // Customer Search States
+    const [customerSearchTerm, setCustomerSearchTerm] = useState('');
+    const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+    const [comandaCustomerSearchTerms, setComandaCustomerSearchTerms] = useState<{[key: string]: string}>({});
+    const [showComandaCustomerDropdowns, setShowComandaCustomerDropdowns] = useState<{[key: string]: boolean}>({});
 
     // Funcionalidades movidas para nível App - removendo duplicação
 
@@ -871,6 +877,41 @@ const App = () => {
       setAppliedDiscount({ percent: discountPercent, pointsUsed: pointsToDeduct });
     };
 
+    // Filter customers based on search term
+    const filteredCustomers = state.customers.filter(customer => {
+      const fullName = `${customer.nome} ${customer.sobrenome || ''}`.toLowerCase();
+      const phone = customer.fone || '';
+      const searchLower = customerSearchTerm.toLowerCase();
+      return fullName.includes(searchLower) || phone.includes(searchLower);
+    });
+    
+    const handleCustomerSelect = (customer: Customer) => {
+      setSelectedCustomerId(customer.id);
+      setCustomerSearchTerm(`${customer.nome} ${customer.sobrenome || ''}`.trim());
+      setNewCustomerName(`${customer.nome} ${customer.sobrenome || ''}`.trim());
+      setShowCustomerDropdown(false);
+    };
+    
+    const handleCustomerSearchChange = (value: string) => {
+      setCustomerSearchTerm(value);
+      setNewCustomerName(value);
+      if (value.trim()) {
+        setShowCustomerDropdown(true);
+        // Auto-select if exact match
+        const exactMatch = state.customers.find(c => 
+          `${c.nome} ${c.sobrenome || ''}`.toLowerCase().trim() === value.toLowerCase().trim()
+        );
+        if (exactMatch) {
+          setSelectedCustomerId(exactMatch.id);
+        } else {
+          setSelectedCustomerId('');
+        }
+      } else {
+        setShowCustomerDropdown(false);
+        setSelectedCustomerId('');
+      }
+    };
+
     const handleCreateComanda = () => {
       if (!newCustomerName.trim()) return alert("Nome do cliente obrigatório");
       storageService.createComanda(newCustomerName)
@@ -888,6 +929,7 @@ const App = () => {
           setState(prev => ({ ...prev, activeComandas: [...prev.activeComandas, newComanda] }));
           setNewCustomerName('');
           setSelectedCustomerId('');
+          setCustomerSearchTerm('');
           setSelectedComandaId(comandaId);
         })
         .catch((err) => {
@@ -902,7 +944,6 @@ const App = () => {
         setSelectedComandaId(null); // Go back to list
       }
     };
-
 
     // Modal de pagamento
     const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -1089,30 +1130,38 @@ const App = () => {
                 <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
                   <h3 className="font-bold text-gray-900 mb-3">Nova Comanda</h3>
                   <div className="space-y-3">
-                    <div>
+                    <div className="relative">
                       <label className="block text-xs font-bold text-gray-700 mb-1">
                         Cliente (opcional)
                       </label>
-                      <select
-                        className="w-full border border-gray-400 p-2 rounded-lg text-black bg-white"
-                        value={selectedCustomerId}
-                        onChange={e => {
-                          setSelectedCustomerId(e.target.value);
-                          const customer = state.customers.find(c => c.id === e.target.value);
-                          if (customer) {
-                            setNewCustomerName(`${customer.nome} ${customer.sobrenome || ''}`.trim());
-                          } else {
-                            setNewCustomerName('');
-                          }
-                        }}
-                      >
-                        <option value="">Sem cadastro</option>
-                        {state.customers.map(c => (
-                          <option key={c.id} value={c.id}>
-                            {c.nome} {c.sobrenome || ''} {c.fone ? `- ${c.fone}` : ''}
-                          </option>
-                        ))}
-                      </select>
+                      <input
+                        type="text"
+                        placeholder="Digite o nome do cliente..."
+                        className="w-full border border-gray-400 p-2 rounded-lg text-black bg-white placeholder-gray-600"
+                        value={customerSearchTerm}
+                        onChange={e => handleCustomerSearchChange(e.target.value)}
+                        onFocus={() => customerSearchTerm && setShowCustomerDropdown(true)}
+                        onBlur={() => setTimeout(() => setShowCustomerDropdown(false), 200)}
+                      />
+                      {showCustomerDropdown && filteredCustomers.length > 0 && (
+                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                          {filteredCustomers.slice(0, 5).map(customer => (
+                            <button
+                              key={customer.id}
+                              type="button"
+                              className="w-full text-left px-3 py-2 hover:bg-blue-50 text-sm border-b border-gray-100 last:border-b-0"
+                              onClick={() => handleCustomerSelect(customer)}
+                            >
+                              <div className="font-medium text-gray-900">
+                                {customer.nome} {customer.sobrenome || ''}
+                              </div>
+                              {customer.fone && (
+                                <div className="text-xs text-gray-500">{customer.fone}</div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-700 mb-1">
@@ -1168,30 +1217,61 @@ const App = () => {
                       </div>
 
                       {/* Dropdown de Cliente no Card */}
-                      <div className="mb-3">
+                      <div className="mb-3 relative">
                         <label className="block text-xs font-medium text-gray-700 mb-1">
                           Cliente:
                         </label>
-                        <select
-                          value={comanda.customer_id || ''}
+                        <input
+                          type="text"
+                          placeholder="Digite o nome do cliente..."
+                          className="w-full p-1.5 text-sm border border-gray-300 rounded-md bg-white"
+                          value={comandaCustomerSearchTerms[comanda.id] || ''}
                           onChange={(e) => {
                             e.stopPropagation();
-                            updateComandaCustomerId(comanda.id, e.target.value);
+                            const value = e.target.value;
+                            setComandaCustomerSearchTerms(prev => ({ ...prev, [comanda.id]: value }));
+                            if (value.trim()) {
+                              setShowComandaCustomerDropdowns(prev => ({ ...prev, [comanda.id]: true }));
+                            } else {
+                              setShowComandaCustomerDropdowns(prev => ({ ...prev, [comanda.id]: false }));
+                            }
                           }}
-                          className="w-full p-1.5 text-sm border border-gray-300 rounded-md bg-white"
+                          onFocus={(e) => {
+                            e.stopPropagation();
+                            if (comandaCustomerSearchTerms[comanda.id]) {
+                              setShowComandaCustomerDropdowns(prev => ({ ...prev, [comanda.id]: true }));
+                            }
+                          }}
+                          onBlur={() => setTimeout(() => {
+                            setShowComandaCustomerDropdowns(prev => ({ ...prev, [comanda.id]: false }));
+                          }, 200)}
                           onClick={(e) => e.stopPropagation()}
-                        >
-                          <option value="">Selecionar cliente...</option>
-                          {customersDropdown.length === 0 ? (
-                            <option disabled>Carregando clientes...</option>
-                          ) : (
-                            customersDropdown.map((customer) => (
-                              <option key={customer.id} value={customer.id}>
-                                {customer.displayName}
-                              </option>
-                            ))
-                          )}
-                        </select>
+                        />
+                        {showComandaCustomerDropdowns[comanda.id] && customersDropdown.length > 0 && (
+                          <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-32 overflow-y-auto">
+                            {customersDropdown
+                              .filter(customer => 
+                                customer.displayName.toLowerCase().includes((comandaCustomerSearchTerms[comanda.id] || '').toLowerCase())
+                              )
+                              .slice(0, 5)
+                              .map((customer) => (
+                                <button
+                                  key={customer.id}
+                                  type="button"
+                                  className="w-full text-left px-3 py-2 hover:bg-blue-50 text-xs border-b border-gray-100 last:border-b-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    updateComandaCustomerId(comanda.id, customer.id);
+                                    setComandaCustomerSearchTerms(prev => ({ ...prev, [comanda.id]: customer.displayName }));
+                                    setShowComandaCustomerDropdowns(prev => ({ ...prev, [comanda.id]: false }));
+                                  }}
+                                >
+                                  {customer.displayName}
+                                </button>
+                              ))
+                            }
+                          </div>
+                        )}
                         {comanda.customer_id && (
                           <p className="text-xs text-blue-600 mt-1">ID: {comanda.customer_id}</p>
                         )}
@@ -1239,26 +1319,57 @@ const App = () => {
                       </div>
                       
                       {/* Dropdown de Cliente na Comanda */}
-                      <div className="mb-2">
+                      <div className="mb-2 relative">
                         <label className="block text-xs font-medium text-blue-700 mb-1">
-                          Cliente ID:
+                          Cliente:
                         </label>
-                        <select
-                          value={selectedComanda.customer_id || ''}
-                          onChange={(e) => updateComandaCustomerId(selectedComanda.id, e.target.value)}
+                        <input
+                          type="text"
+                          placeholder="Digite o nome do cliente..."
                           className="w-full p-2 text-sm border border-blue-300 rounded-md bg-white"
-                        >
-                          <option value="">Selecionar cliente...</option>
-                          {customersDropdown.length === 0 ? (
-                            <option disabled>Carregando clientes...</option>
-                          ) : (
-                            customersDropdown.map((customer) => (
-                              <option key={customer.id} value={customer.id}>
-                                {customer.displayName}
-                              </option>
-                            ))
-                          )}
-                        </select>
+                          value={comandaCustomerSearchTerms[selectedComanda.id] || ''}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setComandaCustomerSearchTerms(prev => ({ ...prev, [selectedComanda.id]: value }));
+                            if (value.trim()) {
+                              setShowComandaCustomerDropdowns(prev => ({ ...prev, [selectedComanda.id]: true }));
+                            } else {
+                              setShowComandaCustomerDropdowns(prev => ({ ...prev, [selectedComanda.id]: false }));
+                            }
+                          }}
+                          onFocus={() => {
+                            if (comandaCustomerSearchTerms[selectedComanda.id]) {
+                              setShowComandaCustomerDropdowns(prev => ({ ...prev, [selectedComanda.id]: true }));
+                            }
+                          }}
+                          onBlur={() => setTimeout(() => {
+                            setShowComandaCustomerDropdowns(prev => ({ ...prev, [selectedComanda.id]: false }));
+                          }, 200)}
+                        />
+                        {showComandaCustomerDropdowns[selectedComanda.id] && customersDropdown.length > 0 && (
+                          <div className="absolute z-20 w-full mt-1 bg-white border border-blue-300 rounded-lg shadow-lg max-h-32 overflow-y-auto">
+                            {customersDropdown
+                              .filter(customer => 
+                                customer.displayName.toLowerCase().includes((comandaCustomerSearchTerms[selectedComanda.id] || '').toLowerCase())
+                              )
+                              .slice(0, 5)
+                              .map((customer) => (
+                                <button
+                                  key={customer.id}
+                                  type="button"
+                                  className="w-full text-left px-3 py-2 hover:bg-blue-50 text-sm border-b border-blue-100 last:border-b-0"
+                                  onClick={() => {
+                                    updateComandaCustomerId(selectedComanda.id, customer.id);
+                                    setComandaCustomerSearchTerms(prev => ({ ...prev, [selectedComanda.id]: customer.displayName }));
+                                    setShowComandaCustomerDropdowns(prev => ({ ...prev, [selectedComanda.id]: false }));
+                                  }}
+                                >
+                                  {customer.displayName}
+                                </button>
+                              ))
+                            }
+                          </div>
+                        )}
                       </div>
                    </div>
                  )}
