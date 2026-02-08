@@ -217,7 +217,7 @@ const App = () => {
   };
 
   // --- Actions ---
-  const addSale = (
+  const addSale = async (
     items: CartItem[], 
     paymentMethod: Sale['paymentMethod'], 
     customerName?: string,
@@ -245,7 +245,14 @@ const App = () => {
       customerId
     };
 
-    // If using API, we would call storageService.syncSale(newSale) here
+    // Persistir venda no banco de dados
+    try {
+      await storageService.saveSale(newSale);
+    } catch (err) {
+      console.error('Erro ao salvar venda:', err);
+      alert('Erro ao salvar venda no banco de dados!');
+      return;
+    }
 
     setState(prev => {
       // Create a copy of products to mutate stocks
@@ -852,25 +859,29 @@ const App = () => {
       setCart(prev => prev.filter(item => item.productId !== productId));
     };
 
-    const handleQuickCheckout = () => {
+    const handleQuickCheckout = async () => {
       if (cart.length === 0) return;
       
       const customer = state.customers.find(c => c.id === selectedCustomerId);
       const customerName = customer ? `${customer.nome} ${customer.sobrenome || ''}`.trim() : undefined;
       
-      addSale(
-        cart, 
-        'cash', 
-        customerName,
-        selectedCustomerId || undefined,
-        appliedDiscount?.percent,
-        appliedDiscount?.pointsUsed
-      );
-      
-      setCart([]);
-      setSelectedCustomerId('');
-      setAppliedDiscount(null);
-      alert("Venda Rápida finalizada!");
+      try {
+        await addSale(
+          cart, 
+          'cash', 
+          customerName,
+          selectedCustomerId || undefined,
+          appliedDiscount?.percent,
+          appliedDiscount?.pointsUsed
+        );
+        
+        setCart([]);
+        setSelectedCustomerId('');
+        setAppliedDiscount(null);
+        alert("Venda Rápida finalizada!");
+      } catch (err) {
+        console.error('Erro na venda rápida:', err);
+      }
     };
     
     const handleApplyDiscount = (discountPercent: number, pointsToDeduct: number) => {
