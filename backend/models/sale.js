@@ -13,7 +13,6 @@ const SaleModel = {
     // Inserir venda na tabela sales
     const [saleId] = await db('sales').insert({
       date: data.date || new Date().toISOString(),
-      subtotal: data.subtotal,
       total: data.total,
       discount: data.discount || 0,
       payment_method: data.paymentMethod,
