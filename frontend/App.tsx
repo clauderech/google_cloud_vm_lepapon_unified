@@ -380,7 +380,13 @@ const App = () => {
           activeComandas: prev.activeComandas.map(c => {
             if (c.id === comandaId) {
               const total = items.reduce((acc, i) => acc + (i.quantity * i.unitPrice), 0);
-              return { ...c, items, total, customer_id: customerId };
+              return { 
+                ...c, 
+                items, 
+                total, 
+                customer_id: customerId || c.customer_id,
+                customerId: customerId || c.customerId // Garantir ambos os formatos
+              };
             }
             return c;
           })
@@ -444,8 +450,21 @@ const App = () => {
   const updateComandaCustomerId = (comandaId: string, customerId: string) => {
     const comanda = state.activeComandas.find(c => c.id === comandaId);
     if (comanda) {
+      // Atualizar no backend e estado local
       updateComanda(comandaId, comanda.items, customerId);
       setSelectedComandaCustomerId(customerId);
+      
+      // Atualizar estado local imediatamente para feedback visual
+      setState(prev => ({
+        ...prev,
+        activeComandas: prev.activeComandas.map(c => 
+          c.id === comandaId ? { 
+            ...c, 
+            customer_id: customerId, 
+            customerId: customerId 
+          } : c
+        )
+      }));
     }
   };
 
@@ -907,6 +926,11 @@ const App = () => {
       setCustomerSearchTerm(`${customer.nome} ${customer.sobrenome || ''}`.trim());
       setNewCustomerName(`${customer.nome} ${customer.sobrenome || ''}`.trim());
       setShowCustomerDropdown(false);
+      
+      console.log('[DEBUG] Cliente selecionado para nova comanda:', {
+        customerId: customer.id,
+        customerName: `${customer.nome} ${customer.sobrenome || ''}`.trim()
+      });
     };
     
     const handleCustomerSearchChange = (value: string) => {
@@ -931,13 +955,14 @@ const App = () => {
 
     const handleCreateComanda = () => {
       if (!newCustomerName.trim()) return alert("Nome do cliente obrigatório");
-      storageService.createComanda(newCustomerName)
+      storageService.createComanda(newCustomerName, undefined, selectedCustomerId || undefined)
         .then(({ comandaId }) => {
           // Adiciona ao estado local após sucesso no backend
           const newComanda: Comanda = {
             id: comandaId,
             customerName: newCustomerName,
             customerId: selectedCustomerId || undefined,
+            customer_id: selectedCustomerId || undefined, // Garantir ambos os formatos
             openedAt: new Date().toISOString(),
             items: [],
             total: 0,
@@ -1278,9 +1303,17 @@ const App = () => {
                                   className="w-full text-left px-3 py-2 hover:bg-blue-50 text-xs border-b border-gray-100 last:border-b-0"
                                   onClick={(e) => {
                                     e.stopPropagation();
+                                    // Atualizar customer_id na comanda
                                     updateComandaCustomerId(comanda.id, customer.id);
                                     setComandaCustomerSearchTerms(prev => ({ ...prev, [comanda.id]: customer.displayName }));
                                     setShowComandaCustomerDropdowns(prev => ({ ...prev, [comanda.id]: false }));
+                                    // Atualizar estado local imediatamente
+                                    setState(prev => ({
+                                      ...prev,
+                                      activeComandas: prev.activeComandas.map(c => 
+                                        c.id === comanda.id ? { ...c, customer_id: customer.id } : c
+                                      )
+                                    }));
                                   }}
                                 >
                                   {customer.displayName}
@@ -1376,9 +1409,17 @@ const App = () => {
                                   type="button"
                                   className="w-full text-left px-3 py-2 hover:bg-blue-50 text-sm border-b border-blue-100 last:border-b-0"
                                   onClick={() => {
+                                    // Atualizar customer_id na comanda
                                     updateComandaCustomerId(selectedComanda.id, customer.id);
                                     setComandaCustomerSearchTerms(prev => ({ ...prev, [selectedComanda.id]: customer.displayName }));
                                     setShowComandaCustomerDropdowns(prev => ({ ...prev, [selectedComanda.id]: false }));
+                                    // Atualizar estado local imediatamente
+                                    setState(prev => ({
+                                      ...prev,
+                                      activeComandas: prev.activeComandas.map(c => 
+                                        c.id === selectedComanda.id ? { ...c, customer_id: customer.id } : c
+                                      )
+                                    }));
                                   }}
                                 >
                                   {customer.displayName}

@@ -129,12 +129,10 @@ export const storageService = {
   // COMANDAS
   // =========================================
   
-  async createComanda(customerName: string, tableNumber?: string): Promise<{ comandaId: string }> {
+  async createComanda(customerName: string, tableNumber?: string, customerId?: string): Promise<{ comandaId: string }> {
     if (USE_API) {
       // Gerar id único: timestamp + random
       const id = `comanda_${Date.now()}_${Math.floor(Math.random()*100000)}`;
-      // customerId será passado como argumento extra (hack: arguments[2])
-      const customerId = arguments[2];
       const payload = {
         id,
         customer_name: customerName,

@@ -116,6 +116,7 @@ export interface ComandaItem extends CartItem {
 export interface Comanda {
   id: string;
   customerId?: string;
+  customer_id?: string; // Campo para compatibilidade com backend
   customerName: string;
   customerFone?: string; // Adicionado para compatibilidade com backend
   tableNumber?: string;
