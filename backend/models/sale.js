@@ -29,8 +29,8 @@ const SaleModel = {
         dateReceived: data.date
       });
 
-      // Gerar ID único para a venda
-      const saleId = `sale_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+      // Gerar ID único numérico para a venda (compatível com INTEGER)
+      const saleId = Date.now(); // Timestamp único como ID numérico
       
       // Converter data para formato MySQL
       const mysqlDate = formatDateForMySQL(data.date || new Date());
