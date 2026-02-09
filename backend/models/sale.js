@@ -29,12 +29,12 @@ const SaleModel = {
         dateReceived: data.date
       });
 
-      // Gerar ID único numérico menor (compatível com INT MySQL)
-      // Usa timestamp truncado + random para evitar colisões
+      // Gerar ID único menor que 2.1 bilhões (limite INT MySQL)
+      // Usa timestamp dos últimos 5 dígitos + 3 dígitos aleatórios = máximo 99999999 (~100M)
       const now = new Date();
-      const timePart = parseInt(now.getTime().toString().slice(-8)); // Últimos 8 dígitos do timestamp
-      const randomPart = Math.floor(Math.random() * 1000); // 3 dígitos aleatórios
-      const saleId = parseInt(`${timePart}${randomPart.toString().padStart(3, '0')}`); // Máximo 11 dígitos
+      const timePart = parseInt(now.getTime().toString().slice(-5)); // Últimos 5 dígitos
+      const randomPart = Math.floor(Math.random() * 100); // 2 dígitos aleatórios
+      const saleId = parseInt(`${timePart}${randomPart.toString().padStart(2, '0')}`); // Máximo 7 dígitos
       
       // Converter data para formato MySQL
       const mysqlDate = formatDateForMySQL(data.date || new Date());
