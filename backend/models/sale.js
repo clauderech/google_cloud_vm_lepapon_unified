@@ -2,6 +2,17 @@
 const { db } = require('../config/knex');
 const ProductModel = require('./product');
 
+// Função para converter data para formato MySQL
+function formatDateForMySQL(date) {
+  const d = new Date(date);
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0') + ' ' +
+    String(d.getHours()).padStart(2, '0') + ':' +
+    String(d.getMinutes()).padStart(2, '0') + ':' +
+    String(d.getSeconds()).padStart(2, '0');
+}
+
 const SaleModel = {
   async list() {
     return db('sales').select('*');
@@ -14,16 +25,21 @@ const SaleModel = {
       console.log('[SALE][CREATE][DATA]', { 
         items: data.items?.length || 0, 
         total: data.total, 
-        paymentMethod: data.paymentMethod 
+        paymentMethod: data.paymentMethod,
+        dateReceived: data.date
       });
 
       // Gerar ID único para a venda
       const saleId = `sale_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
       
+      // Converter data para formato MySQL
+      const mysqlDate = formatDateForMySQL(data.date || new Date());
+      console.log('[SALE][CREATE][DATE]', { original: data.date, converted: mysqlDate });
+      
       // Inserir venda na tabela sales
       await db('sales').insert({
         id: saleId,
-        date: data.date || new Date(),
+        date: mysqlDate,
         total: parseFloat(data.total) || 0,
         discount: parseFloat(data.discount) || 0,
         payment_method: data.paymentMethod,
@@ -98,7 +114,8 @@ const SaleModel = {
           itemsCount: data.items?.length || 0,
           total: data.total,
           paymentMethod: data.paymentMethod,
-          customerName: data.customerName
+          customerName: data.customerName,
+          dateOriginal: data.date
         }
       });
       throw error;
