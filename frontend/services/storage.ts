@@ -103,24 +103,47 @@ export const storageService = {
   
   async saveSale(sale: Sale): Promise<{ saleId: string }> {
     if (USE_API) {
+      console.log('[FRONTEND][SAVE_SALE][REQ]', { 
+        itemsCount: sale.items?.length || 0,
+        total: sale.total,
+        paymentMethod: sale.paymentMethod
+      });
+      
+      const payload = {
+        items: sale.items || [],
+        total: sale.total || 0,
+        subtotal: sale.subtotal || 0,
+        discount: sale.discount || 0,
+        paymentMethod: sale.paymentMethod,
+        customerName: sale.customerName || null,
+        customerPhone: sale.customerPhone || null,
+        customerId: sale.customerId || null,
+        comandaId: sale.comandaId || null,
+        notes: sale.notes || null,
+        date: sale.date || new Date().toISOString()
+      };
+      
+      console.log('[FRONTEND][SAVE_SALE][PAYLOAD]', payload);
+      
       const response = await fetch(`${API_URL}/sales`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items: sale.items,
-          total: sale.total,
-          subtotal: sale.subtotal,
-          discount: sale.discount || 0,
-          paymentMethod: sale.paymentMethod,
-          customerName: sale.customerName,
-          customerPhone: sale.customerPhone,
-          comandaId: sale.comandaId,
-          notes: sale.notes
-        })
+        body: JSON.stringify(payload)
       });
       
-      if (!response.ok) throw new Error('Erro ao salvar venda');
-      return response.json();
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[FRONTEND][SAVE_SALE][ERROR]', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        });
+        throw new Error(`Erro ao salvar venda: ${errorData.details || response.statusText}`);
+      }
+      
+      const result = await response.json();
+      console.log('[FRONTEND][SAVE_SALE][SUCCESS]', result);
+      return { saleId: result.saleId };
     }
     return { saleId: sale.id };
   },

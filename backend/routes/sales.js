@@ -27,10 +27,28 @@ router.get('/:id', async (req, res) => {
 // Criar venda
 router.post('/', async (req, res) => {
   try {
+    console.log('[SALES][POST][REQ]', { 
+      bodySize: JSON.stringify(req.body).length,
+      items: req.body.items?.length || 0,
+      total: req.body.total,
+      paymentMethod: req.body.paymentMethod
+    });
+    
     const result = await SaleModel.create(req.body);
-    res.status(201).json({ success: true, id: result[0] });
+    
+    console.log('[SALES][POST][SUCCESS]', { saleId: result[0] });
+    res.status(201).json({ success: true, saleId: result[0] });
   } catch (err) {
-    res.status(500).json({ error: 'Erro ao criar venda', details: err.message });
+    console.error('[SALES][POST][ERROR]', { 
+      error: err.message, 
+      stack: err.stack,
+      body: req.body
+    });
+    res.status(500).json({ 
+      error: 'Erro ao criar venda', 
+      details: err.message,
+      code: err.code || 'UNKNOWN'
+    });
   }
 });
 
