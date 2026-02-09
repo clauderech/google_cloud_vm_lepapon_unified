@@ -12,12 +12,21 @@ router.post('/:id/close', async (req, res) => {
     Espera body:
     {
       paymentMethod: 'cash' | 'card' | 'pix' | 'credit' | 'crediario',
+      customerId?: string (opcional, obrigatório para crédito),
       closeDate?: string (opcional, default: now)
     }
   */
   try {
     const comandaId = req.params.id;
-    const { paymentMethod, closeDate } = req.body;
+    const { paymentMethod, customerId, closeDate } = req.body;
+    
+    // Para crédito, customer_id é obrigatório
+    if ((paymentMethod === 'credit' || paymentMethod === 'crediario') && !customerId) {
+      return res.status(400).json({ 
+        error: 'Customer ID é obrigatório para pagamentos no crédito' 
+      });
+    }
+    
     const comanda = await ComandaModel.getById(comandaId);
     if (!comanda) return res.status(404).json({ error: 'Comanda não encontrada' });
     if (comanda.status === 'closed') return res.status(400).json({ error: 'Comanda já está fechada' });
@@ -27,10 +36,14 @@ router.post('/:id/close', async (req, res) => {
     // Calcula total
     const total = items.reduce((sum, item) => sum + (parseFloat(item.quantity) * parseFloat(item.unit_price)), 0);
 
+    // Usa customerId do request se fornecido, senão usa o da comanda
+    const finalCustomerId = customerId || comanda.customer_id;
+
     // Atualiza comanda para fechada
     await ComandaModel.update(comandaId, {
       status: 'closed',
       payment_method: paymentMethod,
+      customer_id: finalCustomerId, // Atualiza customer_id se fornecido
       closed_at: closeDate ? formatDateForMySQL(closeDate) : formatDateForMySQL(new Date()),
       total
     });
@@ -54,7 +67,7 @@ function formatDateForMySQL(date) {
       const dueDate = new Date(now.getFullYear(), now.getMonth() + 1, 0); // último dia do mês
 
       // Cria ou busca conta mensal
-      const acc = await CrediarioModel.findOrCreateMonthlyAccount(comanda.customer_id, monthYear, dueDate);
+      const acc = await CrediarioModel.findOrCreateMonthlyAccount(finalCustomerId, monthYear, dueDate);
 
       // Registra a compra vinculada à conta mensal
       await CrediarioModel.addMonthlyPurchase(
@@ -75,7 +88,7 @@ function formatDateForMySQL(date) {
       total,
       discount: 0,
       payment_method: paymentMethod,
-      customer_id: comanda.customer_id,
+      customer_id: finalCustomerId,
       customer_name: comanda.customer_name
     };
     const [saleId] = await SaleModel.create(saleData);

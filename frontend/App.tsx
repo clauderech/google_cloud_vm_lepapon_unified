@@ -395,8 +395,14 @@ const App = () => {
     const comanda = state.activeComandas.find(c => c.id === comandaId);
     if (!comanda) return;
 
+    // Para crédito, é obrigatório ter customer_id
+    if (paymentMethod === 'credit' && !comanda.customer_id) {
+      alert('Para pagamento no crédito é necessário associar um cliente à comanda!');
+      return;
+    }
+
     try {
-      await storageService.closeComanda(comandaId, paymentMethod);
+      await storageService.closeComanda(comandaId, paymentMethod, comanda.customer_id);
       setState(prev => ({
         ...prev,
         activeComandas: prev.activeComandas.filter(c => c.id !== comandaId)
@@ -1506,9 +1512,19 @@ const App = () => {
                                 <input type="radio" name="paymentMethod" value="pix" checked={paymentMethod === 'pix'} onChange={() => setPaymentMethod('pix')} />
                                 <span>Pix</span>
                               </label>
-                              <label className="flex items-center space-x-2">
-                                <input type="radio" name="paymentMethod" value="credit" checked={paymentMethod === 'credit'} onChange={() => setPaymentMethod('credit')} />
+                              <label className={`flex items-center space-x-2 ${!selectedComanda?.customer_id ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                <input 
+                                  type="radio" 
+                                  name="paymentMethod" 
+                                  value="credit" 
+                                  checked={paymentMethod === 'credit'} 
+                                  onChange={() => setPaymentMethod('credit')}
+                                  disabled={!selectedComanda?.customer_id}
+                                />
                                 <span>Crédito</span>
+                                {!selectedComanda?.customer_id && (
+                                  <span className="text-xs text-red-500">(Cliente obrigatório)</span>
+                                )}
                               </label>
                             </div>
                             <div className="flex justify-end space-x-2">
@@ -1523,6 +1539,36 @@ const App = () => {
             </div>
           )}
         </div>
+
+        {/* Modal de Cancelamento de Comanda */}
+        {showCancelModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6">
+              <h3 className="text-lg font-bold mb-4 text-gray-900">Cancelar Comanda</h3>
+              <p className="text-gray-600 mb-6">
+                Tem certeza que deseja cancelar esta comanda? 
+                O estoque dos itens será revertido automaticamente.
+              </p>
+              <div className="flex justify-end space-x-3">
+                <button 
+                  onClick={() => {
+                    setShowCancelModal(false);
+                    setCancelingComandaId(null);
+                  }} 
+                  className="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 font-bold hover:bg-gray-300"
+                >
+                  Manter Comanda
+                </button>
+                <button 
+                  onClick={() => cancelingComandaId && handleCancelComanda(cancelingComandaId)} 
+                  className="px-4 py-2 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700"
+                >
+                  Sim, Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   };

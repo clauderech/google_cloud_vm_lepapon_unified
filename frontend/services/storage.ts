@@ -172,12 +172,12 @@ export const storageService = {
     }
   },
 
-  async closeComanda(comandaId: string, paymentMethod: string): Promise<{ saleId: string }> {
+  async closeComanda(comandaId: string, paymentMethod: string, customerId?: string): Promise<{ saleId: string }> {
     if (USE_API) {
       const response = await fetch(`${API_URL}/comandas/${comandaId}/close`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paymentMethod })
+        body: JSON.stringify({ paymentMethod, customerId })
       });
       
       if (!response.ok) throw new Error('Erro ao fechar comanda');
