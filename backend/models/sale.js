@@ -92,8 +92,8 @@ const SaleModel = {
                     });
                   }
                 }
-              } else if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda') {
-                // Para insumos e revenda, deduzir diretamente do estoque
+              } else if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda' || product.type === 'drink') {
+                // Para insumos, bebidas, drinks e revenda, deduzir diretamente do estoque
                 const newStock = Math.max(0, (parseFloat(product.stock) || 0) - quantity);
                 await ProductModel.update(productId, { stock: newStock });
                 console.log('[SALE][STOCK][DIRECT]', { 
