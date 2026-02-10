@@ -270,8 +270,8 @@ const App = () => {
               ingredient.stock -= (recipeItem.quantity * cartItem.quantity);
             }
           });
-        } else if (productSold.type === 'insumo' || productSold.type === 'insumo_bebida') {
-          // Venda direta de insumo ou insumo_bebida
+        } else if (productSold.type === 'insumo' || productSold.type === 'insumo_bebida' || productSold.type === 'revenda' || productSold.type === 'drink') {
+          // Venda direta de insumo, insumo_bebida, revenda ou drink
           productSold.stock -= cartItem.quantity;
         }
       });
