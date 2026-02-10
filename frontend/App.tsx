@@ -262,16 +262,16 @@ const App = () => {
         const productSold = productsMap.get(cartItem.productId);
         if (!productSold) return;
 
-        if (productSold.type === 'prato' && productSold.recipe) {
-          // Deduct ingredients
+        if ((productSold.type === 'prato' || productSold.type === 'drink') && productSold.recipe) {
+          // Deduct ingredients for pratos and drinks with recipes
           productSold.recipe.forEach(recipeItem => {
             const ingredient = productsMap.get(recipeItem.ingredientId);
             if (ingredient) {
               ingredient.stock -= (recipeItem.quantity * cartItem.quantity);
             }
           });
-        } else if (productSold.type === 'insumo' || productSold.type === 'insumo_bebida' || productSold.type === 'revenda' || productSold.type === 'drink') {
-          // Venda direta de insumo, insumo_bebida, revenda ou drink
+        } else if (productSold.type === 'insumo' || productSold.type === 'insumo_bebida' || productSold.type === 'revenda' || (productSold.type === 'drink' && !productSold.recipe)) {
+          // Venda direta de insumo, insumo_bebida, revenda ou drinks simples (sem receita)
           productSold.stock -= cartItem.quantity;
         }
       });

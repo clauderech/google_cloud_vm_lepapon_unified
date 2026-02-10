@@ -76,8 +76,8 @@ const SaleModel = {
             const product = await ProductModel.getById(productId);
             
             if (product) {
-              if (product.type === 'prato' && product.recipe) {
-                // Para pratos, deduzir ingredientes da receita
+              if ((product.type === 'prato' || product.type === 'drink') && product.recipe) {
+                // Para pratos e drinks com receita, deduzir ingredientes da receita
                 const recipe = typeof product.recipe === 'string' ? JSON.parse(product.recipe) : product.recipe;
                 
                 for (const recipeItem of recipe) {
@@ -88,12 +88,14 @@ const SaleModel = {
                     console.log('[SALE][STOCK][INGREDIENT]', { 
                       ingredientId: recipeItem.ingredientId, 
                       oldStock: ingredient.stock, 
-                      newStock 
+                      newStock,
+                      productType: product.type,
+                      productName: product.name
                     });
                   }
                 }
-              } else if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda' || product.type === 'drink') {
-                // Para insumos, bebidas, drinks e revenda, deduzir diretamente do estoque
+              } else if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda' || (product.type === 'drink' && !product.recipe)) {
+                // Para insumos, bebidas, revenda e drinks simples (sem receita), deduzir diretamente do estoque
                 const newStock = Math.max(0, (parseFloat(product.stock) || 0) - quantity);
                 await ProductModel.update(productId, { stock: newStock });
                 console.log('[SALE][STOCK][DIRECT]', { 
