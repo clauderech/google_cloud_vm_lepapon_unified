@@ -12,6 +12,3 @@ export const Reports = lazy(() => import('./ReportsView'));
 export const LoyaltyProgram = lazy(() => import('./LoyaltyProgram'));
 export const Login = lazy(() => import('./Login'));
 
-// Lazy load de utilities pesadas
-export const Charts = lazy(() => import('./Charts'));
-export const BusinessInsights = lazy(() => import('./BusinessInsights'));
