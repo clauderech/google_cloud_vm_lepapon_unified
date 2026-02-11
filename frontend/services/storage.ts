@@ -291,18 +291,8 @@ export const storageService = {
         body: JSON.stringify(product)
       });
       
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.details
-          ? Array.isArray(errorData.details) 
-            ? errorData.details.join(', ')
-            : errorData.details
-          : errorData.error || 'Erro ao salvar produto';
-        throw new Error(errorMessage);
-      }
-      
-      const result = await response.json();
-      return { productId: result.id };
+      if (!response.ok) throw new Error('Erro ao salvar produto');
+      return response.json();
     }
     return { productId: product.id };
   },

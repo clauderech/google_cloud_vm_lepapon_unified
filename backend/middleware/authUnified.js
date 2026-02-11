@@ -88,7 +88,7 @@ function validateCombined(req, res, next) {
   });
 }
 
-module.exports = {
+export {
   validateWhatsappToken,
   validateApiKey,
   authDevMode,

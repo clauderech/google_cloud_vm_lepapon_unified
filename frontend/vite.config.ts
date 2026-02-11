@@ -17,30 +17,6 @@ export default defineConfig(({ mode }) => {
         ]
       },
       plugins: [react()],
-      build: {
-        rollupOptions: {
-          output: {
-            manualChunks: {
-              // Vendor libraries
-              'vendor-react': ['react', 'react-dom'],
-              'vendor-charts': ['recharts'],
-              'vendor-icons': ['lucide-react']
-            }
-          }
-        },
-        chunkSizeWarningLimit: 1000,
-        sourcemap: false,
-        minify: 'terser',
-        terserOptions: {
-          compress: {
-            drop_console: true,
-            drop_debugger: true
-          }
-        }
-      },
-      optimizeDeps: {
-        include: ['react', 'react-dom', 'recharts', 'lucide-react']
-      },
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)

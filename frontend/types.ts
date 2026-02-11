@@ -63,22 +63,6 @@ export interface Product {
   updated_at?: string;
 }
 
-export interface ProductFormData {
-  name?: string;
-  price?: number | string;
-  cost?: number | string;
-  stock?: number | string;
-  minStock?: number | string;
-  maxStock?: number | string;
-  unit?: MeasurementUnit;
-  supplierId?: string;
-  category?: string;
-  description?: string;
-  barcode?: string;
-  is_active?: boolean;
-  recipe?: RecipeItem[];
-}
-
 export interface CartItem {
   productId: string;
   productName: string;
