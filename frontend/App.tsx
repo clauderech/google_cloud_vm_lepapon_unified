@@ -86,18 +86,18 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { 
   Dashboard as LazyDashboard,
   POS as LazyPOS,
-  Inventory as LazyInventory
+  Inventory as LazyInventory,
+  Financial as LazyFinancial,
+  Reports as LazyReports,
+  Login as LazyLogin
 } from './components/LazyComponents';
 
-import FinancialDashboard from './components/FinancialDashboard';
 import ExpensesManager from './components/ExpensesManager';
 import CashRegister from './components/CashRegister';
-import ReportsView from './components/ReportsView';
 import CustomersManager from './components/CustomersManager';
 import LoyaltyProgram from './components/LoyaltyProgram';
 import CrediarioManager from './components/CrediarioManager';
 import HelpMenu from './components/HelpMenu';
-import Login from './components/Login';
 import { useAuth } from './hooks/useAuth';
 
 const App = () => {
@@ -670,7 +670,7 @@ const App = () => {
 
   // --- Render Login if not authenticated ---
   if (!isAuthenticated) {
-    return <Login onLogin={login} />;
+    return <LazyLogin onLogin={login} />;
   }
 
 
@@ -2209,10 +2209,10 @@ const App = () => {
             {view === 'customers' && <CustomersManager customers={state.customers} sales={state.sales} onAddCustomer={addCustomer} onUpdateCustomer={updateCustomer} onDeleteCustomer={deleteCustomer} />}
             {view === 'shopping-list' && <ShoppingListView />}
             {view === 'purchases' && <Purchases />}
-            {view === 'financial' && <FinancialDashboard />}
+            {view === 'financial' && <LazyFinancial />}
             {view === 'expenses' && <ExpensesManager />}
             {view === 'cash-register' && <CashRegister />}
-            {view === 'reports' && <ReportsView />}
+            {view === 'reports' && <LazyReports />}
             {view === 'crediario' && <CrediarioManager customers={state.customers} />}
            </Suspense>
         )}
