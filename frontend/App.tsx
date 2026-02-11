@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 
 // Configuration
 const USE_API = true; // Set to false to use local storage only
@@ -81,6 +81,14 @@ type PaymentMethod = 'cash' | 'card' | 'pix' | 'credit';
 import { generateBusinessInsight, suggestRestockOrder } from './services/geminiService';
 import { storageService } from './services/storage';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Legend } from 'recharts';
+
+// Lazy load components for better performance
+import { 
+  Dashboard as LazyDashboard,
+  POS as LazyPOS,
+  Inventory as LazyInventory
+} from './components/LazyComponents';
+
 import FinancialDashboard from './components/FinancialDashboard';
 import ExpensesManager from './components/ExpensesManager';
 import CashRegister from './components/CashRegister';
@@ -355,6 +363,100 @@ const App = () => {
     }
   };
 
+  const handleSave = async (newProd: Partial<Product>, mode: 'insumo' | 'insumo_bebida' | 'prato' | 'drink' | 'revenda') => {
+    // Validações
+    const errors = [];
+    
+    if (!newProd.name?.trim()) errors.push('Nome é obrigatório');
+    if (newProd.name && newProd.name.trim().length > 255) errors.push('Nome muito longo (máx 255 caracteres)');
+    
+    if (newProd.price !== undefined && newProd.price !== null) {
+      const price = Number(newProd.price);
+      if (isNaN(price) || price < 0) errors.push('Preço deve ser um número positivo');
+      if (price > 999999.99) errors.push('Preço muito alto (máx R$ 999.999,99)');
+    }
+    
+    if (newProd.cost !== undefined && newProd.cost !== null) {
+      const cost = Number(newProd.cost);
+      if (isNaN(cost) || cost < 0) errors.push('Custo deve ser um número positivo');
+      if (cost > 999999.99) errors.push('Custo muito alto (máx R$ 999.999,99)');
+    }
+    
+    if (newProd.stock !== undefined && newProd.stock !== null) {
+      const stock = Number(newProd.stock);
+      if (isNaN(stock) || stock < 0) errors.push('Estoque deve ser um número positivo');
+    }
+    
+    if (newProd.minStock !== undefined && newProd.minStock !== null) {
+      const minStock = Number(newProd.minStock);
+      if (isNaN(minStock) || minStock < 0) errors.push('Estoque mínimo deve ser um número positivo');
+    }
+    
+    if (newProd.supplierId && !state.suppliers.find(s => s.id === newProd.supplierId)) {
+      errors.push('Fornecedor selecionado não existe');
+    }
+    
+    if (newProd.recipe && newProd.recipe.length > 0) {
+      newProd.recipe.forEach((item, index) => {
+        if (!item.ingredientId || !item.quantity) {
+          errors.push(`Item ${index + 1} da receita deve ter produto e quantidade`);
+        }
+        if (isNaN(Number(item.quantity)) || Number(item.quantity) <= 0) {
+          errors.push(`Quantidade do item ${index + 1} da receita deve ser um número positivo`);
+        }
+        if (!state.products.find(p => p.id === item.ingredientId)) {
+          errors.push(`Produto do item ${index + 1} da receita não existe`);
+        }
+      });
+    }
+    
+    if (errors.length > 0) {
+      alert('Erros de validação:\n' + errors.join('\n'));
+      return;
+    }
+    
+    // Verificar duplicatas
+    const isDuplicate = state.products.some(p => 
+      p.name.toLowerCase().trim() === newProd.name.toLowerCase().trim() && 
+      p.type === mode
+    );
+    
+    if (isDuplicate) {
+      alert('Já existe um produto com este nome e tipo');
+      return;
+    }
+    
+    try {
+      const productToSave: Product = {
+        ...newProd,
+        name: newProd.name.trim(),
+        type: mode,
+        stock: (mode === 'prato' || mode === 'drink') ? 0 : Number(newProd.stock || 0),
+        price: Number(newProd.price || 0),
+        cost: Number(newProd.cost || 0),
+        minStock: Number(newProd.minStock || 0),
+        maxStock: newProd.maxStock ? Number(newProd.maxStock) : undefined,
+        supplierId: newProd.supplierId || '',
+        category: newProd.category?.trim() || 'Geral',
+        description: newProd.description?.trim() || '',
+        barcode: newProd.barcode?.trim() || '',
+        unit: newProd.unit || 'un',
+        is_active: newProd.is_active !== false,
+        recipe: newProd.recipe || []
+      } as Product;
+
+      // Se estiver usando API, não precisa gerar ID (backend fará isso)
+      if (!USE_API) {
+        productToSave.id = `prod_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      }
+
+      await addProduct(productToSave);
+    } catch (error) {
+      console.error('Erro ao salvar produto:', error);
+      alert('Erro ao salvar produto. Tente novamente.');
+    }
+  };
+
   const addCustomer = (customer: Omit<Customer, 'id' | 'created_at' | 'updated_at'>) => {
     const newCustomer: Customer = {
       ...customer,
@@ -586,213 +688,6 @@ const App = () => {
   );
 
   // --- Pages ---
-
-  const Dashboard = () => {
-    const [insight, setInsight] = useState<string>("");
-    const [loadingInsight, setLoadingInsight] = useState(false);
-
-    const totalSales = state.sales.reduce((acc, s) => acc + s.total, 0);
-    const totalPurchases = state.purchases.reduce((acc, p) => acc + p.total, 0);
-    const lowStockCount = state.products.filter(p => p.type === 'insumo' && p.stock <= p.minStock).length;
-    const avgTicket = state.sales.length > 0 ? totalSales / state.sales.length : 0;
-    
-    const salesData = useMemo(() => {
-      const last7Days = new Array(7).fill(0).map((_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        return d.toISOString().split('T')[0];
-      }).reverse();
-
-      return last7Days.map(date => {
-        const dailyTotal = state.sales
-          .filter(s => s.date.startsWith(date))
-          .reduce((acc, s) => acc + s.total, 0);
-        return { date: date.slice(5), total: dailyTotal };
-      });
-    }, [state.sales]);
-
-    // Top produtos vendidos
-    const topProducts = useMemo(() => {
-      const productSales: Record<string, { name: string; quantity: number; revenue: number }> = {};
-      
-      state.sales.forEach(sale => {
-        sale.items.forEach(item => {
-          if (!productSales[item.productId]) {
-            productSales[item.productId] = { name: item.productName, quantity: 0, revenue: 0 };
-          }
-          productSales[item.productId].quantity += item.quantity;
-          productSales[item.productId].revenue += item.quantity * item.unitPrice;
-        });
-      });
-
-      return Object.values(productSales)
-        .sort((a, b) => b.revenue - a.revenue)
-        .slice(0, 5);
-    }, [state.sales]);
-
-    // Vendas por categoria
-    const salesByCategory = useMemo(() => {
-      const categoryData: Record<string, number> = {};
-      
-      state.sales.forEach(sale => {
-        sale.items.forEach(item => {
-          const product = state.products.find(p => p.id === item.productId);
-          const category = product?.category || 'Outros';
-          categoryData[category] = (categoryData[category] || 0) + (item.quantity * item.unitPrice);
-        });
-      });
-
-      return Object.entries(categoryData).map(([name, value]) => ({ name, value }));
-    }, [state.sales, state.products]);
-
-    // Vendas por forma de pagamento
-    const paymentMethodData = useMemo(() => {
-      const methods: Record<string, number> = { cash: 0, card: 0, pix: 0, credit: 0 };
-      
-      state.sales.forEach(sale => {
-        methods[sale.paymentMethod] = (methods[sale.paymentMethod] || 0) + sale.total;
-      });
-
-      return Object.entries(methods)
-        .map(([name, value]) => ({ 
-          name: name === 'cash' ? 'Dinheiro' : name === 'card' ? 'Cartão' : name === 'pix' ? 'PIX' : 'Crédito', 
-          value 
-        }))
-        .filter(item => item.value > 0);
-    }, [state.sales]);
-
-    const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
-
-    const handleGenerateInsight = async () => {
-      setLoadingInsight(true);
-      const result = await generateBusinessInsight(state.products, state.sales, state.purchases);
-      setInsight(result);
-      setLoadingInsight(false);
-    };
-
-    return (
-      <div className="p-6 space-y-6">
-        <h2 className="text-2xl font-bold text-gray-900">Painel de Controle</h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-6 rounded-xl shadow-lg text-white">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white/90 text-sm font-bold">Vendas Totais</h3>
-              <TrendingUp className="text-white/90 w-6 h-6" />
-            </div>
-            <p className="text-3xl font-bold">R$ {totalSales.toFixed(2)}</p>
-            <p className="text-xs text-white/80 mt-1 font-medium">{state.sales.length} transações</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-xl shadow-lg text-white">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white/90 text-sm font-bold">Ticket Médio</h3>
-              <Receipt className="text-white/90 w-6 h-6" />
-            </div>
-            <p className="text-3xl font-bold">R$ {avgTicket.toFixed(2)}</p>
-            <p className="text-xs text-white/80 mt-1 font-medium">Por venda</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-amber-500 to-amber-600 p-6 rounded-xl shadow-lg text-white">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white/90 text-sm font-bold">Insumos Críticos</h3>
-              <AlertTriangle className="text-white/90 w-6 h-6" />
-            </div>
-            <p className="text-3xl font-bold">{lowStockCount}</p>
-            <p className="text-xs text-white/80 mt-1 font-medium">Abaixo do mínimo</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-xl shadow-lg text-white">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white/90 text-sm font-bold">Comandas Abertas</h3>
-              <Users className="text-white/90 w-6 h-6" />
-            </div>
-            <p className="text-3xl font-bold">{state.activeComandas.length}</p>
-            <p className="text-xs text-white/80 mt-1 font-medium">Em atendimento</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-             <h3 className="text-lg font-bold text-gray-800 mb-4">Vendas da Semana</h3>
-             <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={salesData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="date" tickLine={false} axisLine={false} tick={{ fill: '#4b5563' }} />
-                  <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `R$ ${value}`} tick={{ fill: '#4b5563' }} />
-                  <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', color: '#000' }} />
-                  <Line type="monotone" dataKey="total" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                </LineChart>
-             </ResponsiveContainer>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Top 5 Produtos Vendidos</h3>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={topProducts}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fill: '#4b5563', fontSize: 11 }} />
-                <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `R$ ${value}`} tick={{ fill: '#4b5563' }} />
-                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                <Bar dataKey="revenue" fill="#8b5cf6" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Vendas por Categoria</h3>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={salesByCategory}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {salesByCategory.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value: number) => `R$ ${value.toFixed(2)}`} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-xl border border-indigo-100">
-            <div className="flex items-center gap-2 mb-4">
-              <Sparkles className="w-5 h-5 text-indigo-700" />
-              <h3 className="text-lg font-bold text-indigo-900">Consultor IA</h3>
-            </div>
-            {!insight ? (
-              <div className="text-center py-8">
-                <p className="text-indigo-800 text-sm mb-4 font-medium">Obtenha insights sobre seu estoque e vendas.</p>
-                <button 
-                  onClick={handleGenerateInsight}
-                  disabled={loadingInsight}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors disabled:opacity-50"
-                >
-                  {loadingInsight ? "Analisando..." : "Gerar Análise"}
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="text-sm text-indigo-900 font-medium leading-relaxed whitespace-pre-line bg-white/80 p-4 rounded-lg border border-indigo-200 h-48 overflow-y-auto">
-                  {insight}
-                </div>
-                <button onClick={handleGenerateInsight} className="text-xs text-indigo-700 font-bold hover:underline">
-                  Atualizar Análise
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   const POS = () => {
     const [cart, setCart] = useState<CartItem[]>([]);
@@ -1701,102 +1596,6 @@ const App = () => {
       }
     };
 
-    const handleSave = async () => {
-      // Validações
-      const errors = [];
-      
-      if (!newProd.name?.trim()) errors.push('Nome é obrigatório');
-      if (newProd.name && newProd.name.trim().length > 255) errors.push('Nome muito longo (máx 255 caracteres)');
-      
-      if (newProd.price !== undefined && newProd.price !== null) {
-        const price = Number(newProd.price);
-        if (isNaN(price) || price < 0) errors.push('Preço deve ser um número positivo');
-        if (price > 999999.99) errors.push('Preço muito alto (máx R$ 999.999,99)');
-      }
-      
-      if (newProd.cost !== undefined && newProd.cost !== null) {
-        const cost = Number(newProd.cost);
-        if (isNaN(cost) || cost < 0) errors.push('Custo deve ser um número positivo');
-        if (cost > 999999.99) errors.push('Custo muito alto (máx R$ 999.999,99)');
-      }
-      
-      if (newProd.stock !== undefined && newProd.stock !== null) {
-        const stock = Number(newProd.stock);
-        if (isNaN(stock) || stock < 0) errors.push('Estoque deve ser um número positivo');
-      }
-      
-      if (newProd.minStock !== undefined && newProd.minStock !== null) {
-        const minStock = Number(newProd.minStock);
-        if (isNaN(minStock) || minStock < 0) errors.push('Estoque mínimo deve ser um número positivo');
-      }
-      
-      if (newProd.supplierId && !state.suppliers.find(s => s.id === newProd.supplierId)) {
-        errors.push('Fornecedor selecionado não existe');
-      }
-      
-      if (newProd.recipe && newProd.recipe.length > 0) {
-        newProd.recipe.forEach((item, index) => {
-          if (!item.productId || !item.quantity) {
-            errors.push(`Item ${index + 1} da receita deve ter produto e quantidade`);
-          }
-          if (isNaN(Number(item.quantity)) || Number(item.quantity) <= 0) {
-            errors.push(`Quantidade do item ${index + 1} da receita deve ser um número positivo`);
-          }
-          if (!state.products.find(p => p.id === item.productId)) {
-            errors.push(`Produto do item ${index + 1} da receita não existe`);
-          }
-        });
-      }
-      
-      if (errors.length > 0) {
-        alert('Erros de validação:\n' + errors.join('\n'));
-        return;
-      }
-      
-      // Verificar duplicatas
-      const isDuplicate = state.products.some(p => 
-        p.name.toLowerCase().trim() === newProd.name.toLowerCase().trim() && 
-        p.type === mode
-      );
-      
-      if (isDuplicate) {
-        alert('Já existe um produto com este nome e tipo');
-        return;
-      }
-      
-      try {
-        const productToSave: Product = {
-          ...newProd,
-          name: newProd.name.trim(),
-          type: mode,
-          stock: (mode === 'prato' || mode === 'drink') ? 0 : Number(newProd.stock || 0),
-          price: Number(newProd.price || 0),
-          cost: Number(newProd.cost || 0),
-          minStock: Number(newProd.minStock || 0),
-          maxStock: newProd.maxStock ? Number(newProd.maxStock) : undefined,
-          supplierId: newProd.supplierId || '',
-          category: newProd.category?.trim() || 'Geral',
-          description: newProd.description?.trim() || '',
-          barcode: newProd.barcode?.trim() || '',
-          unit: newProd.unit || 'un',
-          is_active: newProd.is_active !== false,
-          recipe: newProd.recipe || []
-        } as Product;
-
-        // Se estiver usando API, não precisa gerar ID (backend fará isso)
-        if (!USE_API) {
-          productToSave.id = `prod_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        }
-
-        await addProduct(productToSave);
-        setShowForm(false);
-        setNewProd({ category: 'Geral', minStock: 10, unit: 'un', recipe: [] });
-        
-      } catch (error) {
-        console.error('Erro ao salvar produto:', error);
-        alert('Erro ao salvar produto. Tente novamente.');
-      }
-    };
 
     return (
       <div className="p-6 max-w-6xl mx-auto">
@@ -2387,10 +2186,26 @@ const App = () => {
         {loading ? (
            <div className="flex h-full items-center justify-center text-blue-600 font-bold text-xl">Carregando Sistema...</div>
         ) : (
-           <>
-            {view === 'dashboard' && <Dashboard />}
-            {view === 'pos' && <POS />}
-            {view === 'inventory' && <Inventory />}
+           <Suspense fallback={<div className="flex h-full items-center justify-center text-blue-600 font-bold text-xl">Carregando...</div>}>
+            {view === 'dashboard' && (
+              <LazyDashboard
+                products={state.products}
+                sales={state.sales}
+                purchases={state.purchases}
+                activeComandas={state.activeComandas}
+              />
+            )}
+            {view === 'pos' && (
+              <LazyPOS 
+                products={state.products}
+                onSale={(items, paymentMethod, customerId) => {
+                  addSale(items, paymentMethod, undefined, customerId);
+                }}
+              />
+            )}
+            {view === 'inventory' && (
+              <Inventory />
+            )}
             {view === 'customers' && <CustomersManager customers={state.customers} sales={state.sales} onAddCustomer={addCustomer} onUpdateCustomer={updateCustomer} onDeleteCustomer={deleteCustomer} />}
             {view === 'shopping-list' && <ShoppingListView />}
             {view === 'purchases' && <Purchases />}
@@ -2399,7 +2214,7 @@ const App = () => {
             {view === 'cash-register' && <CashRegister />}
             {view === 'reports' && <ReportsView />}
             {view === 'crediario' && <CrediarioManager customers={state.customers} />}
-           </>
+           </Suspense>
         )}
       </main>
 
