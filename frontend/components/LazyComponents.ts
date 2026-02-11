@@ -5,7 +5,7 @@ export const Dashboard = lazy(() => import('./Dashboard'));
 export const POS = lazy(() => import('./POS'));
 export const Inventory = lazy(() => import('./Inventory'));
 export const Customers = lazy(() => import('./Customers'));
-export const Financial = lazy(() => import('./Financial'));
+export const Financial = lazy(() => import('./FinancialDashboard'));
 export const Reports = lazy(() => import('./Reports'));
 
 // Lazy load de componentes grandes
