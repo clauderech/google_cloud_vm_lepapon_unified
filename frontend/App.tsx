@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 
+// Configuration
+const USE_API = true; // Set to false to use local storage only
+
 // Extende a interface Window para incluir __ERROR_LOGGER_INSTALLED__
 declare global {
   interface Window {
@@ -329,8 +332,27 @@ const App = () => {
     });
   };
 
-  const addProduct = (product: Product) => {
-    setState(prev => ({ ...prev, products: [...prev.products, product] }));
+  const addProduct = async (product: Product) => {
+    try {
+      const response = await storageService.saveProduct(product);
+      
+      // Se retornou um ID do backend, usar esse ID
+      const finalProduct = {
+        ...product,
+        id: response.productId || product.id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      setState(prev => ({ 
+        ...prev, 
+        products: [...prev.products, finalProduct] 
+      }));
+      
+    } catch (error) {
+      console.error('Erro ao adicionar produto:', error);
+      throw error; // Re-throw para ser capturado no handleSave
+    }
   };
 
   const addCustomer = (customer: Omit<Customer, 'id' | 'created_at' | 'updated_at'>) => {
@@ -1679,23 +1701,101 @@ const App = () => {
       }
     };
 
-    const handleSave = () => {
-      if (!newProd.name) return alert("Nome é obrigatório");
+    const handleSave = async () => {
+      // Validações
+      const errors = [];
       
-      const productToSave: Product = {
-        ...newProd,
-        id: Date.now().toString(),
-        type: mode,
-        stock: (mode === 'prato' || mode === 'drink') ? 0 : (newProd.stock || 0),
-        price: Number(newProd.price || 0),
-        cost: Number(newProd.cost || 0),
-        supplierId: newProd.supplierId || '',
-        is_active: newProd.is_active ? 1 : 0,
-      } as Product;
+      if (!newProd.name?.trim()) errors.push('Nome é obrigatório');
+      if (newProd.name && newProd.name.trim().length > 255) errors.push('Nome muito longo (máx 255 caracteres)');
+      
+      if (newProd.price !== undefined && newProd.price !== null) {
+        const price = Number(newProd.price);
+        if (isNaN(price) || price < 0) errors.push('Preço deve ser um número positivo');
+        if (price > 999999.99) errors.push('Preço muito alto (máx R$ 999.999,99)');
+      }
+      
+      if (newProd.cost !== undefined && newProd.cost !== null) {
+        const cost = Number(newProd.cost);
+        if (isNaN(cost) || cost < 0) errors.push('Custo deve ser um número positivo');
+        if (cost > 999999.99) errors.push('Custo muito alto (máx R$ 999.999,99)');
+      }
+      
+      if (newProd.stock !== undefined && newProd.stock !== null) {
+        const stock = Number(newProd.stock);
+        if (isNaN(stock) || stock < 0) errors.push('Estoque deve ser um número positivo');
+      }
+      
+      if (newProd.minStock !== undefined && newProd.minStock !== null) {
+        const minStock = Number(newProd.minStock);
+        if (isNaN(minStock) || minStock < 0) errors.push('Estoque mínimo deve ser um número positivo');
+      }
+      
+      if (newProd.supplierId && !state.suppliers.find(s => s.id === newProd.supplierId)) {
+        errors.push('Fornecedor selecionado não existe');
+      }
+      
+      if (newProd.recipe && newProd.recipe.length > 0) {
+        newProd.recipe.forEach((item, index) => {
+          if (!item.productId || !item.quantity) {
+            errors.push(`Item ${index + 1} da receita deve ter produto e quantidade`);
+          }
+          if (isNaN(Number(item.quantity)) || Number(item.quantity) <= 0) {
+            errors.push(`Quantidade do item ${index + 1} da receita deve ser um número positivo`);
+          }
+          if (!state.products.find(p => p.id === item.productId)) {
+            errors.push(`Produto do item ${index + 1} da receita não existe`);
+          }
+        });
+      }
+      
+      if (errors.length > 0) {
+        alert('Erros de validação:\n' + errors.join('\n'));
+        return;
+      }
+      
+      // Verificar duplicatas
+      const isDuplicate = state.products.some(p => 
+        p.name.toLowerCase().trim() === newProd.name.toLowerCase().trim() && 
+        p.type === mode
+      );
+      
+      if (isDuplicate) {
+        alert('Já existe um produto com este nome e tipo');
+        return;
+      }
+      
+      try {
+        const productToSave: Product = {
+          ...newProd,
+          name: newProd.name.trim(),
+          type: mode,
+          stock: (mode === 'prato' || mode === 'drink') ? 0 : Number(newProd.stock || 0),
+          price: Number(newProd.price || 0),
+          cost: Number(newProd.cost || 0),
+          minStock: Number(newProd.minStock || 0),
+          maxStock: newProd.maxStock ? Number(newProd.maxStock) : undefined,
+          supplierId: newProd.supplierId || '',
+          category: newProd.category?.trim() || 'Geral',
+          description: newProd.description?.trim() || '',
+          barcode: newProd.barcode?.trim() || '',
+          unit: newProd.unit || 'un',
+          is_active: newProd.is_active !== false,
+          recipe: newProd.recipe || []
+        } as Product;
 
-      addProduct(productToSave);
-      setShowForm(false);
-      setNewProd({ category: 'Geral', minStock: 10, unit: 'un', recipe: [] });
+        // Se estiver usando API, não precisa gerar ID (backend fará isso)
+        if (!USE_API) {
+          productToSave.id = `prod_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        }
+
+        await addProduct(productToSave);
+        setShowForm(false);
+        setNewProd({ category: 'Geral', minStock: 10, unit: 'un', recipe: [] });
+        
+      } catch (error) {
+        console.error('Erro ao salvar produto:', error);
+        alert('Erro ao salvar produto. Tente novamente.');
+      }
     };
 
     return (
