@@ -285,13 +285,47 @@ export const storageService = {
   
   async saveProduct(product: Product): Promise<{ productId: string }> {
     if (USE_API) {
+      // Mapear camelCase para snake_case (padrão do banco)
+      const payload = {
+        id: product.id,
+        name: product.name,
+        type: product.type,
+        price: product.price,
+        cost: product.cost,
+        stock: product.stock,
+        min_stock: product.minStock,
+        max_stock: product.maxStock,
+        unit: product.unit,
+        supplier_id: product.supplierId && product.supplierId !== '' ? product.supplierId : null,
+        category: product.category,
+        description: product.description,
+        barcode: product.barcode,
+        is_active: product.is_active,
+        recipe: product.recipe || []
+      };
+      
+      console.log('[STORAGE][SAVE_PRODUCT][PAYLOAD]', {
+        id: payload.id,
+        name: payload.name,
+        min_stock: payload.min_stock,
+        supplier_id: payload.supplier_id
+      });
+      
       const response = await fetch(`${API_URL}/products`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(product)
+        body: JSON.stringify(payload)
       });
       
-      if (!response.ok) throw new Error('Erro ao salvar produto');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[STORAGE][SAVE_PRODUCT][ERROR]', {
+          status: response.status,
+          error: errorData
+        });
+        throw new Error(`Erro ao salvar produto: ${errorData.details || response.statusText}`);
+      }
+      
       return response.json();
     }
     return { productId: product.id };
