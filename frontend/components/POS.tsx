@@ -28,7 +28,7 @@ const POS: React.FC<POSProps> = ({ products, onSale }) => {
 
   const filteredProducts = useMemo(() => {
     return products
-      .filter(p => p.type === 'produto' && p.stock > 0)
+      .filter(p => p.type !== 'insumo' && p.type !== 'insumo_bebida' && p.stock > 0)
       .filter(p => selectedCategory === 'Todos' || p.category === selectedCategory)
       .filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
   }, [products, selectedCategory, searchTerm]);
