@@ -125,6 +125,13 @@ const App = () => {
     activeComandas: []
   });
 
+  // --- ID Generator: timestamp + random base-36 (collision-proof) ---
+  const generateId = (): string => {
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 11);
+    return `${timestamp}_${random}`;
+  };
+
   // --- Initialization ---
   useEffect(() => {
     const init = async () => {
@@ -231,7 +238,7 @@ const App = () => {
     const loyaltyPointsEarned = Math.floor(total / 10);
     
     const newSale: Sale = {
-      id: Date.now().toString(),
+      id: generateId(),
       date: new Date().toISOString(),
       items,
       subtotal,
@@ -304,7 +311,7 @@ const App = () => {
   const addPurchase = (supplierId: string, items: CartItem[]) => {
     const total = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
     const newPurchase: Purchase = {
-      id: Date.now().toString(),
+      id: generateId(),
       date: new Date().toISOString(),
       supplierId,
       items,
@@ -329,14 +336,49 @@ const App = () => {
     });
   };
 
-  const addProduct = (product: Product) => {
+  const addProduct = async (product: Product) => {
+    // Atualiza estado local primeiro (UI otimista)
     setState(prev => ({ ...prev, products: [...prev.products, product] }));
+    
+    // Persiste no banco de dados
+    try {
+      console.log('[PRODUTO][CREATE][REQ]', { 
+        id: product.id, 
+        name: product.name, 
+        type: product.type,
+        stock: product.stock,
+        cost: product.cost
+      });
+      
+      await storageService.saveProduct(product);
+      
+      console.log('[PRODUTO][CREATE][SUCCESS]', { 
+        id: product.id, 
+        name: product.name 
+      });
+    } catch (err: any) {
+      console.error('[PRODUTO][CREATE][ERROR]', { 
+        id: product.id, 
+        name: product.name,
+        error: err.message,
+        stack: err.stack
+      });
+      
+      // Remove do estado local se falhar no banco
+      setState(prev => ({ 
+        ...prev, 
+        products: prev.products.filter(p => p.id !== product.id) 
+      }));
+      
+      alert(`Erro ao salvar produto no banco de dados:\n${err.message}\n\nO produto não foi cadastrado.`);
+      throw err;
+    }
   };
 
   const addCustomer = (customer: Omit<Customer, 'id' | 'created_at' | 'updated_at'>) => {
     const newCustomer: Customer = {
       ...customer,
-      id: `customer_${Date.now()}`,
+      id: `customer_${generateId()}`,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -361,7 +403,7 @@ const App = () => {
   // --- Comanda Actions ---
   const openComanda = (customerName: string) => {
     const newComanda: Comanda = {
-      id: Date.now().toString(),
+      id: generateId(),
       customerName,
       openedAt: new Date().toISOString(),
       items: [],
@@ -487,7 +529,7 @@ const App = () => {
       }
       return {
         ...prev,
-        shoppingList: [...prev.shoppingList, { id: Date.now().toString(), productId, quantity }]
+        shoppingList: [...prev.shoppingList, { id: generateId(), productId, quantity }]
       };
     });
   };
@@ -510,7 +552,7 @@ const App = () => {
         const suggestQty = (p.minStock * 2) - p.stock; 
         if (suggestQty > 0) {
           if (!existing) {
-            newList.push({ id: Date.now().toString() + p.id, productId: p.id, quantity: suggestQty });
+            newList.push({ id: `${generateId()}_${p.id}`, productId: p.id, quantity: suggestQty });
             count++;
           }
         }
@@ -1679,12 +1721,12 @@ const App = () => {
       }
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
       if (!newProd.name) return alert("Nome é obrigatório");
       
       const productToSave: Product = {
         ...newProd,
-        id: Date.now().toString(),
+        id: generateId(),
         type: mode,
         stock: (mode === 'prato' || mode === 'drink') ? 0 : (newProd.stock || 0),
         price: Number(newProd.price || 0),
@@ -1693,9 +1735,15 @@ const App = () => {
         is_active: newProd.is_active ? 1 : 0,
       } as Product;
 
-      addProduct(productToSave);
-      setShowForm(false);
-      setNewProd({ category: 'Geral', minStock: 10, unit: 'un', recipe: [] });
+      try {
+        await addProduct(productToSave);
+        setShowForm(false);
+        setNewProd({ category: 'Geral', minStock: 10, unit: 'un', recipe: [] });
+        alert(`${mode === 'insumo' ? 'Insumo' : mode === 'prato' ? 'Prato' : mode === 'drink' ? 'Drink' : 'Item'} cadastrado com sucesso!`);
+      } catch (err) {
+        // Erro já foi tratado em addProduct
+        console.error('[HANDLERSAVE][ERROR]', err);
+      }
     };
 
     return (

@@ -19,14 +19,67 @@ const ProductModel = {
     };
   },
   async create(data) {
-    const toSave = { ...data };
-    if (toSave.recipe) toSave.recipe = JSON.stringify(toSave.recipe);
-    return db('products').insert(toSave);
+    console.log('[PRODUCT][MODEL][CREATE][REQ]', { 
+      id: data.id, 
+      name: data.name, 
+      type: data.type,
+      stock: data.stock,
+      hasRecipe: !!data.recipe,
+      recipeLength: data.recipe?.length || 0
+    });
+    
+    try {
+      const toSave = { ...data };
+      if (toSave.recipe) toSave.recipe = JSON.stringify(toSave.recipe);
+      
+      const result = await db('products').insert(toSave);
+      
+      console.log('[PRODUCT][MODEL][CREATE][SUCCESS]', { 
+        id: data.id, 
+        name: data.name,
+        insertResult: result
+      });
+      
+      return result;
+    } catch (err) {
+      console.error('[PRODUCT][MODEL][CREATE][ERROR]', {
+        id: data.id,
+        name: data.name,
+        error: err.message,
+        code: err.code,
+        stack: err.stack
+      });
+      throw err;
+    }
   },
   async update(id, data) {
-    const toSave = { ...data };
-    if (toSave.recipe) toSave.recipe = JSON.stringify(toSave.recipe);
-    return db('products').where({ id }).update(toSave);
+    console.log('[PRODUCT][MODEL][UPDATE][REQ]', { 
+      id, 
+      fields: Object.keys(data),
+      hasRecipe: !!data.recipe
+    });
+    
+    try {
+      const toSave = { ...data };
+      if (toSave.recipe) toSave.recipe = JSON.stringify(toSave.recipe);
+      
+      const result = await db('products').where({ id }).update(toSave);
+      
+      console.log('[PRODUCT][MODEL][UPDATE][SUCCESS]', { 
+        id,
+        rowsAffected: result
+      });
+      
+      return result;
+    } catch (err) {
+      console.error('[PRODUCT][MODEL][UPDATE][ERROR]', {
+        id,
+        error: err.message,
+        code: err.code,
+        stack: err.stack
+      });
+      throw err;
+    }
   },
   async remove(id) {
     return db('products').where({ id }).del();

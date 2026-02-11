@@ -41,10 +41,34 @@ router.get('/:id', async (req, res) => {
 // Criar produto
 router.post('/', async (req, res) => {
   try {
+    console.log('[PRODUCT][ROUTE][CREATE][REQ]', {
+      id: req.body.id,
+      name: req.body.name,
+      type: req.body.type,
+      bodyKeys: Object.keys(req.body)
+    });
+    
     const result = await ProductModel.create(req.body);
-    res.status(201).json({ success: true, id: result[0] });
+    
+    console.log('[PRODUCT][ROUTE][CREATE][SUCCESS]', {
+      id: req.body.id,
+      resultId: result[0]
+    });
+    
+    res.status(201).json({ success: true, productId: req.body.id || result[0] });
   } catch (err) {
-    res.status(500).json({ error: 'Erro ao criar produto', details: err.message });
+    console.error('[PRODUCT][ROUTE][CREATE][ERROR]', {
+      id: req.body.id,
+      name: req.body.name,
+      error: err.message,
+      code: err.code,
+      stack: err.stack
+    });
+    res.status(500).json({ 
+      error: 'Erro ao criar produto', 
+      details: err.message,
+      code: err.code
+    });
   }
 });
 
