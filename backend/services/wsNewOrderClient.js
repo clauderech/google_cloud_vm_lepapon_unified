@@ -13,27 +13,13 @@ const WS_URL = process.env.LEPAPON_WS_URL || 'ws://lepapon.com.br:3001';
 const TOKEN = process.env.LEPAPON_WS_TOKEN || 'SEU_TOKEN_AQUI';
 const RECONNECT_DELAY = 5000; // ms
 
-// Helper para enviar itens do tipo 'prato' para a cozinha
+// Helper para gerenciar itens do tipo 'prato' na cozinha
+// Usa função centralizada para evitar duplicações
 async function sendPratosToKitchen(items, comandaId) {
   try {
-    for (const item of items) {
-      const productId = item.product_id;
-      if (!productId) continue;
-      
-      const product = await ProductModel.getById(productId);
-      if (product && product.type === 'prato') {
-        await CozinhaItem.create({
-          comanda_id: comandaId,
-          product_id: productId,
-          quantidade: item.quantity,
-          status: 'pending',
-          observacao: item.notes || null,
-          prioridade: 'normal',
-          responsavel: null
-        });
-        console.log(`[WS][COZINHA] Prato adicionado à cozinha: ${product.name} (qty: ${item.quantity})`);
-      }
-    }
+    console.log(`[WS][COZINHA] Gerenciando itens da cozinha para comanda ${comandaId}`);
+    const results = await CozinhaItem.manageCozinhaItems(comandaId, items);
+    console.log(`[WS][COZINHA] Operações realizadas:`, results);
   } catch (error) {
     console.error('[WS][COZINHA][ERROR]', { error: error.message, comandaId });
   }

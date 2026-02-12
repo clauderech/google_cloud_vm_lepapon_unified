@@ -121,24 +121,6 @@ function formatDateForMySQL(date) {
       }
     }
 
-    // Integração com cozinha: registrar itens do tipo 'prato' na cozinha_items
-    for (const item of items) {
-      const productId = item.product_id || item.productId;
-      if (!productId) continue;
-      const product = await ProductModel.getById(productId);
-      if (product && product.type === 'prato') {
-        await CozinhaItem.create({
-          comanda_id: comandaId,
-          product_id: productId,
-          quantidade: item.quantity,
-          status: 'pending',
-          observacao: item.notes || null,
-          prioridade: 'normal',
-          responsavel: null
-        });
-      }
-    }
-
     res.json({ success: true, comandaId, saleId, total });
   } catch (err) {
     console.error('[COMANDA][CLOSE][ERROR]', { id: req.params.id, error: err.message, stack: err.stack });
@@ -181,14 +163,31 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     console.log('[COMANDA][CREATE][REQ]', { payload: req.body });
+    
+    // Separa itens dos dados da comanda
+    const { items, ...comandaPayload } = req.body;
+    
     // Garante que customer_fone será preenchido se houver customer ou telefone no body
-    const comandaPayload = {
-      ...req.body,
-      customer_fone: req.body.customer_fone || (req.body.customer ? req.body.customer.phone : undefined)
+    const finalComandaPayload = {
+      ...comandaPayload,
+      customer_fone: comandaPayload.customer_fone || (comandaPayload.customer ? comandaPayload.customer.phone : undefined)
     };
-    const result = await ComandaModel.create(comandaPayload);
-    console.log('[COMANDA][CREATE][RESULT]', { result });
-    res.status(201).json({ success: true, id: result[0] });
+    
+    const result = await ComandaModel.create(finalComandaPayload);
+    const comandaId = result[0];
+    
+    console.log('[COMANDA][CREATE][RESULT]', { result, comandaId });
+    
+    // Adiciona itens se fornecidos
+    if (Array.isArray(items) && items.length > 0) {
+      console.log('[COMANDA][CREATE][ADDING_ITEMS]', { comandaId, itemsCount: items.length });
+      await ComandaModel.addItems(comandaId, items);
+      
+      // Envia itens do tipo 'prato' para a cozinha imediatamente
+      await CozinhaItem.manageCozinhaItems(comandaId, items);
+    }
+    
+    res.status(201).json({ success: true, id: comandaId });
   } catch (err) {
     console.error('[COMANDA][CREATE][ERROR]', { payload: req.body, error: err.message, stack: err.stack });
     res.status(500).json({ error: 'Erro ao criar comanda', details: err.message, stack: err.stack });
@@ -230,45 +229,11 @@ router.put('/:id', async (req, res) => {
     if (Array.isArray(items)) {
       // Remove itens antigos e insere novos (simples)
       await ComandaModel.clearItems(req.params.id);
-      
-      // CORREÇÃO: Remove itens antigos da cozinha para evitar duplicação
-      try {
-        const { db } = require('../config/knex');
-        const deletedCozinhaItems = await db('cozinha_items')
-          .where({ comanda_id: req.params.id })
-          .del();
-        
-        if (deletedCozinhaItems > 0) {
-          console.log('[COMANDA][UPDATE][COZINHA_CLEAR]', { 
-            comandaId: req.params.id, 
-            removedItems: deletedCozinhaItems 
-          });
-        }
-      } catch (cozinhaError) {
-        console.warn('[COMANDA][UPDATE][COZINHA_CLEAR_WARNING]', { 
-          error: cozinhaError.message 
-        });
-      }
-      
       await ComandaModel.addItems(req.params.id, items);
       
-      // Adiciona novos itens do tipo 'prato' na cozinha
-      for (const item of items) {
-        const productId = item.productId || item.product_id;
-        if (!productId) continue;
-        const product = await ProductModel.getById(productId);
-        if (product && product.type === 'prato') {
-          await CozinhaItem.create({
-            comanda_id: req.params.id,
-            product_id: productId,
-            quantidade: item.quantity,
-            status: 'pending',
-            observacao: item.notes || null,
-            prioridade: 'normal',
-            responsavel: null
-          });
-        }
-      }
+      // Gerencia itens da cozinha usando função centralizada
+      // Faz diff inteligente para evitar duplicações
+      await CozinhaItem.manageCozinhaItems(req.params.id, items);
     }
     res.json({ success: true });
   } catch (err) {
