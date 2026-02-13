@@ -2015,10 +2015,13 @@ const App = () => {
                     })}
                           {/* Modal de edição de produto */}
                           {editModalOpen && editProd && (
-                            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                              <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-8 border border-blue-200">
-                                <h3 className="text-xl font-bold mb-4 text-blue-900">Editar Produto</h3>
-                                <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+                              <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col border border-blue-200">
+                                <div className="p-8 pb-4">
+                                  <h3 className="text-xl font-bold text-blue-900">Editar Produto</h3>
+                                </div>
+                                <div className="flex-1 overflow-y-auto px-8">
+                                  <div className="grid grid-cols-2 gap-4 mb-4">
                                   <div className="flex items-center col-span-2">
                                     <input type="checkbox" id="isActiveEdit" checked={!!editProd.is_active} onChange={e => setEditProd({...editProd, is_active: e.target.checked})} className="mr-2" />
                                     <label htmlFor="isActiveEdit" className="font-bold text-gray-700">Produto Ativo</label>
@@ -2041,9 +2044,9 @@ const App = () => {
                                     <option value="">Fornecedor</option>
                                     {state.suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                   </select>
-                                </div>
-                                {(editMode === 'prato' || editMode === 'drink') && (
-                                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4">
+                                  </div>
+                                  {(editMode === 'prato' || editMode === 'drink') && (
+                                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4">
                                     <h4 className="font-bold text-gray-800 mb-2">Ficha Técnica (Receita)</h4>
                                     <div className="flex gap-2 mb-2">
                                       <select 
@@ -2065,7 +2068,7 @@ const App = () => {
                                         ))}
                                       </select>
                                     </div>
-                                    <div className="space-y-1">
+                                    <div className="space-y-1 max-h-48 overflow-y-auto">
                                       {editProd.recipe?.map((item, idx) => {
                                         const ingName = state.products.find(p => p.id === item.ingredientId)?.name;
                                         return (
@@ -2088,9 +2091,12 @@ const App = () => {
                                     </div>
                                   </div>
                                 )}
-                                <div className="flex justify-end gap-2 mt-4">
-                                  <button className="px-4 py-2 rounded bg-gray-200 text-gray-700 font-bold" onClick={() => {setEditModalOpen(false); setEditProd(null);}}>Cancelar</button>
-                                  <button className="px-4 py-2 rounded bg-green-600 text-white font-bold" onClick={handleEditSave}>Salvar</button>
+                                </div>
+                                <div className="p-8 pt-4 border-t border-gray-100">
+                                  <div className="flex justify-end gap-2">
+                                    <button className="px-4 py-2 rounded bg-gray-200 text-gray-700 font-bold" onClick={() => {setEditModalOpen(false); setEditProd(null);}}>Cancelar</button>
+                                    <button className="px-4 py-2 rounded bg-green-600 text-white font-bold" onClick={handleEditSave}>Salvar</button>
+                                  </div>
                                 </div>
                               </div>
                             </div>
