@@ -1,7 +1,6 @@
 
 const { db } = require('../config/knex');
-const ProductModel = require('./product');
-
+const ProductModel = require('./product');const StockService = require('../services/stockService');
 // Função para converter data para formato MySQL
 function formatDateForMySQL(date) {
   const d = new Date(date);
@@ -67,48 +66,37 @@ const SaleModel = {
         await db('sale_items').insert(saleItems);
         console.log('[SALE][ITEMS][SUCCESS]', { itemCount: saleItems.length });
 
-        // Atualizar estoque dos produtos vendidos
+        // Atualizar estoque dos produtos vendidos usando StockService
         for (const item of data.items) {
           const productId = item.productId;
           const quantity = parseFloat(item.quantity);
           
           if (productId && !isNaN(quantity)) {
-            const product = await ProductModel.getById(productId);
-            
-            if (product) {
-              if ((product.type === 'prato' || product.type === 'drink') && product.recipe) {
-                // Para pratos e drinks com receita, deduzir ingredientes da receita
-                const recipe = typeof product.recipe === 'string' ? JSON.parse(product.recipe) : product.recipe;
-                
-                for (const recipeItem of recipe) {
-                  const ingredient = await ProductModel.getById(recipeItem.ingredientId);
-                  if (ingredient) {
-                    const newStock = Math.max(0, (parseFloat(ingredient.stock) || 0) - (recipeItem.quantity * quantity));
-                    await ProductModel.update(recipeItem.ingredientId, { stock: newStock });
-                    console.log('[SALE][STOCK][INGREDIENT]', { 
-                      ingredientId: recipeItem.ingredientId, 
-                      oldStock: ingredient.stock, 
-                      newStock,
-                      productType: product.type,
-                      productName: product.name
-                    });
-                  }
-                }
-              } else if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda' || (product.type === 'drink' && !product.recipe)) {
-                // Para insumos, bebidas, revenda e drinks simples (sem receita), deduzir diretamente do estoque
-                const newStock = Math.max(0, (parseFloat(product.stock) || 0) - quantity);
-                await ProductModel.update(productId, { stock: newStock });
-                console.log('[SALE][STOCK][DIRECT]', { 
-                  productId, 
-                  oldStock: product.stock, 
-                  newStock 
-                });
-              }
+            try {
+              await StockService.processSale({
+                productId: productId,
+                quantity: quantity,
+                saleId: saleId.toString(),
+                userId: data.userId || null
+              });
+              
+              console.log('[SALE][STOCK][SUCCESS]', { 
+                productId, 
+                quantity,
+                saleId
+              });
+            } catch (stockError) {
+              console.error('[SALE][STOCK][ERROR]', {
+                productId,
+                quantity,
+                error: stockError.message
+              });
+              // Não falha a venda por erro de estoque, apenas loga
             }
           }
         }
         
-        console.log('[SALE][STOCK][SUCCESS]', 'Estoque atualizado');
+        console.log('[SALE][STOCK][SUCCESS]', 'Estoque atualizado via StockService');
       }
 
       return [saleId];

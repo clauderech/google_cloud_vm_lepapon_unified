@@ -6,6 +6,7 @@ const SaleItemModel = require('../models/sale_item');
 const ProductModel = require('../models/product');
 const CrediarioModel = require('../models/crediario');
 const CozinhaItem = require('../models/cozinha_item');
+const StockService = require('../services/stockService');
 // Finalizar comanda (pagamento normal ou crediário)
 router.post('/:id/close', async (req, res) => {
   /*
@@ -108,17 +109,20 @@ function formatDateForMySQL(date) {
       });
     }
 
-    // Atualiza estoque dos produtos
-    for (const item of items) {
-      const productId = item.product_id || item.productId;
-      const quantity = parseFloat(item.quantity);
-      if (productId && !isNaN(quantity)) {
-        const product = await ProductModel.getById(productId);
-        if (product) {
-          const newStock = (parseFloat(product.stock) || 0) - quantity;
-          await ProductModel.update(productId, { stock: newStock });
-        }
-      }
+    // Atualiza estoque dos produtos usando StockService
+    try {
+      await StockService.processComanda({
+        items: items,
+        comandaId: comandaId,
+        userId: req.body.userId || null
+      });
+      console.log('[COMANDA][CLOSE][STOCK][SUCCESS]', { comandaId, itemCount: items.length });
+    } catch (stockError) {
+      console.error('[COMANDA][CLOSE][STOCK][ERROR]', {
+        comandaId,
+        error: stockError.message
+      });
+      // Não falha o fechamento da comanda por erro de estoque
     }
 
     res.json({ success: true, comandaId, saleId, total });
@@ -265,25 +269,23 @@ router.delete('/:id', async (req, res) => {
     const items = await ComandaModel.getItems(req.params.id);
     console.log('[COMANDA][DELETE][ITEMS]', { comandaId: req.params.id, itemCount: items.length });
     
-    // Reverte estoque dos produtos
-    for (const item of items) {
-      const productId = item.product_id || item.productId;
-      const quantity = parseFloat(item.quantity);
-      
-      if (productId && !isNaN(quantity)) {
-        const product = await ProductModel.getById(productId);
-        if (product) {
-          // Reverte estoque (adiciona de volta a quantidade)
-          const newStock = (parseFloat(product.stock) || 0) + quantity;
-          await ProductModel.update(productId, { stock: newStock });
-          console.log('[COMANDA][DELETE][STOCK_REVERT]', { 
-            productId, 
-            quantity, 
-            oldStock: product.stock, 
-            newStock 
-          });
-        }
-      }
+    // Reverte estoque dos produtos usando StockService
+    try {
+      await StockService.revertComanda({
+        items: items,
+        comandaId: req.params.id,
+        userId: req.body.userId || null
+      });
+      console.log('[COMANDA][DELETE][STOCK_REVERT][SUCCESS]', { 
+        comandaId: req.params.id, 
+        itemCount: items.length 
+      });
+    } catch (stockError) {
+      console.error('[COMANDA][DELETE][STOCK_REVERT][ERROR]', {
+        comandaId: req.params.id,
+        error: stockError.message
+      });
+      // Continua com a deleção mesmo se houver erro de estoque
     }
     
     // Remove itens da cozinha se existirem

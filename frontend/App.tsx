@@ -255,39 +255,16 @@ const App = () => {
     // Persistir venda no banco de dados
     try {
       await storageService.saveSale(newSale);
-    } catch (err) {
-      console.error('Erro ao salvar venda:', err);
-      alert('Erro ao salvar venda no banco de dados!');
-      return;
-    }
-
-    setState(prev => {
-      // Create a copy of products to mutate stocks
-      const productsMap = new Map<string, Product>(prev.products.map(p => [p.id, { ...p }]));
-
-      items.forEach(cartItem => {
-        const productSold = productsMap.get(cartItem.productId);
-        if (!productSold) return;
-
-        if ((productSold.type === 'prato' || productSold.type === 'drink') && productSold.recipe) {
-          // Deduct ingredients for pratos and drinks with recipes
-          productSold.recipe.forEach(recipeItem => {
-            const ingredient = productsMap.get(recipeItem.ingredientId);
-            if (ingredient) {
-              ingredient.stock -= (recipeItem.quantity * cartItem.quantity);
-            }
-          });
-        } else if (productSold.type === 'insumo' || productSold.type === 'insumo_bebida' || productSold.type === 'revenda' || (productSold.type === 'drink' && !productSold.recipe)) {
-          // Venda direta de insumo, insumo_bebida, revenda ou drinks simples (sem receita)
-          productSold.stock -= cartItem.quantity;
-        }
-      });
-
-      // Atualizar pontos de fidelidade do cliente
-      const updatedCustomers = customerId 
-        ? prev.customers.map(c => {
-            if (c.id === customerId) {
-              const currentPoints = c.loyaltyPoints || 0;
+      
+      // Recarregar produtos do backend após venda (estoque já foi atualizado pelo backend)
+      const updatedProducts = await storageService.getProducts();
+      
+      setState(prev => {
+        // Atualizar pontos de fidelidade do cliente
+        const updatedCustomers = customerId 
+          ? prev.customers.map(c => {
+              if (c.id === customerId) {
+                const currentPoints = c.loyaltyPoints || 0;
               const usedPoints = loyaltyPointsUsed || 0;
               const earnedPoints = loyaltyPointsEarned || 0;
               return {
@@ -299,16 +276,21 @@ const App = () => {
           })
         : prev.customers;
 
-      return {
-        ...prev,
-        sales: [...prev.sales, newSale],
-        products: Array.from(productsMap.values()),
-        customers: updatedCustomers
-      };
-    });
+        return {
+          ...prev,
+          sales: [...prev.sales, newSale],
+          products: updatedProducts, // Usar produtos atualizados do backend
+          customers: updatedCustomers
+        };
+      });
+    } catch (err) {
+      console.error('Erro ao salvar venda:', err);
+      alert('Erro ao salvar venda no banco de dados!');
+      return;
+    }
   };
 
-  const addPurchase = (supplierId: string, items: CartItem[]) => {
+  const addPurchase = async (supplierId: string, items: CartItem[]) => {
     const total = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
     const newPurchase: Purchase = {
       id: generateId(),
@@ -319,21 +301,22 @@ const App = () => {
       status: 'received'
     };
 
-    setState(prev => {
-      const updatedProducts = prev.products.map(p => {
-        const purchasedItem = items.find(i => i.productId === p.id);
-        if (purchasedItem) {
-          return { ...p, stock: p.stock + purchasedItem.quantity };
-        }
-        return p;
-      });
-
-      return {
+    try {
+      // Salvar compra no backend (que atualiza o estoque automaticamente)
+      await storageService.savePurchase(newPurchase);
+      
+      // Recarregar produtos do backend após compra (estoque já foi atualizado)
+      const updatedProducts = await storageService.getProducts();
+      
+      setState(prev => ({
         ...prev,
         purchases: [...prev.purchases, newPurchase],
-        products: updatedProducts
-      };
-    });
+        products: updatedProducts // Usar produtos atualizados do backend
+      }));
+    } catch (err) {
+      console.error('Erro ao salvar compra:', err);
+      alert('Erro ao salvar compra no banco de dados!');
+    }
   };
 
   const addProduct = async (product: Product) => {

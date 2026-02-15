@@ -73,6 +73,14 @@ app.use('/api/initial-state', initialStateRouter);
 const cozinhaRouter = require('./routes/cozinha');
 app.use('/api/cozinha', cozinhaRouter);
 
+// Rotas de relatórios
+const reportsRouter = require('./routes/reports');
+app.use('/api/reports', reportsRouter);
+
+// Rotas de controle de estoque
+const stockRouter = require('./routes/stock');
+app.use('/api/stock', stockRouter);
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({
