@@ -283,6 +283,25 @@ export const storageService = {
   // PRODUTOS
   // =========================================
   
+  async getProducts(): Promise<Product[]> {
+    if (USE_API) {
+      try {
+        const response = await fetch(`${API_URL}/products`);
+        if (!response.ok) throw new Error('Erro ao buscar produtos');
+        
+        const products = await response.json();
+        return products.map(mapProductFromDB);
+      } catch (error) {
+        console.error('Erro ao buscar produtos:', error);
+        throw error;
+      }
+    } else {
+      // LocalStorage fallback
+      const state = loadFromLocalStorage();
+      return state.products;
+    }
+  },
+  
   async saveProduct(product: Product): Promise<{ productId: string }> {
     if (USE_API) {
       // Mapear camelCase para snake_case (padrão do banco)
