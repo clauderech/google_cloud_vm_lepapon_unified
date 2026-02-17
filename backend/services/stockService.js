@@ -259,17 +259,56 @@ class StockService {
     const movements = [];
     
     for (const item of items) {
-      const movement = await this.updateStock({
-        productId: item.product_id || item.productId,
-        quantity: parseFloat(item.quantity), // Positivo para adicionar de volta
-        movementType: 'comanda_cancel',
-        referenceType: 'comanda',
-        referenceId: comandaId,
-        notes: `Comanda cancelada - estoque revertido`,
-        userId
-      });
+      const productId = item.product_id || item.productId;
+      const quantity = parseFloat(item.quantity);
       
-      movements.push(movement);
+      if (!productId || isNaN(quantity)) {
+        console.warn('[STOCK_SERVICE][COMANDA_REVERT][SKIP]', { productId, quantity });
+        continue;
+      }
+      
+      // Usar a mesma lógica inteligente que processSale()
+      const product = await ProductModel.getById(productId);
+      if (!product) {
+        console.warn(`[STOCK_SERVICE][COMANDA_REVERT][PRODUCT_NOT_FOUND] ${productId}`);
+        continue;
+      }
+
+      if ((product.type === 'prato' || product.type === 'drink') && product.recipe) {
+        // Produto com receita - reverte ingredientes (igual processSale)
+        const recipe = typeof product.recipe === 'string' ? JSON.parse(product.recipe) : product.recipe;
+        
+        for (const recipeItem of recipe) {
+          const ingredientQuantity = recipeItem.quantity * quantity; // POSITIVO para devolver
+          
+          const movement = await this.updateStock({
+            productId: recipeItem.ingredientId,
+            quantity: ingredientQuantity,
+            movementType: 'recipe_revert',
+            referenceType: 'comanda',
+            referenceId: comandaId,
+            notes: `Reversão receita: ${product.name} (${quantity}x) - Comanda cancelada`,
+            userId
+          });
+          
+          movements.push(movement);
+        }
+      } else if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda' || (product.type === 'drink' && !product.recipe)) {
+        // Produto simples - reverte diretamente
+        const movement = await this.updateStock({
+          productId: productId,
+          quantity: quantity, // POSITIVO para devolver
+          movementType: 'comanda_cancel',
+          referenceType: 'comanda',
+          referenceId: comandaId,
+          notes: `Comanda cancelada - estoque revertido`,
+          userId
+        });
+        
+        movements.push(movement);
+      } else {
+        console.warn(`[STOCK_SERVICE][COMANDA_REVERT][SKIP_TYPE] Tipo de produto não suportado: ${product.type} para produto ${productId}`);
+      }
     }
 
     return movements;
