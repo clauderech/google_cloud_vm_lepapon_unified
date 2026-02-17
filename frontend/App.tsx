@@ -2302,7 +2302,6 @@ const App = () => {
           {hasPermission('view_inventory') && <SidebarItem icon={Package} label="Estoque / Receitas" active={view === 'inventory'} onClick={() => setView('inventory')} />}
           {hasPermission('manage_products') && <SidebarItem icon={Users} label="Clientes" active={view === 'customers'} onClick={() => setView('customers')} />}
           {hasPermission('view_kitchen') && <SidebarItem icon={ChefHat} label="Cozinha" active={view === 'cozinha'} onClick={() => setView('cozinha')} />}
-          {hasPermission('view_kitchen') && <SidebarItem icon={ChefHat} label="Cozinha" active={view === 'cozinha'} onClick={() => setView('cozinha')} />}
           {hasPermission('view_shopping_list') && <SidebarItem icon={ClipboardList} label="Lista de Compras" active={view === 'shopping-list'} onClick={() => setView('shopping-list')} />}
           {hasPermission('view_purchases') && <SidebarItem icon={Truck} label="Entrada de Notas" active={view === 'purchases'} onClick={() => setView('purchases')} />}
           <div className="my-2 border-t border-gray-200"></div>
@@ -2333,7 +2332,6 @@ const App = () => {
             {view === 'pos' && <POS />}
             {view === 'inventory' && <Inventory />}
             {view === 'customers' && <CustomersManager customers={state.customers} sales={state.sales} onAddCustomer={addCustomer} onUpdateCustomer={updateCustomer} onDeleteCustomer={deleteCustomer} />}
-            {view === 'cozinha' && <KitchenDashboard />}
             {view === 'cozinha' && <KitchenDashboard />}
             {view === 'shopping-list' && <ShoppingListView />}
             {view === 'purchases' && <Purchases />}
