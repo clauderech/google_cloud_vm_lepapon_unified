@@ -2196,6 +2196,9 @@ const App = () => {
     const [selectedSupplier, setSelectedSupplier] = useState('');
     const [purchaseCart, setPurchaseCart] = useState<CartItem[]>([]);
     const [aiSuggestion, setAiSuggestion] = useState('');
+    const [selectedProduct, setSelectedProduct] = useState('');
+    const [quantity, setQuantity] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleAddPurchase = () => {
       if (!selectedSupplier || purchaseCart.length === 0) return;
@@ -2206,12 +2209,23 @@ const App = () => {
 
     const getAiSuggestion = async () => {
       if (!selectedSupplier) return;
-      const text = await suggestRestockOrder(state.products.filter(p => p.type === 'insumo'), selectedSupplier);
-      setAiSuggestion(text);
+      setIsLoading(true);
+      try {
+        const text = await suggestRestockOrder(state.products.filter(p => p.type === 'insumo'), selectedSupplier);
+        setAiSuggestion(text);
+      } catch (error) {
+        console.error('Erro ao gerar sugestão:', error);
+        alert('Erro ao gerar sugestão de pedido');
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    // Only filter 'insumo' (ingredients) for purchasing
-    const availableProducts = state.products.filter(p => p.supplierId === selectedSupplier && p.type === 'insumo');
+    // Only filter 'insumo' (ingredients) for purchasing - optimized with useMemo
+    const availableProducts = useMemo(() => 
+      state.products.filter(p => p.supplierId === selectedSupplier && p.type === 'insumo'),
+      [state.products, selectedSupplier]
+    );
 
     return (
       <div className="p-6 max-w-4xl mx-auto">
@@ -2220,13 +2234,24 @@ const App = () => {
           <div className="md:col-span-1 space-y-4">
             <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
               <label className="block text-sm font-bold text-gray-800 mb-2">Fornecedor</label>
-              <select className="w-full border border-gray-400 p-2 rounded-lg text-black bg-white" value={selectedSupplier} onChange={e => { setSelectedSupplier(e.target.value); setPurchaseCart([]); setAiSuggestion(''); }}>
+              <select className="w-full border border-gray-400 p-2 rounded-lg text-black bg-white" value={selectedSupplier} onChange={e => { 
+                setSelectedSupplier(e.target.value); 
+                setPurchaseCart([]); 
+                setAiSuggestion('');
+                setSelectedProduct('');
+                setQuantity('');
+              }}>
                 <option value="">Selecione...</option>
                 {state.suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
               {selectedSupplier && (
-                <button onClick={getAiSuggestion} className="mt-4 w-full bg-purple-50 text-purple-800 border border-purple-200 py-2 rounded-lg text-sm flex items-center justify-center gap-2 hover:bg-purple-100 font-bold">
-                  <Sparkles className="w-4 h-4" /> Sugerir Pedido
+                <button 
+                  onClick={getAiSuggestion} 
+                  disabled={isLoading}
+                  className="mt-4 w-full bg-purple-50 text-purple-800 border border-purple-200 py-2 rounded-lg text-sm flex items-center justify-center gap-2 hover:bg-purple-100 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Sparkles className="w-4 h-4" /> 
+                  {isLoading ? 'Gerando...' : 'Sugerir Pedido'}
                 </button>
               )}
             </div>
@@ -2238,27 +2263,97 @@ const App = () => {
               <>
                 <h3 className="font-bold text-gray-800 mb-4">Itens do Fornecedor</h3>
                 <div className="flex gap-2 mb-4">
-                  <select id="prodSelect" className="flex-1 border border-gray-400 p-2 rounded-lg text-black bg-white">
-                    {availableProducts.map(p => <option key={p.id} value={p.id}>{p.name} (Atual: {p.stock} {p.unit})</option>)}
+                  <select 
+                    value={selectedProduct} 
+                    onChange={e => setSelectedProduct(e.target.value)}
+                    className="flex-1 border border-gray-400 p-2 rounded-lg text-black bg-white"
+                  >
+                    <option value="">Selecione um produto...</option>
+                    {availableProducts.map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} (Atual: {p.stock} {p.unit})
+                      </option>
+                    ))}
                   </select>
-                  <input id="qtyInput" type="number" placeholder="Qtd" className="w-20 border border-gray-400 p-2 rounded-lg text-black bg-white placeholder-gray-600" />
-                  <button onClick={() => {
-                      const sel = document.getElementById('prodSelect') as HTMLSelectElement;
-                      const qty = document.getElementById('qtyInput') as HTMLInputElement;
-                      const prod = availableProducts.find(p => p.id === sel.value);
-                      if (prod && Number(qty.value) > 0) {
-                        setPurchaseCart([...purchaseCart, { productId: prod.id, productName: prod.name, quantity: Number(qty.value), unitPrice: prod.cost }]);
-                        qty.value = '';
+                  <input 
+                    type="number" 
+                    placeholder="Qtd" 
+                    value={quantity}
+                    onChange={e => setQuantity(e.target.value)}
+                    min="0.01"
+                    step="0.01"
+                    className="w-20 border border-gray-400 p-2 rounded-lg text-black bg-white placeholder-gray-600" 
+                  />
+                  <button 
+                    onClick={() => {
+                      const prod = availableProducts.find(p => p.id === selectedProduct);
+                      const qty = Number(quantity);
+                      
+                      if (!prod) {
+                        alert('Selecione um produto');
+                        return;
                       }
-                    }} className="bg-blue-600 text-white px-4 rounded-lg font-bold">Add</button>
+                      
+                      if (!qty || qty <= 0) {
+                        alert('Digite uma quantidade válida');
+                        return;
+                      }
+                      
+                      // Verifica se produto já existe no carrinho
+                      const existingItemIndex = purchaseCart.findIndex(item => item.productId === prod.id);
+                      
+                      if (existingItemIndex >= 0) {
+                        // Atualiza quantidade do produto existente
+                        const updatedCart = [...purchaseCart];
+                        updatedCart[existingItemIndex].quantity += qty;
+                        setPurchaseCart(updatedCart);
+                      } else {
+                        // Adiciona novo produto ao carrinho
+                        setPurchaseCart([...purchaseCart, { 
+                          productId: prod.id, 
+                          productName: prod.name, 
+                          quantity: qty, 
+                          unitPrice: prod.cost 
+                        }]);
+                      }
+                      
+                      setQuantity('');
+                      setSelectedProduct('');
+                    }} 
+                    disabled={!selectedProduct || !quantity || Number(quantity) <= 0}
+                    className="bg-blue-600 text-white px-4 rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700"
+                  >
+                    Add
+                  </button>
                 </div>
                 <div className="space-y-2 mb-6">
-                  {purchaseCart.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-center bg-gray-100 p-3 rounded border border-gray-200">
-                      <span className="text-gray-900 font-bold">{item.productName} (x{item.quantity})</span>
-                      <span className="text-gray-800 font-medium">R$ {(item.quantity * item.unitPrice).toFixed(2)}</span>
+                  {purchaseCart.length === 0 ? (
+                    <div className="text-gray-500 text-center py-4 italic">
+                      Nenhum item adicionado
                     </div>
-                  ))}
+                  ) : (
+                    purchaseCart.map((item, idx) => (
+                      <div key={idx} className="flex justify-between items-center bg-gray-100 p-3 rounded border border-gray-200">
+                        <div className="flex-1">
+                          <span className="text-gray-900 font-bold">{item.productName}</span>
+                          <span className="text-gray-600 ml-2">(x{item.quantity})</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-gray-800 font-medium">R$ {(item.quantity * item.unitPrice).toFixed(2)}</span>
+                          <button 
+                            onClick={() => {
+                              const updatedCart = purchaseCart.filter((_, index) => index !== idx);
+                              setPurchaseCart(updatedCart);
+                            }}
+                            className="text-red-600 hover:text-red-800 hover:bg-red-50 p-1 rounded"
+                            title="Remover item"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
                 <div className="flex justify-between items-center border-t border-gray-200 pt-4">
                    <span className="font-black text-xl text-gray-900">Total: R$ {purchaseCart.reduce((acc, i) => acc + (i.quantity * i.unitPrice), 0).toFixed(2)}</span>
