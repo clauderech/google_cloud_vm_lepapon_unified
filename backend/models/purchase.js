@@ -24,11 +24,10 @@ const PurchaseModel = {
       // Inserir compra na tabela
       await db('purchases').insert({
         id: purchaseId,
+        date: new Date(), // Usando o campo 'date' que existe no DB
         supplier_id: data.supplierId,
         total: parseFloat(data.total) || 0,
         invoice_number: data.invoiceNumber || null,
-        payment_method: data.paymentMethod || 'cash',
-        notes: data.notes || null,
         status: 'received',
         created_at: new Date()
       });

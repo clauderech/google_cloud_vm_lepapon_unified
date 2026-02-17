@@ -267,9 +267,7 @@ export const storageService = {
           supplierId: purchase.supplierId,
           items: purchase.items,
           total: purchase.total,
-          invoiceNumber: purchase.invoiceNumber,
-          paymentMethod: purchase.paymentMethod,
-          notes: purchase.notes
+          invoiceNumber: purchase.invoiceNumber
         })
       });
       
@@ -477,9 +475,7 @@ function mapPurchaseFromDB(p: any): Purchase {
     total: parseFloat(p.total),
     status: p.status,
     invoiceNumber: p.invoice_number,
-    paymentMethod: p.payment_method,
-    paymentDate: p.payment_date,
-    notes: p.notes
+    created_at: p.created_at
   };
 }
 

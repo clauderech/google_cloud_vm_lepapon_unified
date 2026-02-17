@@ -162,11 +162,7 @@ export interface Purchase {
   total: number;
   status: PurchaseStatus;
   invoiceNumber?: string;
-  paymentMethod?: PurchasePaymentMethod;
-  paymentDate?: string;
-  notes?: string;
   created_at?: string;
-  updated_at?: string;
 }
 
 export interface DailyAssets {
