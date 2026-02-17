@@ -269,6 +269,15 @@ async function handleWebhookEvent(req, res) {
               }
               
               console.log(`[Order] Pedido ${currentOrderId} atualizado como RETIRADA`);
+              
+              // AUTOMAÇÃO: Enviar pedido confirmado para cozinha automaticamente
+              try {
+                const { processWhatsAppOrderToCozinha } = require('../models/processwhatsapp');
+                await processWhatsAppOrderToCozinha(currentOrderId);
+                console.log(`[Order] Pedido ${currentOrderId} enviado automaticamente para cozinha`);
+              } catch (cozinhaError) {
+                console.error('[Order] Erro ao enviar pedido para cozinha:', cozinhaError.message);
+              }
             } catch (error) {
               console.error('[Order] Erro ao atualizar pedido:', error.message);
             }
@@ -305,6 +314,15 @@ async function handleWebhookEvent(req, res) {
               }
               
               console.log(`[Order] Pedido ${currentOrderId} atualizado como TELE-ENTREGA`);
+              
+              // AUTOMAÇÃO: Enviar pedido confirmado para cozinha automaticamente
+              try {
+                const { processWhatsAppOrderToCozinha } = require('../models/processwhatsapp');
+                await processWhatsAppOrderToCozinha(currentOrderId);
+                console.log(`[Order] Pedido ${currentOrderId} enviado automaticamente para cozinha`);
+              } catch (cozinhaError) {
+                console.error('[Order] Erro ao enviar pedido para cozinha:', cozinhaError.message);
+              }
             } catch (error) {
               console.error('[Order] Erro ao atualizar pedido:', error.message);
             }

@@ -110,9 +110,23 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Iniciar servidor
-app.listen(PORT, () => {
+// Iniciar servidor com Socket.IO
+const http = require('http');
+const { configureSocket } = require('./services/socketConfig');
+
+const server = http.createServer(app);
+
+// Configurar Socket.IO para notificações em tempo real
+try {
+  configureSocket(server);
+  console.log('[Socket] Socket.IO configurado para notificações em tempo real');
+} catch (err) {
+  console.warn('[Socket] Socket.IO não disponível, continuando sem notificações em tempo real:', err.message);
+}
+
+server.listen(PORT, () => {
   console.log(`[SERVER] Iniciado em porta ${PORT}`);
   console.log(`[SERVER] Ambiente: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`[SERVER] Socket.IO habilitado para notificações da cozinha`);
 });
 

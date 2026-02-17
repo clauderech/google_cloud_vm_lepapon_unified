@@ -18,7 +18,7 @@ const RECONNECT_DELAY = 5000; // ms
 async function sendPratosToKitchen(items, comandaId) {
   try {
     console.log(`[WS][COZINHA] Gerenciando itens da cozinha para comanda ${comandaId}`);
-    const results = await CozinhaItem.manageCozinhaItems(comandaId, items);
+    const results = await CozinhaItem.manageCozinhaItems(comandaId, items, null);
     console.log(`[WS][COZINHA] Operações realizadas:`, results);
   } catch (error) {
     console.error('[WS][COZINHA][ERROR]', { error: error.message, comandaId });

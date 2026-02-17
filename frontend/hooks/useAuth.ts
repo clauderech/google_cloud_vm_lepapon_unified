@@ -29,6 +29,7 @@ const PERMISSIONS = {
     'view_expenses',
     'view_cash_register',
     'view_reports',
+    'view_kitchen',
     'manage_products',
     'manage_suppliers',
     'manage_users',
@@ -42,6 +43,7 @@ const PERMISSIONS = {
     'view_inventory',
     'view_shopping_list',
     'view_purchases',
+    'view_kitchen',
     'manage_products',
     'view_reports'
   ],

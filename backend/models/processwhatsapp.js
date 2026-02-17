@@ -743,6 +743,76 @@ async function updateOrderFromFlow(orderId, flowData) {
 }
 
 /**
+ * Converte um pedido WhatsApp confirmado para itens da cozinha automaticamente
+ */
+async function processWhatsAppOrderToCozinha(orderId) {
+  if (!orderId) {
+    console.warn('[WhatsApp→Cozinha] orderId não fornecido');
+    return null;
+  }
+
+  try {
+    // 1. Buscar order WhatsApp
+    const order = await db('whatsapp_orders')
+      .where('id', orderId)
+      .first();
+      
+    if (!order) {
+      console.warn(`[WhatsApp→Cozinha] Order ${orderId} não encontrada`);
+      return null;
+    }
+
+    // 2. Buscar items do order
+    const orderItems = await db('whatsapp_order_items')
+      .where('order_id', orderId);
+      
+    if (!orderItems || orderItems.length === 0) {
+      console.warn(`[WhatsApp→Cozinha] Nenhum item encontrado para order ${orderId}`);
+      return null;
+    }
+
+    // 3. Criar comanda automática se não existir
+    const ComandaModel = require('./comanda');
+    const comandaId = `wa_${order.order_number}_${Date.now()}`;
+    
+    const comandaPayload = {
+      id: comandaId,
+      customer_name: `WhatsApp-${order.user_id}`,
+      customer_fone: 'WhatsApp',
+      status: 'open',
+      opened_at: db.fn.now(),
+      notes: `Pedido WhatsApp: ${order.order_number}`,
+      total: order.total || 0
+    };
+    
+    await ComandaModel.create(comandaPayload);
+    console.log(`[WhatsApp→Cozinha] Comanda automática criada: ${comandaId}`);
+
+    // 4. Converter items para formato esperado pela cozinha
+    const cozinhaItems = orderItems.map(item => ({
+      product_id: item.product_retailer_id,
+      quantity: item.quantity,
+      notes: null // observações virão do globalNotes
+    }));
+
+    // 5. Enviar para cozinha com observações globais
+    const CozinhaItem = require('./cozinha_item');
+    const results = await CozinhaItem.manageCozinhaItems(
+      comandaId, 
+      cozinhaItems, 
+      order.customer_notes // observações globais do pedido
+    );
+    
+    console.log(`[WhatsApp→Cozinha] Order ${orderId} processada:`, results);
+    return { comandaId, results };
+    
+  } catch (error) {
+    console.error('[WhatsApp→Cozinha] Erro ao processar:', error.message);
+    throw error;
+  }
+}
+
+/**
  * Valida se o flow_token pertence ao usuário correto
  * Previne que um usuário use flow_token de outro
  */
@@ -827,4 +897,5 @@ module.exports = {
   updateOrderFromFlow,
   validateFlowTokenOwnership,
   logSecurityEvent,
+  processWhatsAppOrderToCozinha,
 };

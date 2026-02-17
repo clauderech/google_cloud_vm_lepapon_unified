@@ -113,6 +113,27 @@ export interface ComandaItem extends CartItem {
   status?: ComandaItemStatus;
 }
 
+// Interfaces da Cozinha
+export type CozinhaItemStatus = 'pending' | 'em_preparo' | 'pronto' | 'entregue';
+export type CozinhaPrioridade = 'normal' | 'urgente';
+
+export interface CozinhaItem {
+  id: string;
+  comanda_id: string;
+  product_id: string;
+  quantidade: number;
+  status: CozinhaItemStatus;
+  observacao?: string;
+  prioridade: CozinhaPrioridade;
+  responsavel?: string;
+  created_at: string;
+  updated_at: string;
+  // Joined fields from backend queries
+  product_name?: string;
+  product_type?: string;
+  comanda_customer_name?: string;
+}
+
 export interface Comanda {
   id: string;
   customerId?: string;
@@ -327,4 +348,5 @@ export type PageView =
   | 'expenses'
   | 'cash-register'
   | 'reports'
+  | 'cozinha'
   | 'crediario';

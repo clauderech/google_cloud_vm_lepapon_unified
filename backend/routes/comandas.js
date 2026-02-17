@@ -188,7 +188,7 @@ router.post('/', async (req, res) => {
       await ComandaModel.addItems(comandaId, items);
       
       // Envia itens do tipo 'prato' para a cozinha imediatamente
-      await CozinhaItem.manageCozinhaItems(comandaId, items);
+      await CozinhaItem.manageCozinhaItems(comandaId, items, null);
     }
     
     res.status(201).json({ success: true, id: comandaId });
@@ -237,7 +237,7 @@ router.put('/:id', async (req, res) => {
       
       // Gerencia itens da cozinha usando função centralizada
       // Faz diff inteligente para evitar duplicações
-      await CozinhaItem.manageCozinhaItems(req.params.id, items);
+      await CozinhaItem.manageCozinhaItems(req.params.id, items, null);
     }
     res.json({ success: true });
   } catch (err) {
