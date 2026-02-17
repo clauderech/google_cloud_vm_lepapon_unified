@@ -188,17 +188,56 @@ class StockService {
     const movements = [];
     
     for (const item of items) {
-      const movement = await this.updateStock({
-        productId: item.product_id || item.productId,
-        quantity: -parseFloat(item.quantity), // Negativo para deduzir
-        movementType: 'comanda_add',
-        referenceType: 'comanda',
-        referenceId: comandaId,
-        notes: `Adicionado à comanda`,
-        userId
-      });
+      const productId = item.product_id || item.productId;
+      const quantity = parseFloat(item.quantity);
       
-      movements.push(movement);
+      if (!productId || isNaN(quantity)) {
+        console.warn('[STOCK_SERVICE][COMANDA][SKIP]', { productId, quantity });
+        continue;
+      }
+      
+      // Usar a mesma lógica inteligente que processSale()
+      const product = await ProductModel.getById(productId);
+      if (!product) {
+        console.warn(`[STOCK_SERVICE][COMANDA][PRODUCT_NOT_FOUND] ${productId}`);
+        continue;
+      }
+
+      if ((product.type === 'prato' || product.type === 'drink') && product.recipe) {
+        // Produto com receita - deduz ingredientes (igual processSale)
+        const recipe = typeof product.recipe === 'string' ? JSON.parse(product.recipe) : product.recipe;
+        
+        for (const recipeItem of recipe) {
+          const ingredientQuantity = -(recipeItem.quantity * quantity); // Negativo para deduzir
+          
+          const movement = await this.updateStock({
+            productId: recipeItem.ingredientId,
+            quantity: ingredientQuantity,
+            movementType: 'recipe_usage',
+            referenceType: 'comanda',
+            referenceId: comandaId,
+            notes: `Uso em receita: ${product.name} (${quantity}x) - Comanda`,
+            userId
+          });
+          
+          movements.push(movement);
+        }
+      } else if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda' || (product.type === 'drink' && !product.recipe)) {
+        // Produto simples - deduz diretamente (igual processSale)
+        const movement = await this.updateStock({
+          productId: productId,
+          quantity: -quantity, // Negativo para deduzir
+          movementType: 'comanda_add',
+          referenceType: 'comanda',
+          referenceId: comandaId,
+          notes: `Adicionado à comanda`,
+          userId
+        });
+        
+        movements.push(movement);
+      } else {
+        console.warn(`[STOCK_SERVICE][COMANDA][SKIP_TYPE] Tipo de produto não suportado: ${product.type} para produto ${productId}`);
+      }
     }
 
     return movements;
