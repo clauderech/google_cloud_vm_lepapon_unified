@@ -2211,7 +2211,7 @@ const App = () => {
       if (!selectedSupplier) return;
       setIsLoading(true);
       try {
-        const text = await suggestRestockOrder(state.products.filter(p => p.type === 'insumo'), selectedSupplier);
+        const text = await suggestRestockOrder(state.products.filter(p => p.type === 'insumo' || p.type === 'insumo_bebida' || p.type === 'revenda'), selectedSupplier);
         setAiSuggestion(text);
       } catch (error) {
         console.error('Erro ao gerar sugestão:', error);
@@ -2221,9 +2221,9 @@ const App = () => {
       }
     };
 
-    // Only filter 'insumo' (ingredients) for purchasing - optimized with useMemo
+    // Filter 'insumo', 'insumo_bebida' and 'revenda' for purchasing - optimized with useMemo
     const availableProducts = useMemo(() => 
-      state.products.filter(p => p.supplierId === selectedSupplier && p.type === 'insumo'),
+      state.products.filter(p => p.supplierId === selectedSupplier && (p.type === 'insumo' || p.type === 'insumo_bebida' || p.type === 'revenda')),
       [state.products, selectedSupplier]
     );
 
