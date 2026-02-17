@@ -109,21 +109,9 @@ function formatDateForMySQL(date) {
       });
     }
 
-    // Atualiza estoque dos produtos usando StockService
-    try {
-      await StockService.processComanda({
-        items: items,
-        comandaId: comandaId,
-        userId: req.body.userId || null
-      });
-      console.log('[COMANDA][CLOSE][STOCK][SUCCESS]', { comandaId, itemCount: items.length });
-    } catch (stockError) {
-      console.error('[COMANDA][CLOSE][STOCK][ERROR]', {
-        comandaId,
-        error: stockError.message
-      });
-      // Não falha o fechamento da comanda por erro de estoque
-    }
+    // Obs: Estoque já foi descontado ao adicionar itens
+    // Não precisa descontar novamente no fechamento
+    console.log('[COMANDA][CLOSE] Estoque já processado anteriormente');
 
     res.json({ success: true, comandaId, saleId, total });
   } catch (err) {
@@ -187,6 +175,21 @@ router.post('/', async (req, res) => {
       console.log('[COMANDA][CREATE][ADDING_ITEMS]', { comandaId, itemsCount: items.length });
       await ComandaModel.addItems(comandaId, items);
       
+      // Descontar estoque imediatamente
+      try {
+        await StockService.processComanda({
+          items: items,
+          comandaId: comandaId,
+          userId: req.body.userId || null
+        });
+        console.log('[COMANDA][CREATE][STOCK][SUCCESS]', { comandaId, itemCount: items.length });
+      } catch (stockError) {
+        console.error('[COMANDA][CREATE][STOCK][ERROR]', {
+          comandaId,
+          error: stockError.message
+        });
+      }
+      
       // Envia itens do tipo 'prato' para a cozinha imediatamente
       await CozinhaItem.manageCozinhaItems(comandaId, items, null);
     }
@@ -234,6 +237,21 @@ router.put('/:id', async (req, res) => {
       // Remove itens antigos e insere novos (simples)
       await ComandaModel.clearItems(req.params.id);
       await ComandaModel.addItems(req.params.id, items);
+      
+      // Descontar estoque imediatamente
+      try {
+        await StockService.processComanda({
+          items: items,
+          comandaId: req.params.id,
+          userId: req.body.userId || null
+        });
+        console.log('[COMANDA][UPDATE][STOCK][SUCCESS]', { comandaId: req.params.id, itemCount: items.length });
+      } catch (stockError) {
+        console.error('[COMANDA][UPDATE][STOCK][ERROR]', {
+          comandaId: req.params.id,
+          error: stockError.message
+        });
+      }
       
       // Gerencia itens da cozinha usando função centralizada
       // Faz diff inteligente para evitar duplicações

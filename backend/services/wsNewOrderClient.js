@@ -8,6 +8,7 @@ const ComandaModel = require(path.join(__dirname, '../models/comanda'));
 const CustomerModel = require(path.join(__dirname, '../models/customer'));
 const ProductModel = require(path.join(__dirname, '../models/product'));
 const CozinhaItem = require(path.join(__dirname, '../models/cozinha_item'));
+const StockService = require(path.join(__dirname, './stockService'));
 
 const WS_URL = process.env.LEPAPON_WS_URL || 'ws://lepapon.com.br:3001';
 const TOKEN = process.env.LEPAPON_WS_TOKEN || 'SEU_TOKEN_AQUI';
@@ -85,6 +86,19 @@ function createWebSocketClient() {
           // Se aberta, só adiciona os itens
           comandaId = recentComanda.id;
           await ComandaModel.addItems(comandaId, items);
+          
+          // Descontar estoque imediatamente
+          try {
+            await StockService.processComanda({
+              items: items,
+              comandaId: comandaId,
+              userId: null
+            });
+            console.log(`[WS][STOCK] Estoque descontado para comanda ${comandaId}`);
+          } catch (stockError) {
+            console.error('[WS][STOCK][ERROR]', { error: stockError.message, comandaId });
+          }
+          
           // Enviar pratos para cozinha
           await sendPratosToKitchen(items, comandaId);
           console.log(`[WS] Itens adicionados à comanda aberta existente para telefone ${sessionId} (comandaId: ${comandaId})`);
@@ -94,6 +108,19 @@ function createWebSocketClient() {
           comandaId = recentComanda.id;
           await ComandaModel.update(comandaId, { status: 'open', opened_at: opened_at });
           await ComandaModel.addItems(comandaId, items);
+          
+          // Descontar estoque imediatamente
+          try {
+            await StockService.processComanda({
+              items: items,
+              comandaId: comandaId,
+              userId: null
+            });
+            console.log(`[WS][STOCK] Estoque descontado para comanda reaberta ${comandaId}`);
+          } catch (stockError) {
+            console.error('[WS][STOCK][ERROR]', { error: stockError.message, comandaId });
+          }
+          
           // Enviar pratos para cozinha
           await sendPratosToKitchen(items, comandaId);
           console.log(`[WS] Comanda reaberta e itens adicionados para telefone ${sessionId} (comandaId: ${comandaId})`);
@@ -114,6 +141,19 @@ function createWebSocketClient() {
       };
       const [createdId] = await ComandaModel.create(comandaPayload);
       await ComandaModel.addItems(comandaId, items);
+      
+      // Descontar estoque imediatamente
+      try {
+        await StockService.processComanda({
+          items: items,
+          comandaId: comandaId,
+          userId: null
+        });
+        console.log(`[WS][STOCK] Estoque descontado para nova comanda ${comandaId}`);
+      } catch (stockError) {
+        console.error('[WS][STOCK][ERROR]', { error: stockError.message, comandaId });
+      }
+      
       // Enviar pratos para cozinha
       await sendPratosToKitchen(items, comandaId);
       console.log(`[WS] Nova comanda criada para telefone ${sessionId} (comandaId: ${comandaId})`);
