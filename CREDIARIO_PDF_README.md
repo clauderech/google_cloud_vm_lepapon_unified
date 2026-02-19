@@ -27,6 +27,16 @@ cd /home/claus/Projetos/google_cloud/google_cloud_vm_lepapon_unified
 npm install
 ```
 
+**🔧 Para VMs na nuvem**: O sistema agora usa **PDFKit** como método principal (mais leve e confiável). 
+- ✅ **Não precisa instalar Chrome/dependências** - PDFKit funciona nativamente
+- 🔄 Puppeteer é usado apenas como fallback (se necessário)
+
+Se quiser habilitar Puppeteer como backup:
+```bash
+chmod +x install_chrome_deps.sh
+sudo ./install_chrome_deps.sh
+```
+
 ### 3. **Reiniciar o servidor backend**
 ```bash
 npm restart
@@ -40,12 +50,13 @@ pm2 restart all
 
 ### Novos arquivos:
 - `create_crediario_tables.sql` - SQL das tabelas
-- `backend/services/pdfService.js` - Service de geração de PDF
-- `backend/templates/crediario-report.html` - Template do relatório
+- `backend/services/pdfService.js` - Service de geração de PDF (PDFKit + Puppeteer)
+- `backend/templates/crediario-report.html` - Template HTML (fallback Puppeteer)
 - `backend/uploads/reports/crediario/` - Pasta dos PDFs (criada automaticamente)
+- `install_chrome_deps.sh` - Script opcional para dependências do Chrome
 
 ### Arquivos modificados:
-- `package.json` - Adicionado puppeteer
+- `package.json` - Adicionado PDFKit + Puppeteer
 - `backend/routes/comandas.js` - Novas rotas de PDF
 - `frontend/components/CrediarioManager.tsx` - Botões de PDF
 
@@ -106,7 +117,9 @@ O relatório inclui:
 
 ### Performance:
 - Loading individual por conta (não trava a interface)
-- Geração assíncrona em background
+- **Duas tecnologias de geração**:
+  - 🎯 **PDFKit** (padrão): Nativo, leve, ideal para servidores na nuvem
+  - 🔄 **Puppeteer** (fallback): HTML→PDF, usa mais recursos mas mais flexível
 - Template otimizado para impressão
 
 ---
@@ -125,7 +138,12 @@ pm2 logs
 SHOW TABLES LIKE 'monthly_%';
 ```
 
-3. **Verificar permissões da pasta**:
+3. **Erro de dependências do Chrome** (libnss3.so):
+   - ✅ **Solução**: O sistema agora usa PDFKit por padrão (não precisa de Chrome)
+   - 📝 PDFs são gerados nativamente sem dependências externas
+   - 🔄 Se ainda quiser Puppeteer: execute `sudo ./install_chrome_deps.sh`
+
+4. **Verificar permissões da pasta**:
 ```bash
 ls -la backend/uploads/reports/
 ```
@@ -163,6 +181,26 @@ Query: ?download=true (força download)
 3. **Adicionar logo** da empresa no header do PDF
 4. **Configurar envio por email** dos PDFs
 5. **Relatórios em lote** (múltiplos clientes)
+
+---
+
+## 🚀 Nova Implementação - VMs na Nuvem
+
+### 🔧 **Problema Resolvido**: 
+- ❌ Erro `libnss3.so` (dependências do Chrome)
+- ❌ Puppeteer falhando em VMs sem interface gráfica
+
+### ✅ **Solução Implementada**:
+- 🎯 **PDFKit como método principal** - bibliotecas nativas JS
+- 🔄 **Puppeteer como fallback** - caso específico needed
+- ⚡ **Geração mais rápida** e **menor uso de recursos**
+- 🛡️ **Maior estabilidade** em ambientes de produção
+
+### 📊 **Tecnologias Ativas**:
+1. **PDFKit** ➜ Geração nativa de PDF, sem dependências externas
+2. **Puppeteer** ➜ Fallback HTML→PDF (se PDFKit falhar)
+
+**Sistema otimizado para Google Cloud VM! 🎉**
 
 ---
 

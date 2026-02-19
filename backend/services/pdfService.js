@@ -1,4 +1,5 @@
 const puppeteer = require('puppeteer');
+const PDFDocument = require('pdfkit');
 const fs = require('fs').promises;
 const path = require('path');
 
@@ -106,6 +107,189 @@ class PDFService {
   }
   
   /**
+   * Gera PDF usando PDFKit (alternativa leve para servidores)
+   * @param {Object} data - Dados formatados para o PDF
+   * @returns {Promise<Buffer>} - Buffer do PDF gerado
+   */
+  async generatePDFWithKit(data) {
+    return new Promise((resolve, reject) => {
+      try {
+        const doc = new PDFDocument({
+          size: 'A4',
+          margin: 50,
+          info: {
+            Title: `Extrato Mensal - ${data.customer_name}`,
+            Subject: 'Conta de Crediário Mensal',
+            Author: 'LePapon-Laches-Claudemir'
+          }
+        });
+
+        let buffers = [];
+        doc.on('data', buffers.push.bind(buffers));
+        doc.on('end', () => {
+          const pdfData = Buffer.concat(buffers);
+          resolve(pdfData);
+        });
+
+        // Header da empresa
+        doc.fontSize(20).fillColor('#1e40af').text('LePapon-Laches-Claudemir', { align: 'center' });
+        doc.fontSize(10).fillColor('#666666')
+           .text('João Venâcio Girarde 260', { align: 'center' })
+           .text('Telefone: (55) 5499125-3180', { align: 'center' })
+           .text('CNPJ: 33.794.253/0001-33', { align: 'center' });
+        
+        doc.moveDown(0.5);
+        doc.fontSize(16).fillColor('#1e40af').text('EXTRATO DE CONTA MENSAL', { align: 'center' });
+        doc.moveTo(50, doc.y + 10).lineTo(545, doc.y + 10).strokeColor('#2563eb').lineWidth(2).stroke();
+        
+        doc.moveDown(1);
+
+        // Informações do Cliente
+        const clientY = doc.y;
+        doc.rect(50, clientY, 495, 60).fillColor('#f8fafc').fill()
+           .rect(50, clientY, 495, 60).strokeColor('#2563eb').lineWidth(1).stroke();
+        
+        doc.fillColor('#1e40af').fontSize(14).text(`Cliente: ${data.customer_name}`, 60, clientY + 15);
+        if (data.customer_phone) {
+          doc.fontSize(10).text(`Telefone: ${data.customer_phone}`, 60, clientY + 35);
+        }
+        
+        doc.moveDown(2);
+
+        // Período
+        doc.fillColor('#1e40af').fontSize(12).text(`Período: ${data.month_year_formatted}`, 60, doc.y);
+        doc.text(`Vencimento: ${data.due_date_formatted}`, 300, doc.y - 12);
+        doc.moveDown(1);
+
+        // Resumo financeiro - 3 caixas lado a lado
+        const summaryY = doc.y + 10;
+        const boxWidth = 150;
+        const boxHeight = 60;
+        
+        // Total
+        doc.rect(50, summaryY, boxWidth, boxHeight).fillColor('#eff6ff').fill()
+           .rect(50, summaryY, boxWidth, boxHeight).strokeColor('#3b82f6').lineWidth(2).stroke();
+        doc.fillColor('#1e40af').fontSize(10).text('TOTAL DO MÊS', 60, summaryY + 10);
+        doc.fontSize(16).text(`R$ ${data.total_amount}`, 60, summaryY + 30);
+
+        // Pago
+        doc.rect(220, summaryY, boxWidth, boxHeight).fillColor('#f0fdf4').fill()
+           .rect(220, summaryY, boxWidth, boxHeight).strokeColor('#22c55e').lineWidth(2).stroke();
+        doc.fillColor('#059669').fontSize(10).text('TOTAL PAGO', 230, summaryY + 10);
+        doc.fontSize(16).text(`R$ ${data.amount_paid}`, 230, summaryY + 30);
+
+        // Pendente
+        doc.rect(390, summaryY, boxWidth, boxHeight).fillColor('#fef2f2').fill()
+           .rect(390, summaryY, boxWidth, boxHeight).strokeColor('#ef4444').lineWidth(2).stroke();
+        doc.fillColor('#dc2626').fontSize(10).text('SALDO PENDENTE', 400, summaryY + 10);
+        doc.fontSize(16).text(`R$ ${data.balance}`, 400, summaryY + 30);
+
+        doc.y = summaryY + boxHeight + 20;
+
+        // Tabela de Compras
+        if (data.has_purchases) {
+          doc.fillColor('#1e40af').fontSize(14).text('📋 Compras Realizadas no Período', 50, doc.y);
+          doc.moveDown(0.5);
+          
+          const tableTop = doc.y;
+          doc.y = tableTop + 25;
+          
+          // Headers da tabela
+          doc.rect(50, tableTop, 495, 25).fillColor('#1e40af').fill();
+          doc.fillColor('white').fontSize(11)
+             .text('Data', 60, tableTop + 8)
+             .text('Descrição', 150, tableTop + 8)              
+             .text('Valor', 450, tableTop + 8);
+
+          // Linhas de dados
+          let currentY = tableTop + 25;
+          data.purchases.forEach((purchase, index) => {
+            const rowColor = index % 2 === 0 ? '#ffffff' : '#f9fafb';
+            doc.rect(50, currentY, 495, 20).fillColor(rowColor).fill()
+               .rect(50, currentY, 495, 20).strokeColor('#e5e7eb').lineWidth(0.5).stroke();
+               
+            doc.fillColor('#333333').fontSize(9)
+               .text(purchase.date_formatted, 60, currentY + 6)
+               .text(purchase.description, 150, currentY + 6)
+               .text(`R$ ${purchase.amount}`, 450, currentY + 6);
+            
+            currentY += 20;
+          });
+          
+          doc.y = currentY + 10;
+        }
+
+        // Tabela de Pagamentos
+        if (data.has_payments) {
+          doc.fillColor('#1e40af').fontSize(14).text('💰 Pagamentos Realizados', 50, doc.y);
+          doc.moveDown(0.5);
+          
+          const tableTop = doc.y;
+          doc.y = tableTop + 25;
+          
+          // Headers
+          doc.rect(50, tableTop, 495, 25).fillColor('#1e40af').fill();
+          doc.fillColor('white').fontSize(11)
+             .text('Data', 60, tableTop + 8)
+             .text('Forma', 130, tableTop + 8)
+             .text('Recibo', 220, tableTop + 8)
+             .text('Recebido por', 290, tableTop + 8)
+             .text('Valor', 450, tableTop + 8);
+
+          // Dados
+          let currentY = tableTop + 25;
+          data.payments.forEach((payment, index) => {
+            const rowColor = index % 2 === 0 ? '#ffffff' : '#f9fafb';
+            doc.rect(50, currentY, 495, 20).fillColor(rowColor).fill()
+               .rect(50, currentY, 495, 20).strokeColor('#e5e7eb').lineWidth(0.5).stroke();
+               
+            doc.fillColor('#333333').fontSize(9)
+               .text(payment.date_formatted, 60, currentY + 6)
+               .text(payment.payment_method_formatted, 130, currentY + 6)
+               .text(payment.receipt_number, 220, currentY + 6)
+               .text(payment.received_by, 290, currentY + 6);
+            
+            doc.fillColor('#059669').text(`R$ ${payment.amount}`, 450, currentY + 6);
+            
+            currentY += 20;
+          });
+          
+          doc.y = currentY + 10;
+        }
+
+        // Caso não tenha movimentações
+        if (!data.has_activity) {
+          doc.rect(50, doc.y, 495, 80).fillColor('#f9fafb').fill()
+             .rect(50, doc.y, 495, 80).strokeColor('#e5e7eb').lineWidth(1).stroke();
+          doc.fillColor('#6b7280').fontSize(14)
+             .text('Nenhuma movimentação encontrada para este período', 60, doc.y + 30, {
+               align: 'center',
+               width: 475
+             });
+          doc.y += 80;
+        }
+
+        // Footer
+        doc.y = 720; // Posição fixa no final da página
+        doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#e5e7eb').lineWidth(1).stroke();
+        doc.moveDown(0.5);
+        doc.fillColor('#6b7280').fontSize(8)
+           .text(`Relatório gerado em ${data.generated_at} por ${data.generated_by}`, { align: 'center' })
+           .moveDown(0.3)
+           .text('Sistema de Gestão LePapon - Este documento é válido sem assinatura', { 
+             align: 'center',
+             oblique: true 
+           });
+
+        doc.end();
+        
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  /**
    * Gera PDF a partir de template e dados
    * @param {string} templateName - Nome do arquivo de template (sem extensão)
    * @param {Object} data - Dados para preenchimento
@@ -113,7 +297,20 @@ class PDFService {
    * @returns {Promise<Buffer>} - Buffer do PDF gerado
    */
   async generatePDF(templateName, data, options = {}) {
+    // Primeiro tenta com PDFKit (mais confiável para servidores)
+    if (templateName === 'crediario-report') {
+      try {
+        console.log('Gerando PDF com PDFKit...');
+        return await this.generatePDFWithKit(data);
+      } catch (error) {
+        console.warn('Falha no PDFKit, tentando Puppeteer:', error.message);
+      }
+    }
+
+    // Fallback para Puppeteer (se PDFKit falhar ou outro template)
     try {
+      console.log('Gerando PDF com Puppeteer...');
+      
       // Carrega template
       const templatePath = path.join(__dirname, '..', 'templates', `${templateName}.html`);
       const templateContent = await fs.readFile(templatePath, 'utf-8');
@@ -123,14 +320,44 @@ class PDFService {
       
       // Configura puppeteer
       const browser = await puppeteer.launch({
-        headless: true,
+        headless: 'new',
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
           '--disable-web-security',
-          '--disable-features=VizDisplayCompositor'
-        ]
+          '--disable-features=VizDisplayCompositor',
+          '--disable-gpu',
+          '--disable-accelerated-2d-canvas',
+          '--disable-accelerated-jpeg-decoding',
+          '--disable-accelerated-mjpeg-decode',
+          '--disable-app-list-dismiss-on-blur',
+          '--disable-accelerated-video-decode',
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-client-side-phishing-detection',
+          '--disable-component-update',
+          '--disable-default-apps',
+          '--disable-domain-reliability',
+          '--disable-extensions',
+          '--disable-features=TranslateUI',
+          '--disable-hang-monitor',
+          '--disable-ipc-flooding-protection',
+          '--disable-popup-blocking',
+          '--disable-prompt-on-repost',
+          '--disable-renderer-backgrounding',
+          '--disable-sync',
+          '--force-color-profile=srgb',
+          '--metrics-recording-only',
+          '--no-first-run',
+          '--safebrowsing-disable-auto-update',
+          '--enable-automation',
+          '--password-store=basic',
+          '--use-mock-keychain',
+          '--single-process'
+        ],
+        executablePath: process.env.CHROME_BIN || undefined,
+        timeout: 60000
       });
       
       const page = await browser.newPage();
@@ -163,7 +390,18 @@ class PDFService {
       return pdfBuffer;
       
     } catch (error) {
-      console.error('Erro ao gerar PDF:', error);
+      console.error('Erro ao gerar PDF com Puppeteer:', error);
+      
+      // Se for crediario-report e Puppeteer falhou, tenta PDFKit como último recurso
+      if (templateName === 'crediario-report') {
+        try {
+          console.log('Fallback final: tentando PDFKit novamente...');
+          return await this.generatePDFWithKit(data);
+        } catch (kitError) {
+          console.error('PDFKit também falhou:', kitError);
+        }
+      }
+      
       throw new Error(`Falha na geração do PDF: ${error.message}`);
     }
   }
