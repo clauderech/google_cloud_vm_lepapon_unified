@@ -548,10 +548,10 @@ router.get('/crediario/pdf/:filename', async (req, res) => {
     });
     
     // Valida nome do arquivo por segurança
-    if (!filename.match(/^conta_[a-zA-Z0-9_-]+_\d{4}-\d{2}_[0-9T-Z]+\.pdf$/)) {
+    if (!filename.match(/^conta_[a-zA-Z0-9_-]+_\d{4}-\d{2}_[0-9T\-Z]+\.pdf$/)) {
       console.log('[CREDIARIO][PDF][DOWNLOAD][INVALID_FILENAME]', {
         filename,
-        regex: '/^conta_[a-zA-Z0-9_-]+_\\d{4}-\\d{2}_[0-9T-Z]+\\.pdf$/',
+        regex: '/^conta_[a-zA-Z0-9_-]+_\\d{4}-\\d{2}_[0-9T\\-Z]+\\.pdf$/',
         matched: false
       });
       return res.status(400).json({ error: 'Nome de arquivo inválido' });
