@@ -7,6 +7,8 @@ const ProductModel = require('../models/product');
 const CrediarioModel = require('../models/crediario');
 const CozinhaItem = require('../models/cozinha_item');
 const StockService = require('../services/stockService');
+const pdfService = require('../services/pdfService');
+const path = require('path');
 // Finalizar comanda (pagamento normal ou crediário)
 router.post('/:id/close', async (req, res) => {
   /*
@@ -425,6 +427,147 @@ router.get('/crediario/:monthlyAccountId/payments', async (req, res) => {
     res.json(payments);
   } catch (err) {
     res.status(500).json({ error: 'Erro ao consultar pagamentos mensais', details: err.message });
+  }
+});
+
+// Gerar PDF do extrato mensal de crediário
+router.post('/crediario/generate-pdf', async (req, res) => {
+  /*
+    Espera body:
+    {
+      customerId: string,
+      monthYear: string (YYYY-MM),
+      generatedBy?: string (opcional)
+    }
+  */
+  try {
+    const { customerId, monthYear, generatedBy } = req.body;
+    
+    if (!customerId || !monthYear) {
+      return res.status(400).json({ error: 'customerId e monthYear são obrigatórios' });
+    }
+    
+    console.log('[CREDIARIO][PDF][GENERATE]', { customerId, monthYear, generatedBy });
+    
+    const { db } = require('../config/knex');
+    
+    // Busca dados da conta mensal
+    const accountData = await db('monthly_accounts')
+      .join('customers', 'monthly_accounts.customer_id', 'customers.id')
+      .select(
+        'monthly_accounts.*',
+        'customers.nome as customer_name',
+        'customers.fone as customer_phone'
+      )
+      .where({
+        'monthly_accounts.customer_id': customerId,
+        'monthly_accounts.month_year': monthYear
+      })
+      .first();
+    
+    if (!accountData) {
+      return res.status(404).json({ error: 'Conta mensal não encontrada para este cliente e período' });
+    }
+    
+    // Busca compras e pagamentos do mês
+    const [purchases, payments] = await Promise.all([
+      db('monthly_purchases')
+        .where('monthly_account_id', accountData.id)
+        .orderBy('purchase_date', 'desc'),
+      db('monthly_payments')
+        .where('monthly_account_id', accountData.id)
+        .orderBy('payment_date', 'desc')
+    ]);
+    
+    // Formata dados para template
+    const templateData = pdfService.formatCrediarioData(
+      accountData,
+      purchases,
+      payments,
+      generatedBy || 'Sistema'
+    );
+    
+    // Gera PDF
+    const pdfBuffer = await pdfService.generatePDF('crediario-report', templateData);
+    
+    // Gera nome único do arquivo
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const customerName = accountData.customer_name.replace(/[^a-zA-Z0-9]/g, '_');
+    const filename = `conta_${customerName}_${monthYear}_${timestamp}.pdf`;
+    
+    // Salva PDF
+    await pdfService.savePDF(pdfBuffer, filename, 'crediario');
+    
+    // Limpa PDFs antigos em background
+    pdfService.cleanupOldPDFs('crediario', 7).catch(err => {
+      console.error('Erro na limpeza de PDFs:', err);
+    });
+    
+    console.log('[CREDIARIO][PDF][GENERATE][SUCCESS]', { filename, size: pdfBuffer.length });
+    
+    res.json({ 
+      success: true,
+      filename,
+      downloadUrl: `/api/comandas/crediario/pdf/${filename}`,
+      size: pdfBuffer.length
+    });
+    
+  } catch (err) {
+    console.error('[CREDIARIO][PDF][GENERATE][ERROR]', {
+      error: err.message,
+      stack: err.stack,
+      body: req.body
+    });
+    res.status(500).json({ 
+      error: 'Erro ao gerar PDF do extrato',
+      details: err.message
+    });
+  }
+});
+
+// Download/visualização do PDF gerado
+router.get('/crediario/pdf/:filename', async (req, res) => {
+  try {
+    const { filename } = req.params;
+    const { download } = req.query; // ?download=true para força download
+    
+    // Valida nome do arquivo por segurança
+    if (!filename.match(/^conta_[a-zA-Z0-9_-]+_\d{4}-\d{2}_[0-9T-]+\.pdf$/)) {
+      return res.status(400).json({ error: 'Nome de arquivo inválido' });
+    }
+    
+    const filePath = path.join(__dirname, '..', 'uploads', 'reports', 'crediario', filename);
+    
+    // Verifica se arquivo existe
+    const fs = require('fs').promises;
+    try {
+      await fs.access(filePath);
+    } catch {
+      return res.status(404).json({ error: 'Arquivo PDF não encontrado' });
+    }
+    
+    // Define headers apropriados
+    res.setHeader('Content-Type', 'application/pdf');
+    
+    if (download === 'true') {
+      // Force download
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    } else {
+      // Visualização inline no browser
+      res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+    }
+    
+    // Envia arquivo
+    res.sendFile(filePath);
+    
+    console.log('[CREDIARIO][PDF][DOWNLOAD]', { filename, download: download === 'true' });
+    
+  } catch (err) {
+    console.error('[CREDIARIO][PDF][DOWNLOAD][ERROR]', {
+      error: err.message,
+      filename: req.params.filename
+    });
+    res.status(500).json({ error: 'Erro ao acessar PDF', details: err.message });
   }
 });
 

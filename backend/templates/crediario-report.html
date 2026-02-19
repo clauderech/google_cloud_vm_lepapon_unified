@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extrato de Conta Mensal - {{customer_name}}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Header da empresa */
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 3px solid #2563eb;
+            margin-bottom: 30px;
+        }
+        
+        .company-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+        
+        .company-info {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .report-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1e40af;
+            margin-top: 15px;
+        }
+        
+        /* Informações do cliente */
+        .client-info {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border-left: 4px solid #2563eb;
+        }
+        
+        .client-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 5px;
+        }
+        
+        .period-info {
+            background: #eff6ff;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            text-align: center;
+            border: 1px solid #bfdbfe;
+        }
+        
+        .period-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #1e40af;
+        }
+        
+        /* Resumo financeiro */
+        .summary {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 25px;
+            gap: 15px;
+        }
+        
+        .summary-card {
+            flex: 1;
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid;
+        }
+        
+        .summary-card.total {
+            background: #eff6ff;
+            border-color: #3b82f6;
+        }
+        
+        .summary-card.paid {
+            background: #f0fdf4;
+            border-color: #22c55e;
+        }
+        
+        .summary-card.pending {
+            background: #fef2f2;
+            border-color: #ef4444;
+        }
+        
+        .summary-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .summary-value {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        /* Tabelas */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .table-header {
+            font-size: 14px;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 10px;
+            padding-left: 5px;
+            border-left: 4px solid #2563eb;
+            padding-left: 10px;
+        }
+        
+        th {
+            background: #1e40af;
+            color: white;
+            padding: 10px 8px;
+            text-align: left;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 11px;
+        }
+        
+        tr:nth-child(even) {
+            background: #f9fafb;
+        }
+        
+        tr:hover {
+            background: #f3f4f6;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+        
+        .text-green {
+            color: #059669;
+            font-weight: bold;
+        }
+        
+        .text-blue {
+            color: #2563eb;
+            font-weight: bold;
+        }
+        
+        /* Footer */
+        .footer {
+            margin-top: 40px;
+            padding-top: 15px;
+            border-top: 2px solid #e5e7eb;
+            text-align: center;
+            font-size: 10px;
+            color: #6b7280;
+        }
+        
+        /* Print adjustments */
+        @media print {
+            .container {
+                max-width: none;
+                padding: 0;
+            }
+            
+            body {
+                font-size: 11px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header da Empresa -->
+        <div class="header">
+            <div class="company-name">LePapon-Laches-Claudemir</div>
+            <div class="company-info">João Venâcio Girarde 260</div>
+            <div class="company-info">Telefone: (55) 5499125-3180</div>
+            <div class="company-info">CNPJ: 33.794.253/0001-33</div>
+            <div class="report-title">EXTRATO DE CONTA MENSAL</div>
+        </div>
+        
+        <!-- Informações do Cliente -->
+        <div class="client-info">
+            <div class="client-name">Cliente: {{customer_name}}</div>
+            {{#customer_phone}}
+            <div>Telefone: {{customer_phone}}</div>
+            {{/customer_phone}}
+        </div>
+        
+        <!-- Período -->
+        <div class="period-info">
+            <div class="period-title">Período: {{month_year_formatted}}</div>
+            <div>Vencimento: {{due_date_formatted}}</div>
+        </div>
+        
+        <!-- Resumo Financeiro -->
+        <div class="summary">
+            <div class="summary-card total">
+                <div class="summary-label">Total do Mês</div>
+                <div class="summary-value">R$ {{total_amount}}</div>
+            </div>
+            <div class="summary-card paid">
+                <div class="summary-label">Total Pago</div>
+                <div class="summary-value">R$ {{amount_paid}}</div>
+            </div>
+            <div class="summary-card pending">
+                <div class="summary-label">Saldo Pendente</div>
+                <div class="summary-value">R$ {{balance}}</div>
+            </div>
+        </div>
+        
+        <!-- Compras do Mês -->
+        {{#has_purchases}}
+        <div class="table-header">📋 Compras Realizadas no Período</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Descrição</th>
+                    <th class="text-right">Valor</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#purchases}}
+                <tr>
+                    <td>{{date_formatted}}</td>
+                    <td>{{description}}</td>
+                    <td class="text-right text-blue">R$ {{amount}}</td>
+                </tr>
+                {{/purchases}}
+            </tbody>
+        </table>
+        {{/has_purchases}}
+        
+        <!-- Pagamentos Realizados -->
+        {{#has_payments}}
+        <div class="table-header">💰 Pagamentos Realizados</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Forma de Pagamento</th>
+                    <th class="text-center">Recibo</th>
+                    <th>Recebido por</th>
+                    <th class="text-right">Valor</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#payments}}
+                <tr>
+                    <td>{{date_formatted}}</td>
+                    <td>{{payment_method_formatted}}</td>
+                    <td class="text-center">{{receipt_number}}</td>
+                    <td>{{received_by}}</td>
+                    <td class="text-right text-green">R$ {{amount}}</td>
+                </tr>
+                {{/payments}}
+            </tbody>
+        </table>
+        {{/has_payments}}
+        
+        <!-- Caso não tenha movimentações -->
+        {{^has_activity}}
+        <div style="text-align: center; padding: 40px; background: #f9fafb; border-radius: 8px; color: #6b7280;">
+            <h3>Nenhuma movimentação encontrada para este período</h3>
+        </div>
+        {{/has_activity}}
+        
+        <!-- Footer -->
+        <div class="footer">
+            <div>Relatório gerado em {{generated_at}} por {{generated_by}}</div>
+            <div style="margin-top: 10px; font-style: italic;">
+                Sistema de Gestão LePapon - Este documento é válido sem assinatura
+            </div>
+        </div>
+    </div>
+</body>
+</html>

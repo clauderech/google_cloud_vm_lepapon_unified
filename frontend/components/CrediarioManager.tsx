@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CreditCard, Plus, Search, X } from 'lucide-react';
+import { CreditCard, Plus, Search, X, FileText, Download } from 'lucide-react';
 
 interface CrediarioManagerProps {
   customers: any[];
@@ -21,6 +21,7 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
     notes: ''
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const [pdfLoading, setPdfLoading] = useState<{[key: string]: boolean}>({});
 
   // Buscar contas mensais
   const loadMonthlyAccounts = async (customerId?: string, monthYear?: string) => {
@@ -64,6 +65,44 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
       loadMonthlyPayments(selectedMonthlyAccount.id);
     } else {
       alert('Erro ao registrar pagamento mensal');
+    }
+  };
+
+  // Gerar PDF da conta mensal
+  const handleGeneratePDF = async (customerId: string, monthYear: string) => {
+    const loadingKey = `${customerId}_${monthYear}`;
+    
+    try {
+      setPdfLoading(prev => ({ ...prev, [loadingKey]: true }));
+      
+      const res = await fetch('/api/comandas/crediario/generate-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerId,
+          monthYear,
+          generatedBy: 'Usuário Sistema' // Pode ser obtido do contexto de autenticação
+        })
+      });
+      
+      if (!res.ok) {
+        throw new Error('Erro na geração do PDF');
+      }
+      
+      const data = await res.json();
+      
+      // Download automático do PDF
+      const downloadUrl = data.downloadUrl;
+      window.open(downloadUrl, '_blank');
+      
+      // Opcionalmente, pode mostrar uma mensagem de sucesso
+      // alert('PDF gerado com sucesso!');
+      
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      alert('Erro ao gerar PDF. Tente novamente.');
+    } finally {
+      setPdfLoading(prev => ({ ...prev, [loadingKey]: false }));
     }
   };
 
@@ -130,17 +169,31 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
                   </span>
                 </td>
                 <td className="p-3 text-center">
-                  <button
-                    onClick={() => {
-                      setSelectedMonthlyAccount(acc);
-                      loadMonthlyPurchases(acc.id);
-                      loadMonthlyPayments(acc.id);
-                    }}
-                    className="text-blue-600 hover:text-blue-800 p-1"
-                    title="Ver detalhes"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
+                  <div className="flex justify-center gap-2">
+                    <button
+                      onClick={() => {
+                        setSelectedMonthlyAccount(acc);
+                        loadMonthlyPurchases(acc.id);
+                        loadMonthlyPayments(acc.id);
+                      }}
+                      className="text-blue-600 hover:text-blue-800 p-1"
+                      title="Ver detalhes"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleGeneratePDF(acc.customer_id, acc.month_year)}
+                      disabled={pdfLoading[`${acc.customer_id}_${acc.month_year}`]}
+                      className="text-green-600 hover:text-green-800 p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Gerar PDF"
+                    >
+                      {pdfLoading[`${acc.customer_id}_${acc.month_year}`] ? (
+                        <Download className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <FileText className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -231,13 +284,32 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
               </div>
             </div>
 
-            {/* Botão registrar pagamento mensal */}
-            <button
-              onClick={() => setShowMonthlyPaymentModal(true)}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold mb-2"
-            >
-              Registrar Pagamento Mensal
-            </button>
+            {/* Botões de ação */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <button
+                onClick={() => setShowMonthlyPaymentModal(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold"
+              >
+                Registrar Pagamento
+              </button>
+              <button
+                onClick={() => handleGeneratePDF(selectedMonthlyAccount.customer_id, selectedMonthlyAccount.month_year)}
+                disabled={pdfLoading[`${selectedMonthlyAccount.customer_id}_${selectedMonthlyAccount.month_year}`]}
+                className="bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {pdfLoading[`${selectedMonthlyAccount.customer_id}_${selectedMonthlyAccount.month_year}`] ? (
+                  <>
+                    <Download className="w-4 h-4 animate-spin" />
+                    Gerando PDF...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="w-4 h-4" />
+                    Gerar PDF
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
