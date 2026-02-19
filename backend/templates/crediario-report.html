@@ -256,7 +256,7 @@
             <thead>
                 <tr>
                     <th>Data</th>
-                    <th>Descrição</th>
+                    <th>Descrição / Itens</th>
                     <th class="text-right">Valor</th>
                 </tr>
             </thead>
@@ -264,7 +264,12 @@
                 {{#purchases}}
                 <tr>
                     <td>{{date_formatted}}</td>
-                    <td>{{description}}</td>
+                    <td>
+                        <div>{{description}}</div>
+                        {{#items_detail}}
+                        <div style="font-size: 11px; color: #666; margin-top: 3px;">→ {{items_detail}}</div>
+                        {{/items_detail}}
+                    </td>
                     <td class="text-right text-blue">R$ {{amount}}</td>
                 </tr>
                 {{/purchases}}

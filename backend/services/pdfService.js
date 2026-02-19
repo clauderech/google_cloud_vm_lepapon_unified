@@ -198,22 +198,36 @@ class PDFService {
           doc.rect(50, tableTop, 495, 25).fillColor('#1e40af').fill();
           doc.fillColor('white').fontSize(11)
              .text('Data', 60, tableTop + 8)
-             .text('Descrição', 150, tableTop + 8)              
+             .text('Descrição / Itens', 150, tableTop + 8)              
              .text('Valor', 450, tableTop + 8);
 
           // Linhas de dados
           let currentY = tableTop + 25;
           data.purchases.forEach((purchase, index) => {
             const rowColor = index % 2 === 0 ? '#ffffff' : '#f9fafb';
-            doc.rect(50, currentY, 495, 20).fillColor(rowColor).fill()
-               .rect(50, currentY, 495, 20).strokeColor('#e5e7eb').lineWidth(0.5).stroke();
+            
+            // Calcula altura da linha baseada no conteúdo
+            const hasItems = purchase.items_detail && purchase.items_detail.length > 0;
+            const rowHeight = hasItems ? 35 : 20;
+            
+            doc.rect(50, currentY, 495, rowHeight).fillColor(rowColor).fill()
+               .rect(50, currentY, 495, rowHeight).strokeColor('#e5e7eb').lineWidth(0.5).stroke();
                
             doc.fillColor('#333333').fontSize(9)
                .text(purchase.date_formatted, 60, currentY + 6)
-               .text(purchase.description, 150, currentY + 6)
                .text(`R$ ${purchase.amount}`, 450, currentY + 6);
             
-            currentY += 20;
+            // Exibe descrição principal
+            const baseDescription = purchase.description.split('(')[0].trim(); // Remove itens detalhados se já incluídos
+            doc.text(baseDescription, 150, currentY + 6);
+            
+            // Exibe itens detalhados em linha separada se existirem
+            if (hasItems) {
+              doc.fillColor('#666666').fontSize(8)
+                 .text(`→ ${purchase.items_detail}`, 155, currentY + 20);
+            }
+            
+            currentY += rowHeight;
           });
           
           doc.y = currentY + 10;
@@ -507,11 +521,31 @@ class PDFService {
       balance: parseFloat(accountData.balance || 0).toFixed(2),
       
       // Compras formatadas
-      purchases: purchases.map(purchase => ({
-        date_formatted: new Date(purchase.purchase_date).toLocaleDateString('pt-BR'),
-        description: purchase.description,
-        amount: parseFloat(purchase.amount).toFixed(2)
-      })),
+      purchases: purchases.map(purchase => {
+        let description = purchase.description;
+        let itemsDetail = '';
+        
+        // Processa items_json para exibir itens detalhados
+        if (purchase.items_json) {
+          try {
+            const items = JSON.parse(purchase.items_json);
+            if (Array.isArray(items) && items.length > 0) {
+              const itemsList = items.map(item => `${item.quantity || 1} ${item.product_name || item.name || 'Item'}`).join(', ');
+              itemsDetail = itemsList;
+              description = `${purchase.description} (${itemsList})`;
+            }
+          } catch (error) {
+            console.warn('Erro ao processar items_json:', error);
+          }
+        }
+        
+        return {
+          date_formatted: new Date(purchase.purchase_date).toLocaleDateString('pt-BR'),
+          description: description,
+          items_detail: itemsDetail,
+          amount: parseFloat(purchase.amount).toFixed(2)
+        };
+      }),
       
       // Pagamentos formatados
       payments: payments.map(payment => ({
