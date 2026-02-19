@@ -106,6 +106,27 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
     }
   };
 
+  // Formatar itens de uma compra
+  const formatPurchaseItems = (itemsJson: string | null) => {
+    if (!itemsJson) return null;
+    
+    try {
+      const items = JSON.parse(itemsJson);
+      if (Array.isArray(items) && items.length > 0) {
+        return items.map(item => {
+          const qty = item.quantity || 1;
+          const name = item.product_name || item.name || 'Item';
+          const price = item.price || item.unit_price || 0;
+          return `${qty} ${name} (R$ ${parseFloat(price).toFixed(2)})`;
+        }).join(', ');
+      }
+    } catch (error) {
+      console.warn('Erro ao processar items_json:', error);
+    }
+    
+    return null;
+  };
+
   useEffect(() => {
     loadMonthlyAccounts();
   }, []);
@@ -236,18 +257,26 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
                   <thead className="bg-gray-200 sticky top-0">
                     <tr>
                       <th className="p-2 text-left font-bold text-gray-900">Data</th>
-                      <th className="p-2 text-left font-bold text-gray-900">Descrição</th>
+                      <th className="p-2 text-left font-bold text-gray-900">Descrição / Itens</th>
                       <th className="p-2 text-right font-bold text-gray-900">Valor</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {monthlyPurchases.map((purchase: any) => (
-                      <tr key={purchase.id} className="hover:bg-white">
-                        <td className="p-2 text-gray-900">{new Date(purchase.date).toLocaleDateString()}</td>
-                        <td className="p-2 text-gray-900">{purchase.description}</td>
-                        <td className="p-2 text-right font-bold text-gray-900">R$ {Number(purchase.amount).toFixed(2)}</td>
-                      </tr>
-                    ))}
+                    {monthlyPurchases.map((purchase: any) => {
+                      const itemsDetail = formatPurchaseItems(purchase.items_json);
+                      return (
+                        <tr key={purchase.id} className="hover:bg-white">
+                          <td className="p-2 text-gray-900">{new Date(purchase.purchase_date || purchase.date).toLocaleDateString()}</td>
+                          <td className="p-2 text-gray-900">
+                            <div>{purchase.description}</div>
+                            {itemsDetail && (
+                              <div className="text-xs text-gray-600 mt-1">→ {itemsDetail}</div>
+                            )}
+                          </td>
+                          <td className="p-2 text-right font-bold text-gray-900">R$ {Number(purchase.amount).toFixed(2)}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

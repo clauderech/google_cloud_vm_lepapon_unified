@@ -530,7 +530,12 @@ class PDFService {
           try {
             const items = JSON.parse(purchase.items_json);
             if (Array.isArray(items) && items.length > 0) {
-              const itemsList = items.map(item => `${item.quantity || 1} ${item.product_name || item.name || 'Item'}`).join(', ');
+              const itemsList = items.map(item => {
+                const qty = item.quantity || 1;
+                const name = item.product_name || item.name || 'Item';
+                const price = item.price || item.unit_price || 0;
+                return `${qty} ${name} (R$ ${parseFloat(price).toFixed(2)})`;
+              }).join(', ');
               itemsDetail = itemsList;
               description = `${purchase.description} (${itemsList})`;
             }
