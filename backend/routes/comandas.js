@@ -495,6 +495,15 @@ router.post('/crediario/generate-pdf', async (req, res) => {
     const customerName = accountData.customer_name.replace(/[^a-zA-Z0-9]/g, '_');
     const filename = `conta_${customerName}_${monthYear}_${timestamp}.pdf`;
     
+    console.log('[CREDIARIO][PDF][FILENAME][DEBUG]', {
+      originalCustomerName: accountData.customer_name,
+      cleanedCustomerName: customerName,
+      monthYear,
+      timestamp,
+      generatedFilename: filename,
+      downloadUrl: `/api/comandas/crediario/pdf/${filename}`
+    });
+    
     // Salva PDF
     await pdfService.savePDF(pdfBuffer, filename, 'crediario');
     
@@ -531,8 +540,20 @@ router.get('/crediario/pdf/:filename', async (req, res) => {
     const { filename } = req.params;
     const { download } = req.query; // ?download=true para força download
     
+    console.log('[CREDIARIO][PDF][DOWNLOAD][DEBUG]', { 
+      filename, 
+      download,
+      rawParams: req.params,
+      fullUrl: req.originalUrl 
+    });
+    
     // Valida nome do arquivo por segurança
     if (!filename.match(/^conta_[a-zA-Z0-9_-]+_\d{4}-\d{2}_[0-9T-]+\.pdf$/)) {
+      console.log('[CREDIARIO][PDF][DOWNLOAD][INVALID_FILENAME]', {
+        filename,
+        regex: '/^conta_[a-zA-Z0-9_-]+_\\d{4}-\\d{2}_[0-9T-]+\\.pdf$/',
+        matched: false
+      });
       return res.status(400).json({ error: 'Nome de arquivo inválido' });
     }
     
