@@ -31,7 +31,8 @@
     "puppeteer": "^22.6.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "recharts": "^3.4.1"
+    "recharts": "^3.4.1",
+    "socket.io": "^4.7.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.17",
