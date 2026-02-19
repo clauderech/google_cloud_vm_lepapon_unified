@@ -132,9 +132,10 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
   }, []);
 
   // Filtro de busca
-  const filteredAccounts = monthlyAccounts.filter(acc =>
-    acc.customer_name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredAccounts = monthlyAccounts.filter(acc => {
+    const fullName = `${acc.customer_name} ${acc.customer_surname || ''}`.toLowerCase();
+    return fullName.includes(searchTerm.toLowerCase());
+  });
   return (
     <div className="p-6 max-w-5xl w-full mx-auto">
       <div className="flex justify-between items-center mb-6">
@@ -177,7 +178,7 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
               <tr key={acc.id} className="hover:bg-gray-50">
                 <td className="p-3">
                   <div>
-                    <p className="font-bold text-gray-900">{acc.customer_name}</p>
+                    <p className="font-bold text-gray-900">{acc.customer_name} {acc.customer_surname || ''}</p>
                     {acc.customer_phone && <p className="text-xs text-gray-600">{acc.customer_phone}</p>}
                   </div>
                 </td>
@@ -227,7 +228,7 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full p-6 my-8">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900">Conta Mensal de {selectedMonthlyAccount.customer_name}</h3>
+              <h3 className="text-xl font-bold text-gray-900">Conta Mensal de {selectedMonthlyAccount.customer_name} {selectedMonthlyAccount.customer_surname || ''}</h3>
               <button onClick={() => setSelectedMonthlyAccount(null)} className="text-gray-500 hover:text-gray-700">
                 <X className="w-5 h-5" />
               </button>
