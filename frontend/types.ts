@@ -251,9 +251,58 @@ export interface StockMovement {
   created_at?: string;
 }
 
-export type CrediarioStatus = 'active' | 'paid' | 'overdue' | 'cancelled';
-export type InstallmentStatus = 'pending' | 'paid' | 'overdue' | 'partial';
+export type CrediarioStatus = 'active' | 'paid' | 'overdue' | 'cancelled' | 'closed';
 
+// Interface para contas mensais (corresponde à estrutura real do banco)
+export interface MonthlyAccount {
+  id: number;
+  customer_id: number;
+  month_year: string; // Formato YYYY-MM
+  total_amount: number;
+  amount_paid: number;
+  balance: number;
+  amount_remaining: number; // Mapeado do campo balance pelo backend
+  due_date: string; 
+  status: CrediarioStatus;
+  late_fee: number;
+  interest: number;
+  payment_date?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  // Campos do join com customers
+  customer_name: string;
+  customer_surname?: string;
+  customer_phone?: string;
+}
+
+// Interface para compras mensais
+export interface MonthlyPurchase {
+  id: number;
+  monthly_account_id: number;
+  sale_id?: string;
+  purchase_date: string;
+  description: string;
+  amount: number;
+  items_json?: string;
+  created_at: string;
+}
+
+// Interface para pagamentos mensais
+export interface MonthlyPayment {
+  id: number;
+  monthly_account_id: number;
+  payment_date: string;
+  amount: number;
+  payment_method: PaymentMethod;
+  receipt_number?: string;
+  received_by?: string;
+  notes?: string;
+  created_at: string;
+}
+
+// DEPRECATED: Interfaces antigas do sistema de parcelas (não utilizadas)
+// Mantidas temporariamente para compatibilidade, serão removidas
 export interface Crediario {
   id: string;
   customer_id: string;
@@ -284,7 +333,7 @@ export interface CrediarioInstallment {
   amount_paid: number;
   paid_date?: string;
   payment_method?: PaymentMethod;
-  status: InstallmentStatus;
+  status: 'pending' | 'paid' | 'overdue' | 'partial';
   late_days: number;
   late_fee: number;
   interest: number;
@@ -329,7 +378,8 @@ export interface AppState {
   dailyAssets?: DailyAssets[];
   expenses?: Expense[];
   cashRegister?: CashRegister;
-  crediarios?: Crediario[];
+  monthlyAccounts?: MonthlyAccount[]; // Usando novo tipo de conta mensal
+  crediarios?: Crediario[]; // DEPRECATED: mantido para compatibilidade
 }
 
 export type PageView = 

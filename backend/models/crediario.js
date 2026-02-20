@@ -3,10 +3,19 @@ const { db } = require('../config/knex');
 
 const CrediarioModel = {
     async addMonthlyPayment(monthlyAccountId, paymentDate, amount, paymentMethod, receiptNumber, receivedBy, notes) {
+      // Validações básicas
+      if (!monthlyAccountId || !paymentDate || !amount || !paymentMethod) {
+        throw new Error('Parâmetros obrigatórios ausentes');
+      }
+      
+      if (amount <= 0) {
+        throw new Error('Valor do pagamento deve ser positivo');
+      }
+      
       await db('monthly_payments').insert({
-        monthly_account_id: monthlyAccountId,
+        monthly_account_id: parseInt(monthlyAccountId), // Garantir que é int
         payment_date: paymentDate,
-        amount,
+        amount: parseFloat(amount), // Garantir que é decimal
         payment_method: paymentMethod,
         receipt_number: receiptNumber,
         received_by: receivedBy,
@@ -16,13 +25,20 @@ const CrediarioModel = {
       await CrediarioModel.updateMonthlyAccountTotals(monthlyAccountId);
     },
   async findOrCreateMonthlyAccount(customerId, monthYear, dueDate) {
+    // Validações básicas
+    if (!customerId || !monthYear || !dueDate) {
+      throw new Error('Parâmetros obrigatórios ausentes');
+    }
+    
+    const customerIdInt = parseInt(customerId); // Garantir que é int conforme schema
+    
     // Busca ou cria a conta mensal do cliente para o mês
     let acc = await db('monthly_accounts')
-      .where({ customer_id: customerId, month_year: monthYear })
+      .where({ customer_id: customerIdInt, month_year: monthYear })
       .first();
     if (!acc) {
       const [id] = await db('monthly_accounts').insert({
-        customer_id: customerId,
+        customer_id: customerIdInt,
         month_year: monthYear,
         due_date: dueDate,
         status: 'open',
@@ -33,12 +49,21 @@ const CrediarioModel = {
   },
 
   async addMonthlyPurchase(monthlyAccountId, saleId, purchaseDate, description, amount, itemsJson) {
+      // Validações básicas
+      if (!monthlyAccountId || !purchaseDate || !description || !amount) {
+        throw new Error('Parâmetros obrigatórios ausentes');
+      }
+      
+      if (amount <= 0) {
+        throw new Error('Valor da compra deve ser positivo');
+      }
+      
       await db('monthly_purchases').insert({
-        monthly_account_id: monthlyAccountId,
+        monthly_account_id: parseInt(monthlyAccountId), // Garantir que é int
         sale_id: saleId,
         purchase_date: purchaseDate,
         description,
-        amount,
+        amount: parseFloat(amount), // Garantir que é decimal
         items_json: itemsJson
       });
       // Atualiza saldo, total e status da conta mensal

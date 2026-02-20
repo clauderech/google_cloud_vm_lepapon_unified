@@ -370,9 +370,32 @@ router.post('/crediario/:monthlyAccountId/pay', async (req, res) => {
   try {
     const { monthlyAccountId } = req.params;
     const { paymentDate, amount, paymentMethod, receiptNumber, receivedBy, notes } = req.body;
+    
+    // Validações aprimoradas
     if (!paymentDate || !amount || !paymentMethod) {
-      return res.status(400).json({ error: 'Campos obrigatórios faltando' });
+      return res.status(400).json({ error: 'Campos obrigatórios faltando: paymentDate, amount, paymentMethod' });
     }
+    
+    if (amount <= 0) {
+      return res.status(400).json({ error: 'Valor do pagamento deve ser positivo' });
+    }
+    
+    if (!['cash', 'card', 'pix', 'transfer'].includes(paymentMethod)) {
+      return res.status(400).json({ error: 'Método de pagamento inválido' });
+    }
+    
+    // Verificar se conta existe
+    const { db } = require('../config/knex');
+    const account = await db('monthly_accounts').where('id', monthlyAccountId).first();
+    if (!account) {
+      return res.status(404).json({ error: 'Conta mensal não encontrada' });
+    }
+    
+    // Verificar se pagamento não excede saldo devedor
+    if (amount > account.balance) {
+      return res.status(400).json({ error: `Valor do pagamento (R$ ${amount.toFixed(2)}) excede saldo devedor (R$ ${account.balance.toFixed(2)})` });
+    }
+    
     await CrediarioModel.addMonthlyPayment(
       monthlyAccountId,
       paymentDate,
@@ -396,11 +419,19 @@ router.get('/crediario/accounts', async (req, res) => {
     const { db } = require('../config/knex');
     let query = db('monthly_accounts')
       .join('customers', 'monthly_accounts.customer_id', 'customers.id')
-      .select('monthly_accounts.*', 'customers.nome as customer_name', 'customers.sobrenome as customer_surname');
+      .select('monthly_accounts.*', 'customers.nome as customer_name', 'customers.sobrenome as customer_surname', 'customers.fone as customer_phone');
     if (customerId) query = query.where('monthly_accounts.customer_id', customerId);
     if (monthYear) query = query.where('monthly_accounts.month_year', monthYear);
     const accounts = await query.orderBy('monthly_accounts.due_date', 'desc');
-    res.json(accounts);
+    
+    // Mapear dados para compatibilidade com frontend
+    const mappedAccounts = accounts.map(account => ({
+      ...account,
+      amount_remaining: account.balance, // Frontend espera amount_remaining
+      status: account.status === 'open' ? 'active' : account.status === 'closed' ? 'cancelled' : account.status // Mapear status
+    }));
+    
+    res.json(mappedAccounts);
   } catch (err) {
     res.status(500).json({ error: 'Erro ao consultar contas mensais', details: err.message });
   }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CreditCard, Plus, Search, X, FileText, Download } from 'lucide-react';
+import type { MonthlyAccount, MonthlyPurchase, MonthlyPayment } from '../types';
 
 interface CrediarioManagerProps {
   customers: any[];
@@ -7,14 +8,14 @@ interface CrediarioManagerProps {
 
 const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
   // Estados para contas mensais
-  const [monthlyAccounts, setMonthlyAccounts] = useState<any[]>([]);
-  const [selectedMonthlyAccount, setSelectedMonthlyAccount] = useState<any | null>(null);
-  const [monthlyPurchases, setMonthlyPurchases] = useState<any[]>([]);
-  const [monthlyPayments, setMonthlyPayments] = useState<any[]>([]);
+  const [monthlyAccounts, setMonthlyAccounts] = useState<MonthlyAccount[]>([]);
+  const [selectedMonthlyAccount, setSelectedMonthlyAccount] = useState<MonthlyAccount | null>(null);
+  const [monthlyPurchases, setMonthlyPurchases] = useState<MonthlyPurchase[]>([]);
+  const [monthlyPayments, setMonthlyPayments] = useState<MonthlyPayment[]>([]);
   const [showMonthlyPaymentModal, setShowMonthlyPaymentModal] = useState(false);
   const [monthlyPayment, setMonthlyPayment] = useState({
     amount: 0,
-    paymentMethod: 'cash',
+    paymentMethod: 'cash' as const,
     paymentDate: '',
     receiptNumber: '',
     receivedBy: '',
@@ -263,11 +264,11 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {monthlyPurchases.map((purchase: any) => {
+                    {monthlyPurchases.map((purchase: MonthlyPurchase) => {
                       const itemsDetail = formatPurchaseItems(purchase.items_json);
                       return (
                         <tr key={purchase.id} className="hover:bg-white">
-                          <td className="p-2 text-gray-900">{new Date(purchase.purchase_date || purchase.date).toLocaleDateString()}</td>
+                          <td className="p-2 text-gray-900">{new Date(purchase.purchase_date).toLocaleDateString()}</td>
                           <td className="p-2 text-gray-900">
                             <div>{purchase.description}</div>
                             {itemsDetail && (
@@ -299,14 +300,14 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {monthlyPayments.map((paymen: any) => (
-                      <tr key={paymen.id} className="hover:bg-white">
-                        <td className="p-2 text-gray-900">{new Date(paymen.paymentDate).toLocaleDateString()}</td>
-                        <td className="p-2 text-gray-900">{paymen.paymentMethod}</td>
-                        <td className="p-2 text-right font-bold text-green-700">R$ {Number(paymen.amount).toFixed(2)}</td>
-                        <td className="p-2 text-gray-900">{paymen.receiptNumber}</td>
-                        <td className="p-2 text-gray-900">{paymen.receivedBy}</td>
-                        <td className="p-2 text-gray-900">{paymen.notes}</td>
+                    {monthlyPayments.map((payment: MonthlyPayment) => (
+                      <tr key={payment.id} className="hover:bg-white">
+                        <td className="p-2 text-gray-900">{new Date(payment.payment_date).toLocaleDateString()}</td>
+                        <td className="p-2 text-gray-900">{payment.payment_method}</td>
+                        <td className="p-2 text-right font-bold text-green-700">R$ {Number(payment.amount).toFixed(2)}</td>
+                        <td className="p-2 text-gray-900">{payment.receipt_number || '-'}</td>
+                        <td className="p-2 text-gray-900">{payment.received_by || '-'}</td>
+                        <td className="p-2 text-gray-900">{payment.notes || '-'}</td>
                       </tr>
                     ))}
                   </tbody>
