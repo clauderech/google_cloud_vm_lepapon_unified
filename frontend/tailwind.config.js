@@ -12,6 +12,10 @@ export default {
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
       },
+      screens: {
+        'landscape': { 'raw': '(orientation: landscape) and (max-height: 896px)' },
+        'mobile-landscape': { 'raw': '(orientation: landscape) and (max-width: 896px)' },
+      },
     },
   },
   plugins: [],

@@ -1732,9 +1732,9 @@ const App = () => {
     };
 
     return (
-      <div className="p-6 max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Cadastro & Estoque</h2>
+      <div className="p-6 max-w-6xl mx-auto landscape:p-3 landscape:max-w-full landscape:overflow-x-hidden">
+        <div className="flex justify-between items-center mb-6 landscape:mb-3">
+          <h2 className="text-2xl font-bold text-gray-900 landscape:text-xl">Cadastro & Estoque</h2>
           <button 
             onClick={() => setShowForm(!showForm)}
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium"
@@ -1743,11 +1743,11 @@ const App = () => {
           </button>
         </div>
         {/* Tabs de tipos de produto */}
-        <div className="flex gap-2 mb-4">
+        <div className="flex gap-2 mb-4 overflow-x-auto landscape:gap-1 landscape:text-sm">
           {['insumo', 'insumo_bebida', 'prato', 'drink', 'revenda'].map(tipo => (
             <button
               key={tipo}
-              className={`px-4 py-2 rounded-lg font-bold capitalize ${tab === tipo ? 'bg-blue-100 text-blue-800' : 'text-gray-600 bg-gray-50'}`}
+              className={`px-4 py-2 rounded-lg font-bold capitalize whitespace-nowrap landscape:px-2 landscape:py-1 landscape:text-xs ${tab === tipo ? 'bg-blue-100 text-blue-800' : 'text-gray-600 bg-gray-50'}`}
               onClick={() => setTab(tipo as any)}
             >
               {tipo.replace('_', ' ')}
@@ -1767,34 +1767,34 @@ const App = () => {
 
         {showForm && (
           <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200 mb-6 animate-in fade-in slide-in-from-top-4">
-            <div className="flex gap-4 mb-4 border-b pb-4">
+            <div className="flex gap-4 mb-4 border-b pb-4 overflow-x-auto landscape:gap-2">
               <button 
                 onClick={() => setMode('insumo')} 
-                className={`px-4 py-2 rounded-lg font-bold ${mode === 'insumo' ? 'bg-blue-100 text-blue-800' : 'text-gray-600'}`}
+                className={`px-4 py-2 rounded-lg font-bold whitespace-nowrap landscape:px-2 landscape:py-1 landscape:text-xs ${mode === 'insumo' ? 'bg-blue-100 text-blue-800' : 'text-gray-600'}`}
               >
                 Insumo (Comida)
               </button>
               <button 
                 onClick={() => setMode('insumo_bebida')} 
-                className={`px-4 py-2 rounded-lg font-bold ${mode === 'insumo_bebida' ? 'bg-blue-100 text-blue-800' : 'text-gray-600'}`}
+                className={`px-4 py-2 rounded-lg font-bold whitespace-nowrap landscape:px-2 landscape:py-1 landscape:text-xs ${mode === 'insumo_bebida' ? 'bg-blue-100 text-blue-800' : 'text-gray-600'}`}
               >
                 Insumo (Bebida)
               </button>
               <button 
                 onClick={() => setMode('prato')} 
-                className={`px-4 py-2 rounded-lg font-bold ${mode === 'prato' ? 'bg-blue-100 text-blue-800' : 'text-gray-600'}`}
+                className={`px-4 py-2 rounded-lg font-bold whitespace-nowrap landscape:px-2 landscape:py-1 landscape:text-xs ${mode === 'prato' ? 'bg-blue-100 text-blue-800' : 'text-gray-600'}`}
               >
                 Prato (Venda / Receita)
               </button>
               <button 
                 onClick={() => setMode('drink')} 
-                className={`px-4 py-2 rounded-lg font-bold ${mode === 'drink' ? 'bg-blue-100 text-blue-800' : 'text-gray-600'}`}
+                className={`px-4 py-2 rounded-lg font-bold whitespace-nowrap landscape:px-2 landscape:py-1 landscape:text-xs ${mode === 'drink' ? 'bg-blue-100 text-blue-800' : 'text-gray-600'}`}
               >
                 Drink (Receita)
               </button>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4 landscape:grid-cols-2 landscape:gap-2">
               <input placeholder="Nome" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.name || ''} onChange={e => setNewProd({...newProd, name: e.target.value})} />
               <input placeholder="Categoria" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.category || ''} onChange={e => setNewProd({...newProd, category: e.target.value})} />
               
@@ -1883,16 +1883,16 @@ const App = () => {
             <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
               <Package className="w-5 h-5" /> {tab.charAt(0).toUpperCase() + tab.slice(1).replace('_', ' ')}
             </h3>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <table className="w-full text-left">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden overflow-x-auto landscape:max-h-[400px] landscape:overflow-y-auto max-w-full">
+              <table className="w-full text-left min-w-[800px] landscape:min-w-[900px]">
                 <thead className="bg-gray-100 text-gray-900 font-bold text-sm">
                   <tr>
-                    <th className="p-3">Nome</th>
-                    <th className="p-3 text-right">Estoque</th>
-                    <th className="p-3">Unidade</th>
-                    <th className="p-3 text-right">Custo</th>
-                    <th className="p-3">Status</th>
-                    <th className="p-3">Ações</th>
+                    <th className="p-3 min-w-[150px]">Nome</th>
+                    <th className="p-3 text-right min-w-[100px]">Estoque</th>
+                    <th className="p-3 min-w-[80px]">Unidade</th>
+                    <th className="p-3 text-right min-w-[100px]">Custo</th>
+                    <th className="p-3 min-w-[80px]">Status</th>
+                    <th className="p-3 min-w-[100px]">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -1967,14 +1967,15 @@ const App = () => {
 
           <section>
              <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2"><ChefHat className="w-5 h-5" /> Pratos / Drink (Estoque Calculado)</h3>
-             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <table className="w-full text-left">
+             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden overflow-x-auto landscape:max-h-[400px] landscape:overflow-y-auto max-w-full">
+                <table className="w-full text-left min-w-[900px] landscape:min-w-[1000px]">
                   <thead className="bg-gray-100 text-gray-900 font-bold text-sm">
                     <tr>
-                      <th className="p-3">Nome</th>
-                      <th className="p-3 text-right">Preço Venda</th>
-                      <th className="p-3 text-right">Produção Max. Est.</th>
-                      <th className="p-3">Ingredientes</th>
+                      <th className="p-3 min-w-[150px]">Nome</th>
+                      <th className="p-3 text-right min-w-[120px]">Preço Venda</th>
+                      <th className="p-3 text-right min-w-[140px]">Produção Max. Est.</th>
+                      <th className="p-3 min-w-[200px]">Ingredientes</th>
+                      <th className="p-3 min-w-[100px]">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
