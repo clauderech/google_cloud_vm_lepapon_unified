@@ -25,12 +25,13 @@ const CozinhaItem = {
   /**
    * Gerencia os itens da cozinha para uma comanda específica
    * Faz diff inteligente para inserir/atualizar/remover apenas o necessário
+   * Envia para cozinha: pratos, drinks, porções, fracionados e produtos de preparo
    * @param {number} comandaId - ID da comanda
    * @param {Array} newItems - Array de itens: [{productId, quantity, notes}]
    * @param {string} globalNotes - Observações globais do pedido (usado quando item.notes for vazio)
    */
   async manageCozinhaItems(comandaId, newItems = [], globalNotes = null) {
-    console.log('[COZINHA_ITEM][MANAGE] Starting management for comanda', comandaId, 'with', newItems.length, 'items');
+    console.log('[COZINHA_ITEM][MANAGE] Starting kitchen management for comanda', comandaId, 'with', newItems.length, 'items');
     
     // 1. Buscar itens atuais na cozinha para esta comanda
     const currentItems = await db('cozinha_items')
@@ -39,14 +40,42 @@ const CozinhaItem = {
     
     console.log('[COZINHA_ITEM][MANAGE] Current items in kitchen:', currentItems.length);
     
-    // 2. Filtrar apenas produtos do tipo 'prato' dos novos itens
+    // 2. Função para determinar se produto precisa de preparo na cozinha
+    const needsKitchenPreparation = (product) => {
+      if (!product) return false;
+      
+      // Tipos que sempre vão para cozinha
+      if (product.type === 'prato' || product.type === 'drink') {
+        return true;
+      }
+      
+      // Categorias que precisam de preparo
+      const kitchenCategories = ['porção', 'porcao', 'picado', 'preparado', 'fracionado'];
+      const categoryLower = (product.category || '').toLowerCase();
+      if (kitchenCategories.some(cat => categoryLower.includes(cat))) {
+        return true;
+      }
+      
+      // Unidades que indicam preparo fracionado
+      if (product.unit === 'frd') {
+        return true;
+      }
+      
+      return false;
+    };
+    
+    // 3. Filtrar produtos que precisam de preparo na cozinha
     const pratosItems = [];
     for (const item of newItems) {
       const productId = item.productId || item.product_id;
       if (!productId) continue;
       
       const product = await ProductModel.getById(productId);
-      if (product && product.type === 'prato') {
+      const needsKitchen = needsKitchenPreparation(product);
+      
+      console.log(`[COZINHA_ITEM][FILTER] Product ${productId} (${product?.name}) - type:${product?.type}, category:'${product?.category}', unit:${product?.unit} → Kitchen: ${needsKitchen ? 'YES' : 'NO'}`);
+      
+      if (needsKitchen) {
         pratosItems.push({
           product_id: productId,
           quantidade: item.quantity || item.quantidade,
@@ -55,17 +84,24 @@ const CozinhaItem = {
       }
     }
     
-    console.log('[COZINHA_ITEM][MANAGE] Filtered pratos items:', pratosItems.length);
+    console.log('[COZINHA_ITEM][MANAGE] Filtered kitchen items (pratos + porções + drinks + fracionados):', pratosItems.length);
     
-    // 3. Criar mapas para comparação eficiente
+    // 3. Função para criar chave única baseada em produto + observação
+    const createItemKey = (productId, observacao) => {
+      return `${productId}||${observacao || 'sem_obs'}`;
+    };
+    
+    // 4. Criar mapas para comparação eficiente (usando product_id + observacao como chave)
     const currentMap = new Map();
     currentItems.forEach(item => {
-      currentMap.set(item.product_id, item);
+      const key = createItemKey(item.product_id, item.observacao);
+      currentMap.set(key, item);
     });
     
     const newMap = new Map();
     pratosItems.forEach(item => {
-      newMap.set(item.product_id, item);
+      const key = createItemKey(item.product_id, item.observacao);
+      newMap.set(key, item);
     });
     
     const operations = {
@@ -74,15 +110,15 @@ const CozinhaItem = {
       toDelete: []
     };
     
-    // 4. Identificar itens para inserir ou atualizar
-    for (const [productId, newItem] of newMap) {
-      const currentItem = currentMap.get(productId);
+    // 5. Identificar itens para inserir ou atualizar
+    for (const [itemKey, newItem] of newMap) {
+      const currentItem = currentMap.get(itemKey);
       
       if (!currentItem) {
         // Item não existe na cozinha - inserir
         operations.toInsert.push({
           comanda_id: comandaId,
-          product_id: productId,
+          product_id: newItem.product_id,
           quantidade: newItem.quantidade,
           status: 'pending',
           observacao: newItem.observacao || globalNotes || null,
@@ -90,21 +126,20 @@ const CozinhaItem = {
           responsavel: null
         });
       } else {
-        // Item existe - verificar se precisa atualizar quantidade ou observação
-        if (currentItem.quantidade !== newItem.quantidade || 
-            currentItem.observacao !== newItem.observacao) {
+        // Item existe - verificar se precisa atualizar quantidade
+        if (currentItem.quantidade !== newItem.quantidade) {
           operations.toUpdate.push({
             id: currentItem.id,
             quantidade: newItem.quantidade,
-            observacao: newItem.observacao
+            observacao: newItem.observacao || globalNotes || null
           });
         }
       }
     }
     
-    // 5. Identificar itens para remover (estavam na cozinha mas não estão mais na comanda)
-    for (const [productId, currentItem] of currentMap) {
-      if (!newMap.has(productId)) {
+    // 6. Identificar itens para remover (estavam na cozinha mas não estão mais na comanda)
+    for (const [itemKey, currentItem] of currentMap) {
+      if (!newMap.has(itemKey)) {
         operations.toDelete.push(currentItem.id);
       }
     }
@@ -112,10 +147,12 @@ const CozinhaItem = {
     console.log('[COZINHA_ITEM][MANAGE] Operations:', {
       toInsert: operations.toInsert.length,
       toUpdate: operations.toUpdate.length,
-      toDelete: operations.toDelete.length
+      toDelete: operations.toDelete.length,
+      newKeys: Array.from(newMap.keys()),
+      currentKeys: Array.from(currentMap.keys())
     });
     
-    // 6. Executar operações no banco
+    // 7. Executar operações no banco
     const results = { inserted: 0, updated: 0, deleted: 0 };
     
     if (operations.toInsert.length > 0) {
