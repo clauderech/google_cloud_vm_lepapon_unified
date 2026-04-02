@@ -1827,9 +1827,12 @@ const App = () => {
               )}
             </div>
 
-            {(mode === 'prato' || mode === 'drink') && (
+            {/* Receita para Pratos, Drinks e Insumos categoria "casa" */}
+            {(mode === 'prato' || mode === 'drink' || (mode === 'insumo' && newProd.category === 'casa')) && (
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4">
-                <h4 className="font-bold text-gray-800 mb-2">Ficha Técnica (Receita)</h4>
+                <h4 className="font-bold text-gray-800 mb-2">
+                  {mode === 'insumo' ? 'Receita de Produção (Insumo Caseiro)' : 'Ficha Técnica (Receita)'}
+                </h4>
                 <div className="flex gap-2 mb-2">
                   <select 
                     className="flex-1 border border-gray-400 p-2 rounded text-black bg-white"
@@ -2034,9 +2037,12 @@ const App = () => {
                                     {state.suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                   </select>
                                   </div>
-                                  {(editMode === 'prato' || editMode === 'drink') && (
+                                  {/* Receita para Pratos, Drinks e Insumos categoria "casa" */}
+                                  {(editMode === 'prato' || editMode === 'drink' || (editMode === 'insumo' && editProd.category === 'casa')) && (
                                     <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4">
-                                    <h4 className="font-bold text-gray-800 mb-2">Ficha Técnica (Receita)</h4>
+                                    <h4 className="font-bold text-gray-800 mb-2">
+                                      {editMode === 'insumo' ? 'Receita de Produção (Insumo Caseiro)' : 'Ficha Técnica (Receita)'}
+                                    </h4>
                                     <div className="flex gap-2 mb-2">
                                       <select 
                                         className="flex-1 border border-gray-400 p-2 rounded text-black bg-white"
