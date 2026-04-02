@@ -17,29 +17,66 @@ const ProductionController = {
       
       const allProducts = await ProductModel.list();
       
-      // Filtrar apenas insumos com receitas
-      const availableProductions = allProducts.filter(product => 
-        (product.type === 'insumo' || product.type === 'insumo_bebida') && 
-        product.recipe && 
-        product.recipe.length > 0 &&
-        product.is_active
-      );
+      console.log('[PRODUCTION][DEBUG] Total products found:', allProducts.length);
+      
+      // Filtrar apenas insumos com receitas válidas
+      const availableProductions = allProducts.filter(product => {
+        // Deve ser insumo
+        const isInsumo = product.type === 'insumo' || product.type === 'insumo_bebida';
+        
+        // Deve estar ativo
+        const isActive = product.is_active === 1;
+        
+        // Deve ter receita válida
+        let hasValidRecipe = false;
+        if (product.recipe) {
+          try {
+            const recipe = typeof product.recipe === 'string' ? JSON.parse(product.recipe) : product.recipe;
+            hasValidRecipe = Array.isArray(recipe) && recipe.length > 0;
+          } catch (error) {
+            console.warn(`[PRODUCTION] Invalid recipe JSON for product ${product.id}:`, error.message);
+          }
+        }
+        
+        const shouldInclude = isInsumo && isActive && hasValidRecipe;
+        
+        console.log(`[PRODUCTION][DEBUG] Product ${product.id} (${product.name}):`, {
+          type: product.type,
+          category: product.category,
+          isInsumo,
+          isActive,
+          hasValidRecipe,
+          recipeLength: product.recipe ? product.recipe.length : 0,
+          shouldInclude
+        });
+        
+        return shouldInclude;
+      });
+      
+      console.log(`[PRODUCTION][DEBUG] Filtered products for production: ${availableProductions.length}`);
+      availableProductions.forEach(p => console.log(`  - ${p.id}: ${p.name} (${p.category})`));
       
       // Calcular disponibilidade de produção baseado nos ingredientes
       const productionsWithAvailability = await Promise.all(
         availableProductions.map(async (product) => {
+          console.log(`[PRODUCTION][CALC] Processing product ${product.id} (${product.name})`);
           const recipe = typeof product.recipe === 'string' ? JSON.parse(product.recipe) : product.recipe;
+          
+          console.log(`[PRODUCTION][CALC] Recipe for ${product.name}:`, recipe);
           
           // Calcular quantas unidades podem ser produzidas
           let maxProduction = Infinity;
           const ingredientDetails = [];
           
           for (const recipeItem of recipe) {
+            console.log(`[PRODUCTION][CALC] Looking for ingredient: ${recipeItem.ingredientId}`);
             const ingredient = await ProductModel.getById(recipeItem.ingredientId);
             if (ingredient) {
               const availableStock = parseFloat(ingredient.stock) || 0;
               const requiredPerUnit = recipeItem.quantity;
               const possibleUnits = Math.floor(availableStock / requiredPerUnit);
+              
+              console.log(`[PRODUCTION][CALC] Ingredient ${ingredient.name}: available=${availableStock}, required=${requiredPerUnit}, possible=${possibleUnits}`);
               
               maxProduction = Math.min(maxProduction, possibleUnits);
               
@@ -51,20 +88,37 @@ const ProductionController = {
                 available: availableStock,
                 possibleUnits: possibleUnits
               });
+            } else {
+              console.warn(`[PRODUCTION][CALC] Ingredient not found: ${recipeItem.ingredientId}`);
+              maxProduction = 0; // Se não encontrar ingrediente, não pode produzir
             }
           }
           
-          return {
+          const finalProduct = {
             ...product,
             maxProduction: maxProduction === Infinity ? 0 : maxProduction,
             ingredientDetails
           };
+          
+          console.log(`[PRODUCTION][CALC] Final result for ${product.name}: maxProduction=${finalProduct.maxProduction}, ingredients=${ingredientDetails.length}`);
+          
+          return finalProduct;
         })
       );
       
       console.log('[PRODUCTION][AVAILABLE][SUCCESS]', { 
         count: productionsWithAvailability.length 
       });
+      
+      console.log('[PRODUCTION][RESPONSE] Sending to frontend:', 
+        productionsWithAvailability.map(p => ({ 
+          id: p.id, 
+          name: p.name, 
+          category: p.category,
+          maxProduction: p.maxProduction,
+          ingredientsCount: p.ingredientDetails.length
+        }))
+      );
       
       res.json({
         success: true,

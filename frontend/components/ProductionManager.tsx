@@ -19,6 +19,7 @@ const ProductionManager: React.FC<ProductionManagerProps> = ({ onError }) => {
   const fetchAvailableProductions = async () => {
     try {
       setLoading(true);
+      console.log('[PRODUCTION_FRONTEND] Fetching available productions...');
       const response = await fetch('/api/production/available');
       
       if (!response.ok) {
@@ -26,9 +27,12 @@ const ProductionManager: React.FC<ProductionManagerProps> = ({ onError }) => {
       }
       
       const data = await response.json();
+      console.log('[PRODUCTION_FRONTEND] API Response:', data);
+      console.log('[PRODUCTION_FRONTEND] Available productions count:', data.data?.length || 0);
+      
       setAvailableProductions(data.data || []);
     } catch (error) {
-      console.error('Erro ao buscar produções:', error);
+      console.error('[PRODUCTION_FRONTEND] Erro ao buscar produções:', error);
       onError('Erro ao carregar produções disponíveis');
     } finally {
       setLoading(false);
