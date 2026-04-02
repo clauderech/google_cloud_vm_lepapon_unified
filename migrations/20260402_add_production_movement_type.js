@@ -3,7 +3,7 @@
  * Data: 2 de abril de 2026
  */
 
-export async function up(knex) {
+exports.up = async function(knex) {
   // Adicionar 'production' no ENUM movement_type
   await knex.raw(`
     ALTER TABLE stock_movements 
@@ -19,9 +19,9 @@ export async function up(knex) {
   `);
   
   console.log('Tipos de movimentação "production" e "production_ingredient" adicionados com sucesso');
-}
+};
 
-export async function down(knex) {
+exports.down = async function(knex) {
   // Remover 'production' dos ENUMs
   await knex.raw(`
     ALTER TABLE stock_movements 
@@ -36,4 +36,4 @@ export async function down(knex) {
   `);
   
   console.log('Tipos de movimentação "production" removidos');
-}
+};
