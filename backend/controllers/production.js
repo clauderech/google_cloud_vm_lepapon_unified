@@ -13,14 +13,19 @@ const ProductionController = {
    */
   async listAvailableProductions(req, res) {
     try {
-      console.log('[PRODUCTION][AVAILABLE][REQ]');
+      console.log('[PRODUCTION][AVAILABLE][REQ] Route called successfully');
+      console.log('[PRODUCTION][AVAILABLE][REQ] Headers:', req.headers);
       
+      console.log('[PRODUCTION][AVAILABLE][STEP1] Calling ProductModel.list()...');
       const allProducts = await ProductModel.list();
+      console.log('[PRODUCTION][AVAILABLE][STEP1] ProductModel.list() completed, found:', allProducts.length, 'products');
       
       console.log('[PRODUCTION][DEBUG] Total products found:', allProducts.length);
       
+      console.log('[PRODUCTION][AVAILABLE][STEP2] Starting product filtering...');
       // Filtrar apenas insumos com receitas válidas
       const availableProductions = allProducts.filter(product => {
+        console.log('[PRODUCTION][AVAILABLE][STEP2] Filtering product:', product.id, product.name);
         // Deve ser insumo
         const isInsumo = product.type === 'insumo' || product.type === 'insumo_bebida';
         
@@ -56,13 +61,15 @@ const ProductionController = {
       console.log(`[PRODUCTION][DEBUG] Filtered products for production: ${availableProductions.length}`);
       availableProductions.forEach(p => console.log(`  - ${p.id}: ${p.name} (${p.category})`));
       
+      console.log('[PRODUCTION][AVAILABLE][STEP3] Starting availability calculations...');
       // Calcular disponibilidade de produção baseado nos ingredientes
       const productionsWithAvailability = await Promise.all(
         availableProductions.map(async (product) => {
-          console.log(`[PRODUCTION][CALC] Processing product ${product.id} (${product.name})`);
-          const recipe = typeof product.recipe === 'string' ? JSON.parse(product.recipe) : product.recipe;
-          
-          console.log(`[PRODUCTION][CALC] Recipe for ${product.name}:`, recipe);
+          try {
+            console.log(`[PRODUCTION][CALC] Processing product ${product.id} (${product.name})`);
+            const recipe = typeof product.recipe === 'string' ? JSON.parse(product.recipe) : product.recipe;
+            
+            console.log(`[PRODUCTION][CALC] Recipe for ${product.name}:`, recipe);
           
           // Calcular quantas unidades podem ser produzidas
           let maxProduction = Infinity;
@@ -103,8 +110,18 @@ const ProductionController = {
           console.log(`[PRODUCTION][CALC] Final result for ${product.name}: maxProduction=${finalProduct.maxProduction}, ingredients=${ingredientDetails.length}`);
           
           return finalProduct;
+          } catch (productError) {
+            console.error(`[PRODUCTION][CALC][ERROR] Error processing product ${product.id}:`, productError.message);
+            return {
+              ...product,
+              maxProduction: 0,
+              ingredientDetails: [],
+              error: productError.message
+            };
+          }
         })
       );
+      console.log('[PRODUCTION][AVAILABLE][STEP4] Availability calculations completed');
       
       console.log('[PRODUCTION][AVAILABLE][SUCCESS]', { 
         count: productionsWithAvailability.length 
@@ -120,7 +137,12 @@ const ProductionController = {
         }))
       );
       
-      res.json({
+      // Adicionar headers CORS explicitamente
+      res.header('Access-Control-Allow-Origin', '*');
+      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+      
+      res.status(200).json({
         success: true,
         data: productionsWithAvailability
       });

@@ -20,10 +20,27 @@ const ProductionManager: React.FC<ProductionManagerProps> = ({ onError }) => {
     try {
       setLoading(true);
       console.log('[PRODUCTION_FRONTEND] Fetching available productions...');
+      
+      // Primeiro, testar se a rota está funcionando
+      console.log('[PRODUCTION_FRONTEND] Testing route connectivity...');
+      try {
+        const testResponse = await fetch('/api/production/test');
+        console.log('[PRODUCTION_FRONTEND] Test response status:', testResponse.status);
+        const testData = await testResponse.json();
+        console.log('[PRODUCTION_FRONTEND] Test response data:', testData);
+      } catch (testError) {
+        console.error('[PRODUCTION_FRONTEND] Test route failed:', testError);
+      }
+      
+      // Agora fazer a requisição real
       const response = await fetch('/api/production/available');
+      console.log('[PRODUCTION_FRONTEND] Available response status:', response.status);
+      console.log('[PRODUCTION_FRONTEND] Available response headers:', response.headers);
       
       if (!response.ok) {
-        throw new Error('Erro ao buscar produções disponíveis');
+        const errorText = await response.text();
+        console.error('[PRODUCTION_FRONTEND] Error response text:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText || 'Erro ao buscar produções disponíveis'}`);
       }
       
       const data = await response.json();
@@ -33,7 +50,7 @@ const ProductionManager: React.FC<ProductionManagerProps> = ({ onError }) => {
       setAvailableProductions(data.data || []);
     } catch (error) {
       console.error('[PRODUCTION_FRONTEND] Erro ao buscar produções:', error);
-      onError('Erro ao carregar produções disponíveis');
+      onError(`Erro ao carregar produções: ${error.message}`);
     } finally {
       setLoading(false);
     }
