@@ -103,8 +103,9 @@ class StockService {
       throw new Error(`Produto não encontrado: ${productId}`);
     }
 
-    if ((product.type === 'prato' || product.type === 'drink') && product.recipe) {
-      // Produto com receita - deduz ingredientes
+    if (((product.type === 'prato' || product.type === 'drink') && product.recipe) || 
+        ((product.type === 'insumo' || product.type === 'insumo_bebida') && product.recipe)) {
+      // Produto com receita - deduz ingredientes (pratos, drinks e insumos caseiros)
       const recipe = typeof product.recipe === 'string' ? JSON.parse(product.recipe) : product.recipe;
       
       for (const recipeItem of recipe) {
@@ -122,8 +123,10 @@ class StockService {
         
         movements.push(movement);
       }
-    } else if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda' || (product.type === 'drink' && !product.recipe)) {
-      // Produto simples - deduz diretamente
+    } else if (((product.type === 'insumo' || product.type === 'insumo_bebida') && !product.recipe) || 
+               product.type === 'revenda' || 
+               (product.type === 'drink' && !product.recipe)) {
+      // Produto simples - deduz diretamente (insumos básicos, revenda, drinks simples)
       const movement = await this.updateStock({
         productId: productId,
         quantity: -quantity, // Negativo para deduzir
@@ -138,6 +141,129 @@ class StockService {
     }
 
     return movements;
+  }
+
+  /**
+   * Processa produção de insumo caseiro com receita
+   * @param {Object} params - Parâmetros da produção
+   * @param {string} params.productId - ID do insumo a ser produzido
+   * @param {number} params.quantity - Quantidade a ser produzida
+   * @param {string} params.userId - ID do usuário
+   * @param {string} params.notes - Observações opcionais
+   * @returns {Promise<Array>} Lista de movimentações realizadas
+   */
+  async processProduction(params) {
+    const { productId, quantity, userId, notes } = params;
+    
+    console.log('[STOCK_SERVICE][PRODUCTION]', { productId, quantity });
+    
+    const movements = [];
+    const product = await ProductModel.getById(productId);
+    
+    if (!product) {
+      throw new Error(`Produto não encontrado: ${productId}`);
+    }
+
+    // Verificar se é um insumo com receita
+    if (product.type !== 'insumo' && product.type !== 'insumo_bebida') {
+      throw new Error(`Produto ${product.name} não é um insumo. Apenas insumos podem ser produzidos.`);
+    }
+
+    if (!product.recipe || product.recipe.length === 0) {
+      throw new Error(`Produto ${product.name} não tem receita definida. Impossível produzir.`);
+    }
+
+    const recipe = typeof product.recipe === 'string' ? JSON.parse(product.recipe) : product.recipe;
+    const productionId = `prod_${Date.now()}`;
+    
+    // Verificar se há ingredientes suficientes
+    for (const recipeItem of recipe) {
+      const ingredient = await ProductModel.getById(recipeItem.ingredientId);
+      if (!ingredient) {
+        throw new Error(`Ingrediente não encontrado: ${recipeItem.ingredientId}`);
+      }
+      
+      const requiredQuantity = recipeItem.quantity * quantity;
+      const availableStock = parseFloat(ingredient.stock) || 0;
+      
+      if (availableStock < requiredQuantity) {
+        throw new Error(`Estoque insuficiente de ${ingredient.name}. Necessário: ${requiredQuantity} ${ingredient.unit || 'un'}, Disponível: ${availableStock} ${ingredient.unit || 'un'}`);
+      }
+    }
+    
+    // Consumir ingredientes
+    for (const recipeItem of recipe) {
+      const ingredientQuantity = -(recipeItem.quantity * quantity); // Negativo para deduzir
+      
+      const ingredient = await ProductModel.getById(recipeItem.ingredientId);
+      const movement = await this.updateStock({
+        productId: recipeItem.ingredientId,
+        quantity: ingredientQuantity,
+        movementType: 'production_ingredient',
+        referenceType: 'production',
+        referenceId: productionId,
+        notes: `Ingrediente para produção: ${product.name} (${quantity}x)`,
+        userId
+      });
+      
+      movements.push(movement);
+    }
+    
+    // Produzir insumo final
+    const productionMovement = await this.updateStock({
+      productId: productId,
+      quantity: quantity, // Positivo para adicionar
+      movementType: 'production',
+      referenceType: 'production',
+      referenceId: productionId,
+      notes: notes || `Produção caseira de ${product.name}`,
+      userId
+    });
+    
+    movements.push(productionMovement);
+    
+    // Recalcular custo baseado nos ingredientes
+    await this.updateProductionCost(productId);
+
+    console.log('[STOCK_SERVICE][PRODUCTION][SUCCESS]', {
+      productId,
+      productName: product.name,
+      quantity,
+      ingredientsConsumed: recipe.length,
+      productionId
+    });
+
+    return movements;
+  }
+
+  /**
+   * Atualiza o custo do produto baseado no custo dos ingredientes da receita
+   * @param {string} productId - ID do produto
+   * @returns {Promise<void>}
+   */
+  async updateProductionCost(productId) {
+    const product = await ProductModel.getById(productId);
+    if (!product || !product.recipe) return;
+    
+    const recipe = typeof product.recipe === 'string' ? JSON.parse(product.recipe) : product.recipe;
+    let totalCost = 0;
+    
+    for (const recipeItem of recipe) {
+      const ingredient = await ProductModel.getById(recipeItem.ingredientId);
+      if (ingredient) {
+        const ingredientCost = parseFloat(ingredient.cost) || 0;
+        totalCost += ingredientCost * recipeItem.quantity;
+      }
+    }
+    
+    if (totalCost > 0) {
+      await ProductModel.update(productId, { cost: totalCost });
+      console.log('[STOCK_SERVICE][COST_UPDATE]', {
+        productId,
+        productName: product.name,
+        newCost: totalCost
+      });
+    }
   }
 
   /**
@@ -203,8 +329,9 @@ class StockService {
         continue;
       }
 
-      if ((product.type === 'prato' || product.type === 'drink') && product.recipe) {
-        // Produto com receita - deduz ingredientes (igual processSale)
+      if (((product.type === 'prato' || product.type === 'drink') && product.recipe) || 
+          ((product.type === 'insumo' || product.type === 'insumo_bebida') && product.recipe)) {
+        // Produto com receita - deduz ingredientes (pratos, drinks e insumos caseiros)
         const recipe = typeof product.recipe === 'string' ? JSON.parse(product.recipe) : product.recipe;
         
         for (const recipeItem of recipe) {
@@ -222,8 +349,10 @@ class StockService {
           
           movements.push(movement);
         }
-      } else if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda' || (product.type === 'drink' && !product.recipe)) {
-        // Produto simples - deduz diretamente (igual processSale)
+      } else if (((product.type === 'insumo' || product.type === 'insumo_bebida') && !product.recipe) || 
+                 product.type === 'revenda' || 
+                 (product.type === 'drink' && !product.recipe)) {
+        // Produto simples - deduz diretamente (insumos básicos, revenda, drinks simples)
         const movement = await this.updateStock({
           productId: productId,
           quantity: -quantity, // Negativo para deduzir
@@ -274,8 +403,9 @@ class StockService {
         continue;
       }
 
-      if ((product.type === 'prato' || product.type === 'drink') && product.recipe) {
-        // Produto com receita - reverte ingredientes (igual processSale)
+      if (((product.type === 'prato' || product.type === 'drink') && product.recipe) || 
+          ((product.type === 'insumo' || product.type === 'insumo_bebida') && product.recipe)) {
+        // Produto com receita - reverte ingredientes (pratos, drinks e insumos caseiros)
         const recipe = typeof product.recipe === 'string' ? JSON.parse(product.recipe) : product.recipe;
         
         for (const recipeItem of recipe) {
@@ -293,7 +423,9 @@ class StockService {
           
           movements.push(movement);
         }
-      } else if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda' || (product.type === 'drink' && !product.recipe)) {
+      } else if (((product.type === 'insumo' || product.type === 'insumo_bebida') && !product.recipe) || 
+                 product.type === 'revenda' || 
+                 (product.type === 'drink' && !product.recipe)) {
         // Produto simples - reverte diretamente
         const movement = await this.updateStock({
           productId: productId,

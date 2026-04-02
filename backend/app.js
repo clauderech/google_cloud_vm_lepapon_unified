@@ -81,6 +81,10 @@ app.use('/api/reports', reportsRouter);
 const stockRouter = require('./routes/stock');
 app.use('/api/stock', stockRouter);
 
+// Rotas de produção de insumos caseiros
+const productionRouter = require('./routes/production');
+app.use('/api/production', productionRouter);
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({

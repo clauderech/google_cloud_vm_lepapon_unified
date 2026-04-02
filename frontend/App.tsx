@@ -56,7 +56,8 @@ import {
   LogOut,
   HelpCircle,
   Menu as MenuIcon,
-  X as CloseIcon
+  X as CloseIcon,
+  Factory
 } from 'lucide-react';
 import { 
   AppState, 
@@ -88,6 +89,7 @@ import CrediarioManager from './components/CrediarioManager';
 import HelpMenu from './components/HelpMenu';
 import Login from './components/Login';
 import KitchenDashboard from './components/KitchenDashboard';
+import ProductionManager from './components/ProductionManager';
 import { useAuth } from './hooks/useAuth';
 
 const App = () => {
@@ -96,6 +98,7 @@ const App = () => {
         { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { key: 'pos', label: 'PDV', icon: ShoppingCart },
         { key: 'inventory', label: 'Estoque', icon: Package },
+        { key: 'production', label: 'Produção', icon: Factory },
         { key: 'customers', label: 'Clientes', icon: Truck },
         { key: 'cozinha', label: 'Cozinha', icon: ChefHat },
         { key: 'financial', label: 'Financeiro', icon: TrendingUp },
@@ -2396,6 +2399,7 @@ const App = () => {
           {hasPermission('view_dashboard') && <SidebarItem icon={LayoutDashboard} label="Dashboard" active={view === 'dashboard'} onClick={() => setView('dashboard')} />}
           {hasPermission('view_pos') && <SidebarItem icon={ShoppingCart} label="PDV (Vendas)" active={view === 'pos'} onClick={() => setView('pos')} />}
           {hasPermission('view_inventory') && <SidebarItem icon={Package} label="Estoque / Receitas" active={view === 'inventory'} onClick={() => setView('inventory')} />}
+          {hasPermission('view_inventory') && <SidebarItem icon={Factory} label="Produção (Casa)" active={view === 'production'} onClick={() => setView('production')} />}
           {hasPermission('manage_products') && <SidebarItem icon={Users} label="Clientes" active={view === 'customers'} onClick={() => setView('customers')} />}
           {hasPermission('view_kitchen') && <SidebarItem icon={ChefHat} label="Cozinha" active={view === 'cozinha'} onClick={() => setView('cozinha')} />}
           {hasPermission('view_shopping_list') && <SidebarItem icon={ClipboardList} label="Lista de Compras" active={view === 'shopping-list'} onClick={() => setView('shopping-list')} />}
@@ -2427,6 +2431,7 @@ const App = () => {
             {view === 'dashboard' && <Dashboard />}
             {view === 'pos' && <POS />}
             {view === 'inventory' && <Inventory />}
+            {view === 'production' && <ProductionManager onError={(message) => alert(message)} />}
             {view === 'customers' && <CustomersManager customers={state.customers} sales={state.sales} onAddCustomer={addCustomer} onUpdateCustomer={updateCustomer} onDeleteCustomer={deleteCustomer} />}
             {view === 'cozinha' && <KitchenDashboard />}
             {view === 'shopping-list' && <ShoppingListView />}

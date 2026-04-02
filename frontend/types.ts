@@ -84,6 +84,46 @@ export interface ShoppingListItem {
   updated_at?: string;
 }
 
+// Interface para produção de insumos caseiros
+export interface ProductionItem {
+  id: string;
+  name: string;
+  type: 'insumo' | 'insumo_bebida';
+  category: string;
+  unit: MeasurementUnit;
+  cost: number;
+  recipe: RecipeItem[];
+  maxProduction: number; // Quantas unidades podem ser produzidas com ingredientes disponíveis
+  ingredientDetails: ProductionIngredientDetail[];
+}
+
+export interface ProductionIngredientDetail {
+  id: string;
+  name: string;
+  required: number;
+  unit: string;
+  available: number;
+  possibleUnits: number;
+}
+
+export interface ProductionHistory {
+  productionId: string;
+  date: string;
+  userId: string;
+  producedItems: ProductionMovement[];
+  consumedIngredients: ProductionMovement[];
+}
+
+export interface ProductionMovement {
+  id: number;
+  product_id: string;
+  productName: string;
+  quantity: number;
+  movement_type: 'production' | 'production_ingredient';
+  notes: string;
+  created_at: string;
+}
+
 export type PaymentMethod = 'cash' | 'card' | 'pix' | 'credit';
 export type PurchasePaymentMethod = 'cash' | 'card' | 'transfer' | 'check' | 'credit';
 
@@ -395,4 +435,5 @@ export type PageView =
   | 'cash-register'
   | 'reports'
   | 'cozinha'
-  | 'crediario';
+  | 'crediario'
+  | 'production';
