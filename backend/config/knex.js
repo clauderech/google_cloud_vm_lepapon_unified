@@ -8,6 +8,18 @@ function parseBoolean(value) {
 }
 
 function buildKnexConfig() {
+  // DEBUG: Log das variáveis de ambiente para verificar se .env está carregado
+  console.log('[KNEX][DEBUG] === VARIÁVEIS DE AMBIENTE ===');
+  console.log('[KNEX][DEBUG] DB_CLIENT:', process.env.DB_CLIENT);
+  console.log('[KNEX][DEBUG] DB_HOST:', process.env.DB_HOST);
+  console.log('[KNEX][DEBUG] DB_PORT:', process.env.DB_PORT);
+  console.log('[KNEX][DEBUG] DB_USER:', process.env.DB_USER);
+  console.log('[KNEX][DEBUG] DB_PASSWORD:', process.env.DB_PASSWORD ? '***DEFINIDA***' : 'UNDEFINED');
+  console.log('[KNEX][DEBUG] DB_NAME:', process.env.DB_NAME);
+  console.log('[KNEX][DEBUG] DATABASE_URL:', process.env.DATABASE_URL ? '***DEFINIDA***' : 'UNDEFINED');
+  console.log('[KNEX][DEBUG] NODE_ENV:', process.env.NODE_ENV);
+  console.log('[KNEX][DEBUG] ==========================================');
+
   // MySQL por padrão (conforme seu ambiente)
   const client = process.env.DB_CLIENT || 'mysql2';
 
@@ -22,6 +34,20 @@ function buildKnexConfig() {
         password: process.env.DB_PASSWORD || undefined,
         database: process.env.DB_NAME || undefined,
       };
+
+  // DEBUG: Log da conexão final (sem senha)
+  console.log('[KNEX][DEBUG] === CONFIGURAÇÃO FINAL ===');
+  console.log('[KNEX][DEBUG] client:', client);
+  console.log('[KNEX][DEBUG] hasDatabaseUrl:', hasDatabaseUrl);
+  if (typeof baseConnection === 'object') {
+    console.log('[KNEX][DEBUG] connection:', {
+      host: baseConnection.host,
+      port: baseConnection.port,
+      user: baseConnection.user,
+      password: baseConnection.password ? '***PRESENTE***' : 'AUSENTE',
+      database: baseConnection.database
+    });
+  }
 
   const sslEnabled = parseBoolean(process.env.DB_SSL);
   const sslRejectUnauthorized = !parseBoolean(process.env.DB_SSL_REJECT_UNAUTHORIZED_FALSE);
@@ -40,7 +66,7 @@ function buildKnexConfig() {
             : null),
         };
 
-  return {
+  const config = {
     client,
     connection,
     pool: {
@@ -52,6 +78,20 @@ function buildKnexConfig() {
       directory: process.env.DB_MIGRATIONS_DIR || '../migrations',
     },
   };
+
+  console.log('[KNEX][DEBUG] === CONFIG FINAL COMPLETA ===');
+  console.log('[KNEX][DEBUG]', JSON.stringify({
+    ...config,
+    connection: typeof config.connection === 'string' 
+      ? '***DATABASE_URL***' 
+      : {
+          ...config.connection,
+          password: config.connection?.password ? '***OCULTA***' : 'AUSENTE'
+        }
+  }, null, 2));
+  console.log('[KNEX][DEBUG] =====================================');
+
+  return config;
 }
 
 
