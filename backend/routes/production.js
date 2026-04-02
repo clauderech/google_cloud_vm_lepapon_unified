@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const ProductionController = require('../controllers/production');
-const authMiddleware = require('../middleware/authUnified');
+const { validateCombined } = require('../middleware/authUnified');
 
 /**
  * Rotas para sistema de produção de insumos caseiros
@@ -12,20 +12,20 @@ const authMiddleware = require('../middleware/authUnified');
  * Lista insumos que podem ser produzidos (têm receitas)
  * Retorna informações de disponibilidade baseado no estoque dos ingredientes
  */
-router.get('/available', authMiddleware, ProductionController.listAvailableProductions);
+router.get('/available', validateCombined, ProductionController.listAvailableProductions);
 
 /**
  * POST /api/production/produce
  * Produz um insumo caseiro consumindo ingredientes conforme receita
  * Body: { productId: string, quantity: number, notes?: string }
  */
-router.post('/produce', authMiddleware, ProductionController.produceItem);
+router.post('/produce', validateCombined, ProductionController.produceItem);
 
 /**
  * GET /api/production/history
  * Obtém histórico de produções realizadas
  * Query params: productId (opcional), limit (padrão 50)
  */
-router.get('/history', authMiddleware, ProductionController.getProductionHistory);
+router.get('/history', validateCombined, ProductionController.getProductionHistory);
 
 module.exports = router;
