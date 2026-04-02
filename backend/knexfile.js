@@ -1,8 +1,12 @@
 'use strict';
 
-require('dotenv').config();
+const path = require('path');
+
+// Carregar .env do diretório raiz do projeto (.. do backend)
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 console.log('[KNEXFILE][DEBUG] === CARREGANDO KNEXFILE ===');
+console.log('[KNEXFILE][DEBUG] .env path:', path.join(__dirname, '..', '.env'));
 console.log('[KNEXFILE][DEBUG] .env carregado, NODE_ENV:', process.env.NODE_ENV);
 console.log('[KNEXFILE][DEBUG] Working directory:', process.cwd());
 
