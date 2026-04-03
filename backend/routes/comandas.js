@@ -684,10 +684,13 @@ router.get('/crediario/:monthlyAccountId/preview-image', async (req, res) => {
   try {
     const { monthlyAccountId } = req.params;
     
+    console.log('[CREDIARIO][PREVIEW_IMAGE][REQUEST]', { monthlyAccountId });
+    
     // Buscar dados da conta mensal
     const accountData = await CrediarioModel.getAccountWithDetails(monthlyAccountId);
     
     if (!accountData) {
+      console.log('[CREDIARIO][PREVIEW_IMAGE][NOT_FOUND]', { monthlyAccountId });
       return res.status(404).json({ error: 'Conta mensal não encontrada' });
     }
 
@@ -696,15 +699,39 @@ router.get('/crediario/:monthlyAccountId/preview-image', async (req, res) => {
     const imageService = getInstance();
     const imagePath = await imageService.generateReceiptImage(accountData);
     
-    // Retornar a imagem diretamente
-    res.sendFile(imagePath);
+    // Verificar tipo de arquivo gerado
+    const fileExt = path.extname(imagePath).toLowerCase();
+    
+    if (fileExt === '.html') {
+      // Fallback HTML - enviar com content-type apropriado
+      console.log('[CREDIARIO][PREVIEW_IMAGE][FALLBACK_HTML]', { monthlyAccountId, imagePath });
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.sendFile(imagePath);
+    } else {
+      // Imagem PNG normal
+      console.log('[CREDIARIO][PREVIEW_IMAGE][SUCCESS]', { monthlyAccountId, imagePath });
+      res.setHeader('Content-Type', 'image/png');
+      res.sendFile(imagePath);
+    }
+    
   } catch (err) {
     console.error('[CREDIARIO][PREVIEW_IMAGE][ERROR]', { 
       monthlyAccountId: req.params.monthlyAccountId,
       error: err.message, 
       stack: err.stack 
     });
-    res.status(500).json({ error: 'Erro ao gerar prévia da imagem', details: err.message });
+    
+    const errorMessage = err.message.includes('libnss3') 
+      ? 'Erro do Puppeteer: Execute "bash install_chrome_deps.sh" no servidor'
+      : 'Erro ao gerar prévia da imagem';
+    
+    res.status(500).json({ 
+      error: errorMessage, 
+      details: err.message,
+      suggestion: err.message.includes('libnss3') 
+        ? 'Execute o script install_chrome_deps.sh para instalar dependências do Chrome'
+        : null
+    });
   }
 });
 
@@ -716,6 +743,65 @@ router.get('/crediario/accounts/need-reminder', async (req, res) => {
   } catch (err) {
     console.error('[CREDIARIO][ACCOUNTS][NEED_REMINDER][ERROR]', { error: err.message, stack: err.stack });
     res.status(500).json({ error: 'Erro ao buscar contas que precisam de lembrete', details: err.message });
+  }
+});
+
+// Endpoint de teste do sistema de imagens
+router.get('/crediario/test-image-system', async (req, res) => {
+  try {
+    console.log('[CREDIARIO][TEST_IMAGE_SYSTEM][START]');
+    
+    const { getInstance } = require('../services/receiptImageService');
+    const imageService = getInstance();
+    
+    // Teste rápido de inicialização do Puppeteer
+    let puppeteerStatus = 'unknown';
+    let chromeVersion = 'unknown';
+    let fallbackStatus = 'unknown';
+    
+    try {
+      await imageService.init();
+      puppeteerStatus = 'success';
+      
+      // Tentar detectar versão do Chrome
+      const puppeteer = require('puppeteer');
+      const browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+      });
+      chromeVersion = await browser.version();
+      await browser.close();
+      
+    } catch (initError) {
+      puppeteerStatus = 'failed';
+      fallbackStatus = 'active';
+      console.log('[CREDIARIO][TEST_IMAGE_SYSTEM][PUPPETEER_FAILED]', { error: initError.message });
+    }
+    
+    res.json({
+      status: 'ok',
+      imageSystem: {
+        puppeteerStatus,
+        chromeVersion,
+        fallbackStatus: puppeteerStatus === 'failed' ? 'active' : 'not_needed',
+        suggestions: puppeteerStatus === 'failed' ? [
+          'Execute: bash install_chrome_deps.sh',
+          'Ou instale Google Chrome: sudo apt install google-chrome-stable',
+          'Sistema funcionará com HTML como fallback'
+        ] : [
+          'Sistema funcionando corretamente',
+          'Gerando imagens PNG'
+        ]
+      },
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (err) {
+    console.error('[CREDIARIO][TEST_IMAGE_SYSTEM][ERROR]', { error: err.message, stack: err.stack });
+    res.status(500).json({ 
+      error: 'Erro ao testar sistema de imagens', 
+      details: err.message 
+    });
   }
 });
 

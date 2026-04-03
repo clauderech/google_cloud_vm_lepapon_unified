@@ -17,13 +17,60 @@ class ReceiptImageService {
   async init() {
     if (!this.browser) {
       this.browser = await puppeteer.launch({
-        headless: true,
+        headless: 'new',
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
-          '--disable-gpu'
-        ]
+          '--disable-gpu',
+          '--disable-extensions',
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding',
+          '--disable-features=TranslateUI',
+          '--disable-ipc-flooding-protection',
+          '--disable-background-networking',
+          '--disable-default-apps',
+          '--disable-sync',
+          '--disable-translate',
+          '--hide-scrollbars',
+          '--metrics-recording-only',
+          '--mute-audio',
+          '--no-first-run',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor'
+        ],
+        executablePath: '/usr/bin/google-chrome-stable',
+        ignoreDefaultArgs: ['--disable-extensions']
+      }).catch(async (err) => {
+        console.warn('Failed to launch with google-chrome-stable, trying chromium...');
+        return await puppeteer.launch({
+          headless: 'new',
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox', 
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--disable-extensions',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding',
+            '--disable-features=TranslateUI',
+            '--disable-ipc-flooding-protection'
+          ],
+          executablePath: '/usr/bin/chromium-browser'
+        });
+      }).catch(async (err) => {
+        console.warn('Failed with system browsers, using Puppeteer default...');
+        return await puppeteer.launch({
+          headless: 'new',
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage', 
+            '--disable-gpu'
+          ]
+        });
       });
     }
 
@@ -111,7 +158,18 @@ class ReceiptImageService {
         error: error.message,
         stack: error.stack
       });
-      throw new Error(`Erro ao gerar imagem da conta: ${error.message}`);
+      
+      // Fallback: tentar gerar arquivo HTML simples quando Puppeteer falha
+      console.log('[RECEIPT_IMAGE][FALLBACK] Tentando fallback para arquivo HTML...');
+      
+      try {
+        const fallbackPath = await this.generateFallbackHTML(accountData, format);
+        console.log('[RECEIPT_IMAGE][FALLBACK_SUCCESS]', { path: fallbackPath });
+        return fallbackPath;
+      } catch (fallbackError) {
+        console.error('[RECEIPT_IMAGE][FALLBACK_ERROR]', fallbackError.message);
+        throw new Error(`Erro ao gerar imagem da conta: ${error.message}. Fallback também falhou: ${fallbackError.message}`);
+      }
     }
   }
 
@@ -589,6 +647,39 @@ class ReceiptImageService {
   /**
    * Limpa arquivos de cache antigos
    */
+  /**
+   * Gerar arquivo HTML simples quando Puppeteer falha
+   * @param {Object} accountData - Dados da conta
+   * @param {string} format - Formato desejado (png ou html)
+   * @returns {Promise<string>} - Caminho do arquivo gerado
+   */
+  async generateFallbackHTML(accountData, format = 'html') {
+    const cacheKey = this.generateCacheKey(accountData) + '_fallback';
+    const fileName = `${cacheKey}.html`;  // Sempre gera HTML como fallback
+    const fallbackPath = path.join(this.cacheDir, fileName);
+    
+    // Gerar HTML simplificado
+    const html = this.generateReceiptHTML(accountData);
+    
+    // Adicionar aviso de fallback no HTML
+    const fallbackHtml = html.replace(
+      '<body>',
+      `<body>
+        <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; margin-bottom: 20px; border-radius: 5px; text-align: center; color: #856404;">
+          <strong>⚠️ Aviso:</strong> Esta é uma versão HTML da conta. Para melhor visualização, instale as dependências do Chrome no servidor.
+        </div>`
+    );
+    
+    await fs.writeFile(fallbackPath, fallbackHtml, 'utf8');
+    
+    console.log('[RECEIPT_IMAGE][FALLBACK_HTML]', { 
+      accountId: accountData.id,
+      path: fallbackPath
+    });
+    
+    return fallbackPath;
+  }
+
   async cleanupCache() {
     try {
       const files = await fs.readdir(this.cacheDir);
