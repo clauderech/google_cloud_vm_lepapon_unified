@@ -55,10 +55,10 @@ class ReceiptImageService {
         console.log('[RECEIPT_IMAGE][INIT] Google Chrome Stable funcionando!');
         
       } catch (err1) {
-        console.log('[RECEIPT_IMAGE][INIT] Google Chrome falhou, tentando Chromium:', err1.message);
+        console.log('[RECEIPT_IMAGE][INIT] Google Chrome falhou, tentando Chromium Snap:', err1.message);
         
         try {
-          // Tentativa 2: Chromium Browser
+          // Tentativa 2: Chromium via Snap (Ubuntu 25.x)
           this.browser = await puppeteer.launch({
             headless: 'new',
             args: [
@@ -73,31 +73,50 @@ class ReceiptImageService {
               '--disable-features=TranslateUI',
               '--disable-ipc-flooding-protection'
             ],
-            executablePath: '/usr/bin/chromium-browser'
+            executablePath: '/snap/bin/chromium'
           });
-          console.log('[RECEIPT_IMAGE][INIT] Chromium funcionando!');
+          console.log('[RECEIPT_IMAGE][INIT] Chromium Snap funcionando!');
           
         } catch (err2) {
-          console.log('[RECEIPT_IMAGE][INIT] Chromium falhou, tentando Puppeteer padrão:', err2.message);
+          console.log('[RECEIPT_IMAGE][INIT] Chromium Snap falhou, tentando Chromium Browser:', err2.message);
           
           try {
-            // Tentativa 3: Puppeteer Padrão
+            // Tentativa 3: Chromium Browser tradicional
             this.browser = await puppeteer.launch({
               headless: 'new',
               args: [
                 '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage', 
-                '--disable-gpu'
-              ]
+                '--disable-setuid-sandbox', 
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+                '--disable-extensions'
+              ],
+              executablePath: '/usr/bin/chromium-browser'
             });
-            console.log('[RECEIPT_IMAGE][INIT] Puppeteer padrão funcionando!');
+            console.log('[RECEIPT_IMAGE][INIT] Chromium Browser funcionando!');
             
           } catch (err3) {
-            console.error('[RECEIPT_IMAGE][INIT] TODAS as tentativas falharam. Ativando fallback HTML.');
-            console.error('[RECEIPT_IMAGE][INIT] Último erro:', err3.message);
-            this.puppeteerFailed = true;
-            this.browser = null;
+            console.log('[RECEIPT_IMAGE][INIT] Chromium Browser falhou, tentando Puppeteer padrão:', err3.message);
+            
+            try {
+              // Tentativa 4: Puppeteer Padrão
+              this.browser = await puppeteer.launch({
+                headless: 'new',
+                args: [
+                  '--no-sandbox',
+                  '--disable-setuid-sandbox',
+                  '--disable-dev-shm-usage', 
+                  '--disable-gpu'
+                ]
+              });
+              console.log('[RECEIPT_IMAGE][INIT] Puppeteer padrão funcionando!');
+              
+            } catch (err4) {
+              console.error('[RECEIPT_IMAGE][INIT] TODAS as tentativas falharam. Ativando fallback HTML.');
+              console.error('[RECEIPT_IMAGE][INIT] Último erro:', err4.message);
+              this.puppeteerFailed = true;
+              this.browser = null;
+            }
           }
         }
       }
