@@ -661,8 +661,6 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
           </div>
         </div>
       )}
-        </div>
-      )}
 
       {/* Modal de configuração de telefone */}
       {showPhoneConfigModal && selectedCustomer && (
