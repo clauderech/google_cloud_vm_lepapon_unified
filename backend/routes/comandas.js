@@ -691,9 +691,9 @@ router.get('/crediario/:monthlyAccountId/preview-image', async (req, res) => {
       return res.status(404).json({ error: 'Conta mensal não encontrada' });
     }
 
-    // Gerar a imagem
-    const ReceiptImageService = require('../services/receiptImageService');
-    const imageService = new ReceiptImageService();
+    // Gerar a imagem usando getInstance
+    const { getInstance } = require('../services/receiptImageService');
+    const imageService = getInstance();
     const imagePath = await imageService.generateReceiptImage(accountData);
     
     // Retornar a imagem diretamente
