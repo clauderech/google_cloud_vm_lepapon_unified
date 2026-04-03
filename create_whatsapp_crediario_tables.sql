@@ -27,7 +27,7 @@ CREATE TABLE whatsapp_account_messages (
   
   monthly_account_id INT NOT NULL COMMENT 'FK para monthly_accounts',
   customer_id VARCHAR(255) NOT NULL COMMENT 'ID do cliente',
-  whatsapp_phone VARCHAR(20) NOT NULL COMMENT 'Número WhatsApp (cópia do campo fone)',}
+  whatsapp_phone VARCHAR(20) NOT NULL COMMENT 'Número WhatsApp (cópia do campo fone)',
   
   message_type ENUM('account_receipt', 'reminder', 'response', 'resend') NOT NULL COMMENT 'Tipo da mensagem',
   message_content TEXT NULL COMMENT 'Texto da mensagem enviada',
