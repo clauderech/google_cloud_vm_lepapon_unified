@@ -10,19 +10,31 @@
 
 -- 2. Adicionar campos de controle WhatsApp na tabela monthly_accounts
 -- (Migration: 20260403_02_add_whatsapp_fields_to_monthly_accounts.js)
-ALTER TABLE monthly_accounts 
-ADD COLUMN last_sent_at TIMESTAMP NULL COMMENT 'Última vez que foi enviada via WhatsApp',
-ADD COLUMN receipt_count INT DEFAULT 0 COMMENT 'Quantas vezes foi enviada',
-ADD COLUMN status_whatsapp ENUM('never_sent', 'sent', 'delivered', 'read', 'failed') DEFAULT 'never_sent' COMMENT 'Status do envio WhatsApp';
+-- Verificar se as colunas já existem antes de adicionar
+SET @sql_last_sent_at = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'monthly_accounts' AND COLUMN_NAME = 'last_sent_at') = 0, 'ALTER TABLE monthly_accounts ADD COLUMN last_sent_at TIMESTAMP NULL COMMENT ''Última vez que foi enviada via WhatsApp'';', 'SELECT ''Column last_sent_at already exists'' AS message;');
+PREPARE stmt FROM @sql_last_sent_at;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
-CREATE INDEX idx_monthly_accounts_last_sent_at ON monthly_accounts(last_sent_at);
-CREATE INDEX idx_monthly_accounts_status_whatsapp ON monthly_accounts(status_whatsapp);
+SET @sql_receipt_count = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'monthly_accounts' AND COLUMN_NAME = 'receipt_count') = 0, 'ALTER TABLE monthly_accounts ADD COLUMN receipt_count INT DEFAULT 0 COMMENT ''Quantas vezes foi enviada'';', 'SELECT ''Column receipt_count already exists'' AS message;');
+PREPARE stmt FROM @sql_receipt_count;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql_status_whatsapp = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'monthly_accounts' AND COLUMN_NAME = 'status_whatsapp') = 0, 'ALTER TABLE monthly_accounts ADD COLUMN status_whatsapp ENUM(''never_sent'', ''sent'', ''delivered'', ''read'', ''failed'') DEFAULT ''never_sent'' COMMENT ''Status do envio WhatsApp'';', 'SELECT ''Column status_whatsapp already exists'' AS message;');
+PREPARE stmt FROM @sql_status_whatsapp;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Criar índices se não existirem
+CREATE INDEX IF NOT EXISTS idx_monthly_accounts_last_sent_at ON monthly_accounts(last_sent_at);
+CREATE INDEX IF NOT EXISTS idx_monthly_accounts_status_whatsapp ON monthly_accounts(status_whatsapp);
 
 -- ================================
 
 -- 3. Criar tabela para histórico de mensagens de contas enviadas via WhatsApp
 -- (Migration: 20260403_03_create_whatsapp_account_messages.js)
-CREATE TABLE whatsapp_account_messages (
+CREATE TABLE IF NOT EXISTS whatsapp_account_messages (
   id INT AUTO_INCREMENT PRIMARY KEY,
   
   monthly_account_id INT NOT NULL COMMENT 'FK para monthly_accounts',
