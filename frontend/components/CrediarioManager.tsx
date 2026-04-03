@@ -554,25 +554,25 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
                 {customersWithWhatsApp.map((customer) => (
                   <tr key={customer.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {customer.nome}
+                      {customer.customer_name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {customer.fone || 'Não informado'}
+                      {customer.customer_phone || 'Não informado'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        customer.fone 
+                        customer.customer_phone 
                           ? 'bg-green-100 text-green-800' 
                           : 'bg-yellow-100 text-yellow-800'
                       }`}>
-                        {customer.fone ? 'Configurado' : 'Pendente'}
+                        {customer.customer_phone ? 'Configurado' : 'Pendente'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
                         onClick={() => {
                           setSelectedCustomer(customer);
-                          setPhoneConfig({ phone: customer.fone || '' });
+                          setPhoneConfig({ phone: customer.customer_phone || '' });
                           setShowPhoneConfigModal(true);
                         }}
                         className="text-blue-600 hover:text-blue-900"
@@ -593,7 +593,7 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <h3 className="text-lg font-semibold mb-4">
-              Configurar WhatsApp - {selectedCustomer.nome}
+              Configurar WhatsApp - {selectedCustomer.customer_name}
             </h3>
             
             <div className="space-y-4">

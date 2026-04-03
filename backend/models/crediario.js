@@ -123,7 +123,12 @@ const CrediarioModel = {
       return db('customers')
         .whereNotNull('fone')
         .where('fone', '!=', '')
-        .select('id', 'nome', 'sobrenome', 'fone');
+        .select(
+          'id', 
+          'nome as customer_name', 
+          'sobrenome as customer_surname', 
+          'fone as customer_phone'
+        );
     },
 
     async getAccountsReadyToSend(filters = {}) {
@@ -143,9 +148,11 @@ const CrediarioModel = {
 
       return query.select(
         'ma.*',
-        'c.nome',
-        'c.sobrenome', 
-        'c.fone'
+        'c.nome as customer_name',
+        'c.sobrenome as customer_surname', 
+        'c.fone as customer_phone',
+        'ma.month_year as reference_month',
+        'ma.amount_remaining as balance'
       ).orderBy('ma.due_date', 'asc');
     },
 
