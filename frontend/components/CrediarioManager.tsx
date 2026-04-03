@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CreditCard, Plus, Search, X, FileText, Download, MessageSquare, Send, Clock, CheckCircle, AlertCircle, Settings } from 'lucide-react';
+import { CreditCard, Plus, Search, X, FileText, Download, MessageSquare, Send, Clock, CheckCircle, AlertCircle, Settings, Eye } from 'lucide-react';
 import type { MonthlyAccount, MonthlyPurchase, MonthlyPayment } from '../types';
 
 interface CrediarioManagerProps {
@@ -38,6 +38,10 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
   const [sendingBatch, setSendingBatch] = useState(false);
   const [accountsFilter, setAccountsFilter] = useState('');
   const [customersFilter, setCustomersFilter] = useState('');
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [selectedAccountForPreview, setSelectedAccountForPreview] = useState<any>(null);
+  const [imageLoading, setImageLoading] = useState(false);
 
   // Buscar contas mensais
   const loadMonthlyAccounts = async (customerId?: string, monthYear?: string) => {
@@ -314,6 +318,36 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
     }
   };
 
+  // Visualizar prévia da imagem da conta
+  const previewAccountImage = async (account: any) => {
+    try {
+      setSelectedAccountForPreview(account);
+      setWhatsappLoading(prev => ({ ...prev, `preview_${account.id}`: true }));
+      
+      // Limpar prévia anterior
+      setPreviewImageUrl(null);
+      setImageLoading(true);
+      
+      const imageUrl = `/api/comandas/crediario/${account.id}/preview-image?t=${Date.now()}`;
+      setPreviewImageUrl(imageUrl);
+      setShowPreviewModal(true);
+    } catch (error) {
+      console.error('Erro ao carregar prévia:', error);
+      alert(`Erro ao carregar prévia: ${error.message}`);
+      setShowPreviewModal(false);
+    } finally {
+      setWhatsappLoading(prev => ({ ...prev, [`preview_${account.id}`]: false }));
+    }
+  };
+
+  // Fechar modal de prévia
+  const closePreviewModal = () => {
+    setShowPreviewModal(false);
+    setPreviewImageUrl(null);
+    setSelectedAccountForPreview(null);
+    setImageLoading(false);
+  };
+
   useEffect(() => {
     loadMonthlyAccounts();
   }, []);
@@ -469,26 +503,36 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {account.customer_phone || 'Não informado'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                      <button
-                        onClick={() => sendAccountWhatsApp(account.id)}
-                        disabled={whatsappLoading[`send_${account.id}`]}
-                        className="text-green-600 hover:text-green-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-                      >
-                        <Send className="w-4 h-4" />
-                        {whatsappLoading[`send_${account.id}`] ? 'Enviando...' : 'Enviar'}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedMonthlyAccount(account);
-                          loadWhatsappMessages(account.id);
-                          setShowWhatsappModal(true);
-                        }}
-                        className="text-blue-600 hover:text-blue-900 flex items-center gap-1"
-                      >
-                        <MessageSquare className="w-4 h-4" />
-                        Histórico
-                      </button>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex flex-col space-y-1">
+                        <button
+                          onClick={() => previewAccountImage(account)}
+                          disabled={whatsappLoading[`preview_${account.id}`]}
+                          className="text-blue-600 hover:text-blue-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 justify-start"
+                        >
+                          <Eye className="w-4 h-4" />
+                          {whatsappLoading[`preview_${account.id}`] ? 'Carregando...' : 'Visualizar'}
+                        </button>
+                        <button
+                          onClick={() => sendAccountWhatsApp(account.id)}
+                          disabled={whatsappLoading[`send_${account.id}`]}
+                          className="text-green-600 hover:text-green-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 justify-start"
+                        >
+                          <Send className="w-4 h-4" />
+                          {whatsappLoading[`send_${account.id}`] ? 'Enviando...' : 'Enviar'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedMonthlyAccount(account);
+                            loadWhatsappMessages(account.id);
+                            setShowWhatsappModal(true);
+                          }}
+                          className="text-gray-600 hover:text-gray-900 flex items-center gap-1 justify-start"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                          Histórico
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -658,6 +702,75 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
                 {customersFilter ? 'Nenhum cliente encontrado com os filtros aplicados' : 'Nenhum cliente encontrado'}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal de prévia da imagem */}
+      {showPreviewModal && selectedAccountForPreview && previewImageUrl && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold">
+                  Prévia do Recibo - {selectedAccountForPreview.customer_name} {selectedAccountForPreview.customer_surname || ''}
+                </h3>
+                <button
+                  onClick={closePreviewModal}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="text-sm text-gray-600 mt-2">
+                Referência: {selectedAccountForPreview.reference_month} • Saldo: R$ {parseFloat(selectedAccountForPreview.balance).toFixed(2)}
+              </p>
+            </div>
+            
+            <div className="flex-1 p-6 overflow-y-auto flex justify-center items-center bg-gray-50">
+              {imageLoading && (
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                  <p className="text-gray-500 text-sm">Gerando prévia da imagem...</p>
+                </div>
+              )}
+              <div className="bg-white shadow-lg rounded-lg overflow-hidden max-w-full" 
+                   style={{ display: imageLoading ? 'none' : 'block' }}>
+                <img 
+                  src={previewImageUrl || ''}
+                  alt="Prévia do recibo"
+                  className="max-w-full h-auto"
+                  style={{ maxHeight: '60vh' }}
+                  onLoad={() => setImageLoading(false)}
+                  onError={() => {
+                    alert('Erro ao carregar prévia da imagem');
+                    closePreviewModal();
+                  }}
+                />
+              </div>
+            </div>
+            
+            <div className="p-6 border-t border-gray-200">
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={closePreviewModal}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    sendAccountWhatsApp(selectedAccountForPreview.id);
+                    closePreviewModal();
+                  }}
+                  disabled={whatsappLoading[`send_${selectedAccountForPreview.id}`]}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <Send className="w-4 h-4" />
+                  {whatsappLoading[`send_${selectedAccountForPreview.id}`] ? 'Enviando...' : 'Enviar via WhatsApp'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

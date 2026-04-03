@@ -679,6 +679,35 @@ router.get('/crediario/accounts/ready-to-send', async (req, res) => {
   }
 });
 
+// Gerar prévia da imagem da conta (sem enviar)
+router.get('/crediario/:monthlyAccountId/preview-image', async (req, res) => {
+  try {
+    const { monthlyAccountId } = req.params;
+    
+    // Buscar dados da conta mensal
+    const accountData = await CrediarioModel.getAccountWithDetails(monthlyAccountId);
+    
+    if (!accountData) {
+      return res.status(404).json({ error: 'Conta mensal não encontrada' });
+    }
+
+    // Gerar a imagem
+    const ReceiptImageService = require('../services/receiptImageService');
+    const imageService = new ReceiptImageService();
+    const imagePath = await imageService.generateReceiptImage(accountData);
+    
+    // Retornar a imagem diretamente
+    res.sendFile(imagePath);
+  } catch (err) {
+    console.error('[CREDIARIO][PREVIEW_IMAGE][ERROR]', { 
+      monthlyAccountId: req.params.monthlyAccountId,
+      error: err.message, 
+      stack: err.stack 
+    });
+    res.status(500).json({ error: 'Erro ao gerar prévia da imagem', details: err.message });
+  }
+});
+
 // Buscar contas que precisam de lembrete
 router.get('/crediario/accounts/need-reminder', async (req, res) => {
   try {
