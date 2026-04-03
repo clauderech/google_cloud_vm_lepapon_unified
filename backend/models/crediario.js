@@ -151,8 +151,7 @@ const CrediarioModel = {
         'c.nome as customer_name',
         'c.sobrenome as customer_surname', 
         'c.fone as customer_phone',
-        'ma.month_year as reference_month',
-        'ma.amount_remaining as balance'
+        'ma.month_year as reference_month'
       ).orderBy('ma.due_date', 'asc');
     },
 

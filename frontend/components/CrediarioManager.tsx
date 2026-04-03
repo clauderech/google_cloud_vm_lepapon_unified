@@ -416,7 +416,7 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
                 {accountsReadyToSend.map((account) => (
                   <tr key={account.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {account.customer_name}
+                      {account.customer_name} {account.customer_surname || ''}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {account.reference_month}
@@ -554,7 +554,7 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
                 {customersWithWhatsApp.map((customer) => (
                   <tr key={customer.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {customer.customer_name}
+                      {customer.customer_name} {customer.customer_surname || ''}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {customer.customer_phone || 'Não informado'}
@@ -593,7 +593,7 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <h3 className="text-lg font-semibold mb-4">
-              Configurar WhatsApp - {selectedCustomer.customer_name}
+              Configurar WhatsApp - {selectedCustomer.customer_name} {selectedCustomer.customer_surname || ''}
             </h3>
             
             <div className="space-y-4">
@@ -643,7 +643,7 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-96 overflow-hidden">
             <div className="p-6 border-b border-gray-200">
               <h3 className="text-lg font-semibold">
-                Histórico WhatsApp - {selectedMonthlyAccount.customer_name}
+                Histórico WhatsApp - {selectedMonthlyAccount.customer_name} {selectedMonthlyAccount.customer_surname || ''}
               </h3>
               <p className="text-sm text-gray-600">
                 Referência: {selectedMonthlyAccount.reference_month}
