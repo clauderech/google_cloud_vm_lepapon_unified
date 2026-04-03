@@ -1,5 +1,5 @@
 const ReceiptImageService = require('./receiptImageService');
-const { sendTextMessage } = require('./whatsappCloudApi');
+const { sendTextMessage } = require('../models/whatsappCloudApi');
 const { db } = require('../config/knex');
 
 /**
