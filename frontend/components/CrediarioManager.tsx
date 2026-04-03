@@ -36,6 +36,8 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [phoneConfig, setPhoneConfig] = useState({ phone: '' });
   const [sendingBatch, setSendingBatch] = useState(false);
+  const [accountsFilter, setAccountsFilter] = useState('');
+  const [customersFilter, setCustomersFilter] = useState('');
 
   // Buscar contas mensais
   const loadMonthlyAccounts = async (customerId?: string, monthYear?: string) => {
@@ -221,12 +223,12 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
 
   // Enviar múltiplas contas via WhatsApp
   const sendBatchWhatsApp = async () => {
-    if (accountsReadyToSend.length === 0) {
+    if (filteredAccountsReadyToSend.length === 0) {
       alert('Nenhuma conta disponível para envio');
       return;
     }
 
-    const accountIds = accountsReadyToSend.slice(0, 10).map(acc => acc.id); // Máximo 10
+    const accountIds = filteredAccountsReadyToSend.slice(0, 10).map(acc => acc.id); // Máximo 10
     
     try {
       setSendingBatch(true);
@@ -327,10 +329,23 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
     }
   }, [whatsappTab]);
 
-  // Filtro de busca
+  // Filtros
   const filteredAccounts = monthlyAccounts.filter(acc => {
     const fullName = `${acc.customer_name} ${acc.customer_surname || ''}`.toLowerCase();
     return fullName.includes(searchTerm.toLowerCase());
+  });
+
+  const filteredAccountsReadyToSend = accountsReadyToSend.filter(acc => {
+    const fullName = `${acc.customer_name} ${acc.customer_surname || ''}`.toLowerCase();
+    return fullName.includes(accountsFilter.toLowerCase()) || 
+           acc.reference_month.toLowerCase().includes(accountsFilter.toLowerCase()) ||
+           (acc.customer_phone && acc.customer_phone.includes(accountsFilter));
+  });
+
+  const filteredCustomers = customersWithWhatsApp.filter(customer => {
+    const fullName = `${customer.customer_name} ${customer.customer_surname || ''}`.toLowerCase();
+    return fullName.includes(customersFilter.toLowerCase()) ||
+           (customer.customer_phone && customer.customer_phone.includes(customersFilter));
   });
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -392,12 +407,39 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
               </button>
               <button
                 onClick={sendBatchWhatsApp}
-                disabled={sendingBatch || accountsReadyToSend.length === 0}
+                disabled={sendingBatch || filteredAccountsReadyToSend.length === 0}
                 className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 <Send className="w-4 h-4" />
-                {sendingBatch ? 'Enviando...' : `Enviar Lote (${Math.min(accountsReadyToSend.length, 10)})`}
+                {sendingBatch ? 'Enviando...' : `Enviar Lote (${Math.min(filteredAccountsReadyToSend.length, 10)})`}
               </button>
+            </div>
+          </div>
+
+          {/* Campo de filtro */}
+          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
+            <div className="flex items-center gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <input
+                  type="text"
+                  placeholder="Buscar por cliente, referência ou telefone..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  value={accountsFilter}
+                  onChange={e => setAccountsFilter(e.target.value)}
+                />
+              </div>
+              {accountsFilter && (
+                <button
+                  onClick={() => setAccountsFilter('')}
+                  className="px-3 py-2 text-gray-500 hover:text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+              <span className="text-sm text-gray-500">
+                {filteredAccountsReadyToSend.length} de {accountsReadyToSend.length} contas
+              </span>
             </div>
           </div>
 
@@ -413,7 +455,7 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {accountsReadyToSend.map((account) => (
+                {filteredAccountsReadyToSend.map((account) => (
                   <tr key={account.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {account.customer_name} {account.customer_surname || ''}
@@ -452,9 +494,9 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
                 ))}
               </tbody>
             </table>
-            {accountsReadyToSend.length === 0 && (
+            {filteredAccountsReadyToSend.length === 0 && (
               <div className="p-6 text-center text-gray-500">
-                Nenhuma conta pronta para envio via WhatsApp
+                {accountsFilter ? 'Nenhuma conta encontrada com os filtros aplicados' : 'Nenhuma conta pronta para envio via WhatsApp'}
               </div>
             )}
           </div>
@@ -540,6 +582,33 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
             </button>
           </div>
 
+          {/* Campo de filtro para clientes */}
+          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
+            <div className="flex items-center gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <input
+                  type="text"
+                  placeholder="Buscar por nome ou telefone..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  value={customersFilter}
+                  onChange={e => setCustomersFilter(e.target.value)}
+                />
+              </div>
+              {customersFilter && (
+                <button
+                  onClick={() => setCustomersFilter('')}
+                  className="px-3 py-2 text-gray-500 hover:text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+              <span className="text-sm text-gray-500">
+                {filteredCustomers.length} de {customersWithWhatsApp.length} clientes
+              </span>
+            </div>
+          </div>
+
           <div className="bg-white rounded-lg shadow overflow-hidden">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -551,7 +620,7 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {customersWithWhatsApp.map((customer) => (
+                {filteredCustomers.map((customer) => (
                   <tr key={customer.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {customer.customer_name} {customer.customer_surname || ''}
@@ -584,7 +653,14 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
                 ))}
               </tbody>
             </table>
+            {filteredCustomers.length === 0 && (
+              <div className="p-6 text-center text-gray-500">
+                {customersFilter ? 'Nenhum cliente encontrado com os filtros aplicados' : 'Nenhum cliente encontrado'}
+              </div>
+            )}
           </div>
+        </div>
+      )}
         </div>
       )}
 
