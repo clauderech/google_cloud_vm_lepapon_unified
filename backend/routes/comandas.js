@@ -8,6 +8,8 @@ const CrediarioModel = require('../models/crediario');
 const CozinhaItem = require('../models/cozinha_item');
 const StockService = require('../services/stockService');
 const pdfService = require('../services/pdfService');
+const ReceiptImageService = require('../services/receiptImageService');
+const WhatsAppCrediarioService = require('../services/whatsappCrediarioService');
 const path = require('path');
 // Finalizar comanda (pagamento normal ou crediário)
 router.post('/:id/close', async (req, res) => {
@@ -621,6 +623,347 @@ router.get('/crediario/pdf/:filename', async (req, res) => {
       filename: req.params.filename
     });
     res.status(500).json({ error: 'Erro ao acessar PDF', details: err.message });
+  }
+});
+
+// ================================
+// ENDPOINTS WHATSAPP CREDIÁRIO
+// ================================
+
+// Listar clientes com WhatsApp configurado
+router.get('/crediario/customers/whatsapp', async (req, res) => {
+  try {
+    const customers = await CrediarioModel.getCustomersWithWhatsApp();
+    res.json(customers);
+  } catch (err) {
+    console.error('[CREDIARIO][CUSTOMERS][WHATSAPP][ERROR]', { error: err.message, stack: err.stack });
+    res.status(500).json({ error: 'Erro ao listar clientes com WhatsApp', details: err.message });
+  }
+});
+
+// Configurar/atualizar número de telefone de um cliente para WhatsApp
+router.post('/crediario/customers/:customerId/whatsapp', async (req, res) => {
+  try {
+    const { customerId } = req.params;
+    const { whatsappPhone } = req.body;
+
+    if (!whatsappPhone) {
+      return res.status(400).json({ error: 'Campo whatsappPhone é obrigatório' });
+    }
+
+    const formattedPhone = await CrediarioModel.setCustomerWhatsApp(customerId, whatsappPhone);
+    res.json({ success: true, fone: formattedPhone });
+  } catch (err) {
+    console.error('[CREDIARIO][CUSTOMERS][WHATSAPP][SET][ERROR]', { 
+      customerId: req.params.customerId, 
+      error: err.message, 
+      stack: err.stack 
+    });
+    res.status(500).json({ error: 'Erro ao configurar telefone do cliente', details: err.message });
+  }
+});
+
+// Buscar contas prontas para envio via WhatsApp
+router.get('/crediario/accounts/ready-to-send', async (req, res) => {
+  try {
+    const { status, monthYear } = req.query;
+    const filters = {};
+    if (status) filters.status = status;
+    if (monthYear) filters.monthYear = monthYear;
+
+    const accounts = await CrediarioModel.getAccountsReadyToSend(filters);
+    res.json(accounts);
+  } catch (err) {
+    console.error('[CREDIARIO][ACCOUNTS][READY_TO_SEND][ERROR]', { error: err.message, stack: err.stack });
+    res.status(500).json({ error: 'Erro ao buscar contas prontas para envio', details: err.message });
+  }
+});
+
+// Buscar contas que precisam de lembrete
+router.get('/crediario/accounts/need-reminder', async (req, res) => {
+  try {
+    const accounts = await CrediarioModel.getAccountsNeedingReminder();
+    res.json(accounts);
+  } catch (err) {
+    console.error('[CREDIARIO][ACCOUNTS][NEED_REMINDER][ERROR]', { error: err.message, stack: err.stack });
+    res.status(500).json({ error: 'Erro ao buscar contas que precisam de lembrete', details: err.message });
+  }
+});
+
+// Buscar histórico de mensagens WhatsApp de uma conta
+router.get('/crediario/:monthlyAccountId/whatsapp-messages', async (req, res) => {
+  try {
+    const { monthlyAccountId } = req.params;
+    const { limit } = req.query;
+    
+    const messages = await CrediarioModel.getMessageHistory(monthlyAccountId, limit ? parseInt(limit) : 50);
+    res.json(messages);
+  } catch (err) {
+    console.error('[CREDIARIO][ACCOUNT][WHATSAPP_MESSAGES][ERROR]', { 
+      monthlyAccountId: req.params.monthlyAccountId, 
+      error: err.message, 
+      stack: err.stack 
+    });
+    res.status(500).json({ error: 'Erro ao buscar histórico de mensagens WhatsApp', details: err.message });
+  }
+});
+
+// Buscar conta mensal com detalhes completos (para geração de imagem/PDF)
+router.get('/crediario/:monthlyAccountId/details', async (req, res) => {
+  try {
+    const { monthlyAccountId } = req.params;
+    
+    const accountDetails = await CrediarioModel.getAccountWithDetails(monthlyAccountId);
+    res.json(accountDetails);
+  } catch (err) {
+    console.error('[CREDIARIO][ACCOUNT][DETAILS][ERROR]', { 
+      monthlyAccountId: req.params.monthlyAccountId, 
+      error: err.message, 
+      stack: err.stack 
+    });
+    res.status(500).json({ error: 'Erro ao buscar detalhes da conta', details: err.message });
+  }
+});
+
+// Gerar imagem da conta mensal para envio via WhatsApp
+router.get('/crediario/:monthlyAccountId/receipt-image', async (req, res) => {
+  try {
+    const { monthlyAccountId } = req.params;
+    const { format = 'png', forceRegenerate = false } = req.query;
+
+    // Validar formato
+    if (!['png', 'jpg', 'jpeg'].includes(format.toLowerCase())) {
+      return res.status(400).json({ error: 'Formato inválido. Use: png, jpg ou jpeg' });
+    }
+
+    // Buscar dados completos da conta
+    const accountData = await CrediarioModel.getAccountWithDetails(monthlyAccountId);
+
+    // Verificar se conta tem saldo > 0 para envio
+    if (accountData.balance <= 0 && accountData.status === 'paid') {
+      return res.status(400).json({ 
+        error: 'Conta já está quitada', 
+        balance: accountData.balance,
+        status: accountData.status 
+      });
+    }
+
+    // Gerar imagem
+    const receiptService = ReceiptImageService.getInstance();
+    const imagePath = await receiptService.generateReceiptImage(accountData, {
+      format: format.toLowerCase(),
+      forceRegenerate: forceRegenerate === 'true'
+    });
+
+    // Configurar headers para download/visualização
+    const filename = `conta-${monthlyAccountId}-${accountData.month_year}.${format}`;
+    res.setHeader('Content-Type', `image/${format === 'jpg' ? 'jpeg' : format}`);
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+    
+    // Enviar arquivo
+    res.sendFile(path.resolve(imagePath));
+
+    console.log('[CREDIARIO][RECEIPT_IMAGE]', { 
+      monthlyAccountId, 
+      filename,
+      format,
+      cached: !forceRegenerate
+    });
+
+  } catch (err) {
+    console.error('[CREDIARIO][RECEIPT_IMAGE][ERROR]', { 
+      monthlyAccountId: req.params.monthlyAccountId, 
+      error: err.message, 
+      stack: err.stack 
+    });
+    res.status(500).json({ error: 'Erro ao gerar imagem da conta', details: err.message });
+  }
+});
+
+// Enviar conta específica via WhatsApp
+router.post('/crediario/:monthlyAccountId/send-whatsapp', async (req, res) => {
+  try {
+    const { monthlyAccountId } = req.params;
+    const { messageType = 'account_receipt', forceRegenerate = false } = req.body;
+
+    const whatsappService = WhatsAppCrediarioService.getInstance();
+    const result = await whatsappService.sendAccountReceipt(monthlyAccountId, {
+      messageType,
+      forceRegenerate: forceRegenerate === 'true' || forceRegenerate === true
+    });
+
+    res.json(result);
+  } catch (err) {
+    console.error('[CREDIARIO][SEND_WHATSAPP][ERROR]', {
+      monthlyAccountId: req.params.monthlyAccountId,
+      error: err.message,
+      stack: err.stack
+    });
+    res.status(500).json({ error: 'Erro ao enviar conta via WhatsApp', details: err.message });
+  }
+});
+
+// Enviar múltiplas contas via WhatsApp
+router.post('/crediario/send-batch', async (req, res) => {
+  try {
+    const { accountIds, messageType = 'account_receipt', forceRegenerate = false } = req.body;
+
+    if (!Array.isArray(accountIds) || accountIds.length === 0) {
+      return res.status(400).json({ error: 'accountIds deve ser um array com pelo menos um ID' });
+    }
+
+    if (accountIds.length > 10) {
+      return res.status(400).json({ error: 'Máximo de 10 contas por lote para evitar sobrecarga' });
+    }
+
+    const whatsappService = WhatsAppCrediarioService.getInstance();
+    const results = await whatsappService.sendBatchAccounts(accountIds, {
+      messageType,
+      forceRegenerate: forceRegenerate === 'true' || forceRegenerate === true
+    });
+
+    const successCount = results.filter(r => r.success).length;
+    const failCount = results.filter(r => !r.success).length;
+
+    res.json({
+      success: true,
+      results,
+      summary: {
+        total: results.length,
+        success: successCount,
+        failed: failCount
+      }
+    });
+  } catch (err) {
+    console.error('[CREDIARIO][SEND_BATCH][ERROR]', {
+      error: err.message,
+      stack: err.stack
+    });
+    res.status(500).json({ error: 'Erro ao enviar contas em lote via WhatsApp', details: err.message });
+  }
+});
+
+// Enviar lembretes automáticos para contas vencidas
+router.post('/crediario/send-reminders', async (req, res) => {
+  try {
+    const whatsappService = WhatsAppCrediarioService.getInstance();
+    const results = await whatsappService.sendOverdueReminders();
+
+    const successCount = results.filter(r => r.success).length;
+    const failCount = results.filter(r => !r.success).length;
+
+    res.json({
+      success: true,
+      results,
+      summary: {
+        total: results.length,
+        success: successCount,
+        failed: failCount
+      }
+    });
+  } catch (err) {
+    console.error('[CREDIARIO][SEND_REMINDERS][ERROR]', {
+      error: err.message,
+      stack: err.stack
+    });
+    res.status(500).json({ error: 'Erro ao enviar lembretes via WhatsApp', details: err.message });
+  }
+});
+
+// Limpar cache de imagens antigas
+router.post('/crediario/cleanup-cache', async (req, res) => {
+  try {
+    const whatsappService = WhatsAppCrediarioService.getInstance();
+    await whatsappService.cleanupCache();
+
+    res.json({ success: true, message: 'Cache limpo com sucesso' });
+  } catch (err) {
+    console.error('[CREDIARIO][CLEANUP_CACHE][ERROR]', {
+      error: err.message,
+      stack: err.stack
+    });
+    res.status(500).json({ error: 'Erro ao limpar cache', details: err.message });
+  }
+});
+
+// ================================
+// ENDPOINTS ADMINISTRATIVOS SCHEDULER
+// ================================
+
+// Status do scheduler de lembretes
+router.get('/crediario/scheduler/status', async (req, res) => {
+  try {
+    const CrediarioScheduler = require('../services/crediarioScheduler');
+    const scheduler = CrediarioScheduler.getInstance();
+    
+    const status = scheduler.getStatus();
+    const nextExecutions = scheduler.getNextExecutions();
+    
+    res.json({
+      success: true,
+      status,
+      nextExecutions
+    });
+  } catch (err) {
+    console.error('[CREDIARIO][SCHEDULER][STATUS][ERROR]', {
+      error: err.message,
+      stack: err.stack
+    });
+    res.status(500).json({ error: 'Erro ao obter status do scheduler', details: err.message });
+  }
+});
+
+// Executar lembretes manualmente
+router.post('/crediario/scheduler/run-now', async (req, res) => {
+  try {
+    const CrediarioScheduler = require('../services/crediarioScheduler');
+    const scheduler = CrediarioScheduler.getInstance();
+    
+    // Executar em background e retornar resposta imediata
+    scheduler.runManualReminders().catch(error => {
+      console.error('[CREDIARIO][SCHEDULER][MANUAL][ERROR]', error);
+    });
+    
+    res.json({ 
+      success: true, 
+      message: 'Lembretes iniciados em background. Verifique logs para acompanhar progresso.' 
+    });
+  } catch (err) {
+    console.error('[CREDIARIO][SCHEDULER][RUN_NOW][ERROR]', {
+      error: err.message,
+      stack: err.stack
+    });
+    res.status(500).json({ error: 'Erro ao executar lembretes', details: err.message });
+  }
+});
+
+// Controlar job de teste (apenas desenvolvimento)
+router.post('/crediario/scheduler/test/:action', async (req, res) => {
+  try {
+    if (process.env.NODE_ENV !== 'development') {
+      return res.status(403).json({ error: 'Endpoint disponível apenas em ambiente de desenvolvimento' });
+    }
+    
+    const { action } = req.params;
+    const CrediarioScheduler = require('../services/crediarioScheduler');
+    const scheduler = CrediarioScheduler.getInstance();
+    
+    if (action === 'start') {
+      scheduler.startTestJob();
+      res.json({ success: true, message: 'Job de teste ativado - lembretes a cada 10 minutos' });
+    } else if (action === 'stop') {
+      scheduler.stopTestJob();
+      res.json({ success: true, message: 'Job de teste desativado' });
+    } else {
+      res.status(400).json({ error: 'Ação inválida. Use: start ou stop' });
+    }
+  } catch (err) {
+    console.error('[CREDIARIO][SCHEDULER][TEST][ERROR]', {
+      action: req.params.action,
+      error: err.message,
+      stack: err.stack
+    });
+    res.status(500).json({ error: 'Erro ao controlar job de teste', details: err.message });
   }
 });
 

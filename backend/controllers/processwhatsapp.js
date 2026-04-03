@@ -443,6 +443,27 @@ async function handleWebhookEvent(req, res) {
         // 2️⃣ PERSISTIR MENSAGEM
         await persistMessage(persistedUserId, message);
         
+        // 2.3️⃣ PROCESSAR POSSÍVEIS RESPOSTAS SOBRE CONTAS DE CREDIÁRIO
+        if (messageType === 'text' && message.text?.body) {
+          try {
+            const CrediarioResponseHandler = require('../services/crediarioResponseHandler');
+            const responseHandler = CrediarioResponseHandler.getInstance();
+            
+            const analysis = await responseHandler.analyzeMessage(message.text.body, phone_number);
+            if (analysis) {
+              console.log(`[CREDIARIO_RESPONSE] Detectada resposta sobre conta: ${analysis.type} (confiança: ${analysis.confidence})`);
+              
+              const processed = await responseHandler.processResponse(analysis);
+              if (processed) {
+                console.log(`[CREDIARIO_RESPONSE] Resposta processada com sucesso para ${phone_number}`);
+              }
+            }
+          } catch (crediarioError) {
+            console.error('[CREDIARIO_RESPONSE] Erro ao processar resposta:', crediarioError.message);
+            // Continuar o fluxo normal mesmo se houver erro no processamento de crediário
+          }
+        }
+        
         // 2.5️⃣ SE FOR INTERATIVA, PERSISTIR INTERAÇÃO
         if (messageType === 'interactive' && message?.interactive) {
           await persistInteraction(persistedUserId, message);

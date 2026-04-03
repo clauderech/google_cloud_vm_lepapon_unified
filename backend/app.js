@@ -129,6 +129,16 @@ try {
   console.warn('[Socket] Socket.IO não disponível, continuando sem notificações em tempo real:', err.message);
 }
 
+// Inicializar Scheduler de Crediário WhatsApp
+try {
+  const CrediarioScheduler = require('./services/crediarioScheduler');
+  const scheduler = CrediarioScheduler.getInstance();
+  scheduler.start();
+  console.log('[CREDIARIO_SCHEDULER] Scheduler de lembretes WhatsApp iniciado');
+} catch (err) {
+  console.warn('[CREDIARIO_SCHEDULER] Falha ao iniciar scheduler:', err.message);
+}
+
 server.listen(PORT, () => {
   console.log(`[SERVER] Iniciado em porta ${PORT}`);
   console.log(`[SERVER] Ambiente: ${process.env.NODE_ENV || 'development'}`);
