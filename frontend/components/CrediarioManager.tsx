@@ -322,7 +322,7 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
   const previewAccountImage = async (account: any) => {
     try {
       setSelectedAccountForPreview(account);
-      setWhatsappLoading(prev => ({ ...prev, `preview_${account.id}`: true }));
+      setWhatsappLoading(prev => ({ ...prev, [`preview_${account.id}`]: true }));
       
       // Limpar prévia anterior
       setPreviewImageUrl(null);
