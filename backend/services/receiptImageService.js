@@ -12,43 +12,24 @@ class ReceiptImageService {
     this.browser = null;
     this.cacheDir = path.join(__dirname, '../uploads/receipt-images');
     this.cacheDuration = 24 * 60 * 60 * 1000; // 24 horas em ms
+    this.puppeteerFailed = false; // Flag para controlar fallback
   }
 
   async init() {
+    if (this.puppeteerFailed) {
+      console.log('[RECEIPT_IMAGE][INIT] Puppeteer marcado como falhou, pulando inicialização');
+      return; // Não tenta inicializar se já falhou
+    }
+    
     if (!this.browser) {
-      this.browser = await puppeteer.launch({
-        headless: 'new',
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu',
-          '--disable-extensions',
-          '--disable-background-timer-throttling',
-          '--disable-backgrounding-occluded-windows',
-          '--disable-renderer-backgrounding',
-          '--disable-features=TranslateUI',
-          '--disable-ipc-flooding-protection',
-          '--disable-background-networking',
-          '--disable-default-apps',
-          '--disable-sync',
-          '--disable-translate',
-          '--hide-scrollbars',
-          '--metrics-recording-only',
-          '--mute-audio',
-          '--no-first-run',
-          '--disable-web-security',
-          '--disable-features=VizDisplayCompositor'
-        ],
-        executablePath: '/usr/bin/google-chrome-stable',
-        ignoreDefaultArgs: ['--disable-extensions']
-      }).catch(async (err) => {
-        console.warn('Failed to launch with google-chrome-stable, trying chromium...');
-        return await puppeteer.launch({
+      try {
+        // Tentativa 1: Google Chrome Stable
+        console.log('[RECEIPT_IMAGE][INIT] Tentando Google Chrome Stable...');
+        this.browser = await puppeteer.launch({
           headless: 'new',
           args: [
             '--no-sandbox',
-            '--disable-setuid-sandbox', 
+            '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
             '--disable-gpu',
             '--disable-extensions',
@@ -56,29 +37,79 @@ class ReceiptImageService {
             '--disable-backgrounding-occluded-windows',
             '--disable-renderer-backgrounding',
             '--disable-features=TranslateUI',
-            '--disable-ipc-flooding-protection'
+            '--disable-ipc-flooding-protection',
+            '--disable-background-networking',
+            '--disable-default-apps',
+            '--disable-sync',
+            '--disable-translate',
+            '--hide-scrollbars',
+            '--metrics-recording-only',
+            '--mute-audio',
+            '--no-first-run',
+            '--disable-web-security',
+            '--disable-features=VizDisplayCompositor'
           ],
-          executablePath: '/usr/bin/chromium-browser'
+          executablePath: '/usr/bin/google-chrome-stable',
+          ignoreDefaultArgs: ['--disable-extensions']
         });
-      }).catch(async (err) => {
-        console.warn('Failed with system browsers, using Puppeteer default...');
-        return await puppeteer.launch({
-          headless: 'new',
-          args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage', 
-            '--disable-gpu'
-          ]
-        });
-      });
+        console.log('[RECEIPT_IMAGE][INIT] Google Chrome Stable funcionando!');
+        
+      } catch (err1) {
+        console.log('[RECEIPT_IMAGE][INIT] Google Chrome falhou, tentando Chromium:', err1.message);
+        
+        try {
+          // Tentativa 2: Chromium Browser
+          this.browser = await puppeteer.launch({
+            headless: 'new',
+            args: [
+              '--no-sandbox',
+              '--disable-setuid-sandbox', 
+              '--disable-dev-shm-usage',
+              '--disable-gpu',
+              '--disable-extensions',
+              '--disable-background-timer-throttling',
+              '--disable-backgrounding-occluded-windows',
+              '--disable-renderer-backgrounding',
+              '--disable-features=TranslateUI',
+              '--disable-ipc-flooding-protection'
+            ],
+            executablePath: '/usr/bin/chromium-browser'
+          });
+          console.log('[RECEIPT_IMAGE][INIT] Chromium funcionando!');
+          
+        } catch (err2) {
+          console.log('[RECEIPT_IMAGE][INIT] Chromium falhou, tentando Puppeteer padrão:', err2.message);
+          
+          try {
+            // Tentativa 3: Puppeteer Padrão
+            this.browser = await puppeteer.launch({
+              headless: 'new',
+              args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage', 
+                '--disable-gpu'
+              ]
+            });
+            console.log('[RECEIPT_IMAGE][INIT] Puppeteer padrão funcionando!');
+            
+          } catch (err3) {
+            console.error('[RECEIPT_IMAGE][INIT] TODAS as tentativas falharam. Ativando fallback HTML.');
+            console.error('[RECEIPT_IMAGE][INIT] Último erro:', err3.message);
+            this.puppeteerFailed = true;
+            this.browser = null;
+          }
+        }
+      }
     }
 
     // Criar diretório de cache se não existir
-    try {
-      await fs.access(this.cacheDir);
-    } catch {
-      await fs.mkdir(this.cacheDir, { recursive: true });
+    if (this.cacheDir) {
+      try {
+        await fs.access(this.cacheDir);
+      } catch {
+        await fs.mkdir(this.cacheDir, { recursive: true });
+      }
     }
   }
 
@@ -97,6 +128,12 @@ class ReceiptImageService {
    */
   async generateReceiptImage(accountData, options = {}) {
     await this.init();
+    
+    // Se Puppeteer falhou, ir direto para fallback
+    if (this.puppeteerFailed) {
+      console.log('[RECEIPT_IMAGE][SKIP_PUPPETEER] Usando fallback HTML diretamente');
+      return await this.generateFallbackHTML(accountData, options.format || 'html');
+    }
 
     const {
       format = 'png',
