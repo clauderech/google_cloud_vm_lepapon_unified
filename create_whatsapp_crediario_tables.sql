@@ -42,9 +42,9 @@ DEALLOCATE PREPARE stmt;
 -- 3. Criar tabela para histórico de mensagens de contas enviadas via WhatsApp
 -- (Migration: 20260403_03_create_whatsapp_account_messages.js)
 CREATE TABLE IF NOT EXISTS whatsapp_account_messages (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   
-  monthly_account_id INT NOT NULL COMMENT 'FK para monthly_accounts',
+  monthly_account_id INT UNSIGNED NOT NULL COMMENT 'FK para monthly_accounts',
   customer_id VARCHAR(255) NOT NULL COMMENT 'ID do cliente',
   whatsapp_phone VARCHAR(20) NOT NULL COMMENT 'Número WhatsApp (cópia do campo fone)',
   
