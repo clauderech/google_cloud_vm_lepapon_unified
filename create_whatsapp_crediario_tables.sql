@@ -27,8 +27,15 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
 -- Criar índices se não existirem
-CREATE INDEX IF NOT EXISTS idx_monthly_accounts_last_sent_at ON monthly_accounts(last_sent_at);
-CREATE INDEX IF NOT EXISTS idx_monthly_accounts_status_whatsapp ON monthly_accounts(status_whatsapp);
+SET @sql_idx_last_sent = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'monthly_accounts' AND INDEX_NAME = 'idx_monthly_accounts_last_sent_at') = 0, 'CREATE INDEX idx_monthly_accounts_last_sent_at ON monthly_accounts(last_sent_at);', 'SELECT ''Index idx_monthly_accounts_last_sent_at already exists'' AS message;');
+PREPARE stmt FROM @sql_idx_last_sent;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql_idx_status = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'monthly_accounts' AND INDEX_NAME = 'idx_monthly_accounts_status_whatsapp') = 0, 'CREATE INDEX idx_monthly_accounts_status_whatsapp ON monthly_accounts(status_whatsapp);', 'SELECT ''Index idx_monthly_accounts_status_whatsapp already exists'' AS message;');
+PREPARE stmt FROM @sql_idx_status;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- ================================
 
