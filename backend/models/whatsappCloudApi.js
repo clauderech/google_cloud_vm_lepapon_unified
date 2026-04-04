@@ -417,6 +417,61 @@ async function sendFlowMessage({
 }
 
 /**
+ * Upload do arquivo para Meta Cloud API - Versão alternativa mais simples
+ */
+async function uploadMediaToMetaAlternative(fileBuffer, filename, mimeType) {
+  const timestamp = new Date().toISOString();
+  
+  console.log(`\n[UPLOAD_ALT][${timestamp}] ========================================`);
+  console.log('[UPLOAD_ALT] Tentativa ALTERNATIVA de upload para Meta Cloud API');
+  
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+  
+  if (!phoneNumberId || !accessToken) {
+    throw new Error('Configurações WhatsApp faltando');
+  }
+  
+  console.log(`[UPLOAD_ALT] Filename: ${filename}, Size: ${fileBuffer.length} bytes`);
+  
+  // Abordagem mais simples com form-data
+  const FormData = require('form-data');
+  const form = new FormData();
+  
+  // Usar método mais direto
+  form.append('file', fileBuffer, filename);  // Simplificado
+  form.append('type', mimeType);
+  form.append('messaging_product', 'whatsapp');
+  
+  const uploadUrl = `https://graph.facebook.com/v20.0/${phoneNumberId}/media`;
+  
+  try {
+    const response = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        ...form.getHeaders()
+      },
+      body: form
+    });
+
+    const json = await response.json();
+    console.log(`[UPLOAD_ALT] Status: ${response.status}, Response:`, json);
+    
+    if (!response.ok) {
+      throw new Error(`Alternative upload failed: ${response.status} - ${JSON.stringify(json)}`);
+    }
+    
+    console.log(`[UPLOAD_ALT] ✅ Upload alternativo bem-sucedido! ID: ${json.id}`);
+    return json;
+    
+  } catch (error) {
+    console.error(`[UPLOAD_ALT] ❌ Erro:`, error);
+    throw error;
+  }
+}
+
+/**
  * Upload do arquivo para Meta Cloud API
  */
 async function uploadMediaToMeta(fileBuffer, filename, mimeType) {
@@ -449,37 +504,102 @@ async function uploadMediaToMeta(fileBuffer, filename, mimeType) {
   console.log(`[UPLOAD_MEDIA] - Filename: ${filename}`);
   console.log(`[UPLOAD_MEDIA] - MIME Type: ${mimeType}`);
   console.log(`[UPLOAD_MEDIA] - Buffer Size: ${fileBuffer.length} bytes`);
+  console.log(`[UPLOAD_MEDIA] - Buffer Type: ${typeof fileBuffer}`);
+  console.log(`[UPLOAD_MEDIA] - Is Buffer: ${Buffer.isBuffer(fileBuffer)}`);
   
   const FormData = require('form-data');
   const form = new FormData();
   
-  form.append('file', fileBuffer, { filename, contentType: mimeType });
-  form.append('type', mimeType);
+  // Método compatível com Meta API - seguindo documentação oficial
   form.append('messaging_product', 'whatsapp');
+  form.append('file', fileBuffer, {
+    filename: filename,
+    contentType: mimeType
+  });
+  form.append('type', mimeType);
+  
+  console.log(`[UPLOAD_MEDIA] FormData criado com:`);
+  console.log(`[UPLOAD_MEDIA] - messaging_product: whatsapp (PRIMEIRO)`);
+  console.log(`[UPLOAD_MEDIA] - file: ${filename} (${fileBuffer.length} bytes)`);
+  console.log(`[UPLOAD_MEDIA] - type: ${mimeType}`);
 
   const uploadUrl = `https://graph.facebook.com/v20.0/${phoneNumberId}/media`;
   console.log(`[UPLOAD_MEDIA] URL de upload: ${uploadUrl}`);
+  
+  const headers = {
+    'Authorization': `Bearer ${accessToken}`,
+    ...form.getHeaders()
+  };
+  
+  console.log(`[UPLOAD_MEDIA] Headers:`, Object.keys(headers).map(key => 
+    key === 'Authorization' ? `${key}: Bearer ***[REDACTED]***` : `${key}: ${headers[key]}`
+  ));
   
   console.log('[UPLOAD_MEDIA] Enviando requisição para Meta API...');
   
   const response = await fetch(uploadUrl, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      ...form.getHeaders()
-    },
+    headers: headers,
     body: form
   });
 
   console.log(`[UPLOAD_MEDIA] Resposta recebida - Status: ${response.status}`);
+  console.log(`[UPLOAD_MEDIA] Response Headers:`, Object.fromEntries(response.headers.entries()));
   
   const json = await response.json();
+  console.log(`[UPLOAD_MEDIA] Response Body:`, JSON.stringify(json, null, 2));
   
   if (!response.ok) {
-    console.error(`[UPLOAD_MEDIA] ❌ ERRO no upload:`);
+    console.error(`[UPLOAD_MEDIA] ❌ ERRO no upload principal:`);
     console.error(`[UPLOAD_MEDIA] Status: ${response.status}`);
+    console.error(`[UPLOAD_MEDIA] URL: ${uploadUrl}`);
+    console.error(`[UPLOAD_MEDIA] Headers enviados:`, Object.keys(headers).map(key => 
+      key === 'Authorization' ? `${key}: Bearer [TOKEN_MASCARADO]` : `${key}: ${headers[key]}`
+    ));
     console.error(`[UPLOAD_MEDIA] Response:`, JSON.stringify(json, null, 2));
-    throw new Error(`Upload failed: ${response.status} - ${JSON.stringify(json)}`);
+    
+    // Tentar método alternativo como fallback
+    console.log(`[UPLOAD_MEDIA] 🔄 Tentando método alternativo simplificado...`);
+    try {
+      // Método super-simplificado seguindo documentação Meta exatamente
+      const FormData = require('form-data');
+      const simpleForm = new FormData();
+      
+      // Ordem e formato EXATO da documentação 
+      simpleForm.append('messaging_product', 'whatsapp');
+      simpleForm.append('file', fileBuffer, filename);  // O mais simples possível
+      simpleForm.append('type', mimeType);
+      
+      console.log(`[UPLOAD_MEDIA] Tentativa SIMPLIFICADA com ordem da documentação`);
+      
+      const simpleResponse = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          ...simpleForm.getHeaders()
+        },
+        body: simpleForm
+      });
+
+      const simpleResult = await simpleResponse.json();
+      console.log(`[UPLOAD_MEDIA] Método simples - Status: ${simpleResponse.status}`);
+      console.log(`[UPLOAD_MEDIA] Método simples - Response:`, JSON.stringify(simpleResult, null, 2));
+      
+      if (simpleResponse.ok) {
+        console.log(`[UPLOAD_MEDIA] ✅ Upload bem-sucedido via método SIMPLIFICADO!`);
+        console.log('[UPLOAD_MEDIA] ========================================\n');
+        return simpleResult;
+      }
+      
+      // Se ambos falharam, tentar o método alternativo completo
+      const alternativeResult = await uploadMediaToMetaAlternative(fileBuffer, filename, mimeType);
+      console.log(`[UPLOAD_MEDIA] ✅ Upload bem-sucedido via método alternativo!`);
+      return alternativeResult;
+      
+    } catch (altError) {
+      console.error(`[UPLOAD_MEDIA] ❌ Todos os métodos falharam:`, altError.message);
+      throw new Error(`Upload failed: Primary (${response.status}), simplified and alternative methods all failed - ${JSON.stringify(json)}`);
+    }
   }
   
   console.log(`[UPLOAD_MEDIA] ✅ Upload bem-sucedido!`);
@@ -578,5 +698,6 @@ module.exports = {
   sendCatalogMessage,
   sendFlowMessage,
   uploadMediaToMeta,
+  uploadMediaToMetaAlternative,
   sendMediaMessage,
 };
