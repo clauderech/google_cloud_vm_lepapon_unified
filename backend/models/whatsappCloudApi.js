@@ -472,6 +472,130 @@ async function uploadMediaToMetaAlternative(fileBuffer, filename, mimeType) {
 }
 
 /**
+ * Upload do arquivo para Meta Cloud API - Versão com axios para garantir compatibilidade
+ */
+async function uploadMediaToMetaWithAxios(fileBuffer, filename, mimeType) {
+  const timestamp = new Date().toISOString();
+  console.log(`\n[AXIOS_UPLOAD][${timestamp}] ========================================`);
+  console.log('[AXIOS_UPLOAD] Tentando upload com AXIOS...');
+  
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+  
+  if (!phoneNumberId || !accessToken) {
+    throw new Error('Configurações WhatsApp faltando');
+  }
+  
+  console.log(`[AXIOS_UPLOAD] File: ${filename}, Size: ${fileBuffer.length} bytes`);
+  
+  try {
+    const FormData = require('form-data');
+    const axios = require('axios');
+    
+    const form = new FormData();
+    form.append('messaging_product', 'whatsapp');
+    form.append('file', fileBuffer, {
+      filename: filename,
+      contentType: mimeType
+    });
+    form.append('type', mimeType);
+    
+    const url = `https://graph.facebook.com/v20.0/${phoneNumberId}/media`;
+    
+    const response = await axios.post(url, form, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        ...form.getHeaders(),
+      },
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+    });
+    
+    console.log(`[AXIOS_UPLOAD] ✅ Axios upload bem-sucedido!`);
+    console.log(`[AXIOS_UPLOAD] Media ID: ${response.data.id}`);
+    console.log('[AXIOS_UPLOAD] ========================================\n');
+    
+    return response.data;
+    
+  } catch (error) {
+    console.error(`[AXIOS_UPLOAD] ❌ Erro:`, error.response?.data || error.message);
+    throw error;
+  }
+}
+
+/**
+ * Upload usando Node.js HTTP nativo para controle total
+ */
+async function uploadMediaToMetaNative(fileBuffer, filename, mimeType) {
+  const timestamp = new Date().toISOString();
+  console.log(`\n[NATIVE_UPLOAD][${timestamp}] ========================================`);
+  console.log('[NATIVE_UPLOAD] Tentando upload com HTTP nativo...');
+  
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+  
+  if (!phoneNumberId || !accessToken) {
+    throw new Error('Configurações WhatsApp faltando');
+  }
+  
+  return new Promise((resolve, reject) => {
+    const https = require('https');
+    const FormData = require('form-data');
+    
+    const form = new FormData();
+    form.append('messaging_product', 'whatsapp');
+    form.append('file', fileBuffer, filename);
+    form.append('type', mimeType);
+    
+    const options = {
+      hostname: 'graph.facebook.com',
+      port: 443,
+      path: `/v20.0/${phoneNumberId}/media`,
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        ...form.getHeaders()
+      }
+    };
+    
+    console.log(`[NATIVE_UPLOAD] Enviando para: ${options.hostname}${options.path}`);
+    
+    const req = https.request(options, (res) => {
+      let data = '';
+      
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      
+      res.on('end', () => {
+        console.log(`[NATIVE_UPLOAD] Status: ${res.statusCode}`);
+        console.log(`[NATIVE_UPLOAD] Response:`, data);
+        
+        try {
+          const result = JSON.parse(data);
+          
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            console.log(`[NATIVE_UPLOAD] ✅ Upload nativo bem-sucedido! ID: ${result.id}`);
+            resolve(result);
+          } else {
+            reject(new Error(`Native upload failed: ${res.statusCode} - ${data}`));
+          }
+        } catch (parseError) {
+          reject(new Error(`Failed to parse response: ${data}`));
+        }
+      });
+    });
+    
+    req.on('error', (error) => {
+      console.error(`[NATIVE_UPLOAD] ❌ Request error:`, error);
+      reject(error);
+    });
+    
+    form.pipe(req);
+  });
+}
+
+/**
  * Upload do arquivo para Meta Cloud API
  */
 async function uploadMediaToMeta(fileBuffer, filename, mimeType) {
@@ -479,6 +603,35 @@ async function uploadMediaToMeta(fileBuffer, filename, mimeType) {
   
   console.log(`\n[UPLOAD_MEDIA][${timestamp}] ========================================`);
   console.log('[UPLOAD_MEDIA] Iniciando upload para Meta Cloud API');
+  
+  // Validação avançada do buffer ANTES de tentar qualquer upload
+  console.log('[UPLOAD_MEDIA] Validação avançada do arquivo...');
+  if (!fileBuffer || !Buffer.isBuffer(fileBuffer)) {
+    const error = `Arquivo inválido: não é um Buffer válido (tipo: ${typeof fileBuffer})`;
+    console.error(`[UPLOAD_MEDIA] ❌ ${error}`);
+    throw new Error(error);
+  }
+  
+  if (fileBuffer.length === 0) {
+    const error = 'Arquivo vazio: buffer tem 0 bytes';
+    console.error(`[UPLOAD_MEDIA] ❌ ${error}`);
+    throw new Error(error);
+  }
+  
+  if (fileBuffer.length > 100 * 1024 * 1024) { // 100MB limite Meta
+    const error = `Arquivo muito grande: ${fileBuffer.length} bytes (limite: 100MB)`;
+    console.error(`[UPLOAD_MEDIA] ❌ ${error}`);
+    throw new Error(error);
+  }
+  
+  // Verificar se é realmente um PDF (assinatura)
+  const pdfSignature = fileBuffer.slice(0, 4).toString();
+  if (mimeType === 'application/pdf' && pdfSignature !== '%PDF') {
+    console.warn(`[UPLOAD_MEDIA] ⚠️ Arquivo pode não ser PDF válido (assinatura: ${pdfSignature})`);
+  }
+  
+  console.log(`[UPLOAD_MEDIA] ✅ Buffer válido: ${fileBuffer.length} bytes`);
+  console.log(`[UPLOAD_MEDIA] ✅ Assinatura: ${pdfSignature} ${pdfSignature === '%PDF' ? '(PDF válido)' : '(verificar formato)'}`);
   
   // Validar configurações antes do upload
   console.log('[UPLOAD_MEDIA] Verificando variáveis de ambiente...');
@@ -559,18 +712,36 @@ async function uploadMediaToMeta(fileBuffer, filename, mimeType) {
     console.error(`[UPLOAD_MEDIA] Response:`, JSON.stringify(json, null, 2));
     
     // Tentar método alternativo como fallback
-    console.log(`[UPLOAD_MEDIA] 🔄 Tentando método alternativo simplificado...`);
+    console.log(`[UPLOAD_MEDIA] 🔄 Tentando métodos alternativos...`);
     try {
-      // Método super-simplificado seguindo documentação Meta exatamente
-      const FormData = require('form-data');
+      // 1. Tentar com Axios primeiro (mais confiável)
+      console.log(`[UPLOAD_MEDIA] Tentativa 1: AXIOS`);
+      try {
+        const axiosResult = await uploadMediaToMetaWithAxios(fileBuffer, filename, mimeType);
+        console.log(`[UPLOAD_MEDIA] ✅ Upload bem-sucedido via AXIOS!`);
+        console.log('[UPLOAD_MEDIA] ========================================\n');
+        return axiosResult;
+      } catch (axiosError) {
+        console.log(`[UPLOAD_MEDIA] Axios falhou: ${axiosError.message}`);
+      }
+      
+      // 2. Tentar com HTTP nativo
+      console.log(`[UPLOAD_MEDIA] Tentativa 2: HTTP Nativo`);
+      try {
+        const nativeResult = await uploadMediaToMetaNative(fileBuffer, filename, mimeType);
+        console.log(`[UPLOAD_MEDIA] ✅ Upload bem-sucedido via HTTP Nativo!`);
+        console.log('[UPLOAD_MEDIA] ========================================\n');
+        return nativeResult;
+      } catch (nativeError) {
+        console.log(`[UPLOAD_MEDIA] HTTP Nativo falhou: ${nativeError.message}`);
+      }
+      
+      // 3. Método simplificado como último recurso
+      console.log(`[UPLOAD_MEDIA] Tentativa 3: Método simplificado`);
       const simpleForm = new FormData();
-      
-      // Ordem e formato EXATO da documentação 
       simpleForm.append('messaging_product', 'whatsapp');
-      simpleForm.append('file', fileBuffer, filename);  // O mais simples possível
+      simpleForm.append('file', fileBuffer, filename);
       simpleForm.append('type', mimeType);
-      
-      console.log(`[UPLOAD_MEDIA] Tentativa SIMPLIFICADA com ordem da documentação`);
       
       const simpleResponse = await fetch(uploadUrl, {
         method: 'POST',
@@ -583,7 +754,6 @@ async function uploadMediaToMeta(fileBuffer, filename, mimeType) {
 
       const simpleResult = await simpleResponse.json();
       console.log(`[UPLOAD_MEDIA] Método simples - Status: ${simpleResponse.status}`);
-      console.log(`[UPLOAD_MEDIA] Método simples - Response:`, JSON.stringify(simpleResult, null, 2));
       
       if (simpleResponse.ok) {
         console.log(`[UPLOAD_MEDIA] ✅ Upload bem-sucedido via método SIMPLIFICADO!`);
@@ -591,14 +761,20 @@ async function uploadMediaToMeta(fileBuffer, filename, mimeType) {
         return simpleResult;
       }
       
-      // Se ambos falharam, tentar o método alternativo completo
-      const alternativeResult = await uploadMediaToMetaAlternative(fileBuffer, filename, mimeType);
-      console.log(`[UPLOAD_MEDIA] ✅ Upload bem-sucedido via método alternativo!`);
-      return alternativeResult;
+      // Se absolutamente tudo falhar
+      console.error(`[UPLOAD_MEDIA] ❌ TODOS OS MÉTODOS FALHARAM`);
+      console.error(`[UPLOAD_MEDIA] Primary: ${response.status}`);
+      console.error(`[UPLOAD_MEDIA] Simple: ${simpleResponse.status}`);
+      console.error(`[UPLOAD_MEDIA] Buffer válido: ${Buffer.isBuffer(fileBuffer)}`);
+      console.error(`[UPLOAD_MEDIA] Buffer size: ${fileBuffer.length}`);
+      console.error(`[UPLOAD_MEDIA] Filename: ${filename}`);
+      console.error(`[UPLOAD_MEDIA] MimeType: ${mimeType}`);
+      
+      throw new Error(`All upload methods failed - Primary: ${response.status}, Simple: ${simpleResponse.status}, details: ${JSON.stringify(json)}`);
       
     } catch (altError) {
-      console.error(`[UPLOAD_MEDIA] ❌ Todos os métodos falharam:`, altError.message);
-      throw new Error(`Upload failed: Primary (${response.status}), simplified and alternative methods all failed - ${JSON.stringify(json)}`);
+      console.error(`[UPLOAD_MEDIA] ❌ Erro em métodos alternativos:`, altError.message);
+      throw new Error(`Upload failed: Primary (${response.status}) and all alternative methods failed - ${JSON.stringify(json)}`);
     }
   }
   
@@ -699,5 +875,7 @@ module.exports = {
   sendFlowMessage,
   uploadMediaToMeta,
   uploadMediaToMetaAlternative,
+  uploadMediaToMetaWithAxios,
+  uploadMediaToMetaNative,
   sendMediaMessage,
 };
