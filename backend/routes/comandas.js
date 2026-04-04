@@ -678,10 +678,20 @@ router.get('/crediario/pdf/:filename', async (req, res) => {
 
 // Enviar PDF existente via WhatsApp (versão simples)
 router.post('/crediario/send-pdf-whatsapp-simple', async (req, res) => {
+  const timestamp = new Date().toISOString();
+  
+  console.log(`\n[PDF_WHATSAPP][${timestamp}] ========================================`);
+  console.log('[PDF_WHATSAPP] Nova requisição de envio de PDF via WhatsApp');
+  
   try {
     const { filename, phoneNumber } = req.body;
     
+    console.log('[PDF_WHATSAPP] Parâmetros recebidos:');
+    console.log(`[PDF_WHATSAPP] - Filename: ${filename}`);
+    console.log(`[PDF_WHATSAPP] - Phone Number: ${phoneNumber}`);
+    
     if (!filename || !phoneNumber) {
+      console.error('[PDF_WHATSAPP] ❌ Parâmetros obrigatórios faltando');
       return res.status(400).json({ 
         error: 'filename e phoneNumber são obrigatórios' 
       });
@@ -689,28 +699,41 @@ router.post('/crediario/send-pdf-whatsapp-simple', async (req, res) => {
     
     // Validar filename por segurança
     if (!filename.match(/^conta_[a-zA-Z0-9_-]+_\d{4}-\d{2}_[0-9T\-Z]+\.pdf$/)) {
+      console.error(`[PDF_WHATSAPP] ❌ Nome de arquivo inválido: ${filename}`);
       return res.status(400).json({ error: 'Nome de arquivo inválido' });
     }
+    
+    console.log('[PDF_WHATSAPP] ✅ Parâmetros validados');
     
     const fs = require('fs');
     const path = require('path');
     const { uploadMediaToMeta, sendMediaMessage } = require('../models/whatsappCloudApi');
     
-    console.log(`[CrediarioWhatsApp] Enviando ${filename} para ${phoneNumber}`);
-    
     // Verificar se arquivo existe
     const filePath = path.join(__dirname, '..', 'uploads', 'reports', 'crediario', filename);
+    console.log(`[PDF_WHATSAPP] Caminho do arquivo: ${filePath}`);
+    
     if (!fs.existsSync(filePath)) {
+      console.error(`[PDF_WHATSAPP] ❌ Arquivo não encontrado: ${filePath}`);
       return res.status(404).json({ error: 'Arquivo PDF não encontrado' });
     }
     
+    console.log('[PDF_WHATSAPP] ✅ Arquivo encontrado, lendo conteúdo...');
+    
     // Ler arquivo PDF
     const pdfBuffer = fs.readFileSync(filePath);
+    console.log(`[PDF_WHATSAPP] Arquivo lido: ${pdfBuffer.length} bytes`);
     
     // Extrair informações do nome do arquivo
     const matches = filename.match(/^conta_(.+)_(\d{4}-\d{2})_(.+)\.pdf$/);
     const customerName = matches ? matches[1].replace(/_/g, ' ') : 'Cliente';
     const monthYear = matches ? matches[2] : '';
+    
+    console.log(`[PDF_WHATSAPP] Dados extraídos do filename:`);
+    console.log(`[PDF_WHATSAPP] - Cliente: ${customerName}`);
+    console.log(`[PDF_WHATSAPP] - Período: ${monthYear}`);
+    
+    console.log('[PDF_WHATSAPP] Chamando upload para Meta...');
     
     // Upload para Meta Cloud API
     const uploadResult = await uploadMediaToMeta(
@@ -718,6 +741,8 @@ router.post('/crediario/send-pdf-whatsapp-simple', async (req, res) => {
       `Extrato_${customerName}_${monthYear}.pdf`,
       'application/pdf'
     );
+    
+    console.log('[PDF_WHATSAPP] Upload concluído, preparando mensagem...');
     
     // Enviar via WhatsApp
     const caption = `📊 *Extrato de Crediário*\n\n` +
@@ -732,6 +757,9 @@ router.post('/crediario/send-pdf-whatsapp-simple', async (req, res) => {
       caption: caption
     });
     
+    console.log('[PDF_WHATSAPP] ✅ SUCESSO TOTAL!');
+    console.log('[PDF_WHATSAPP] ========================================\n');
+    
     res.json({
       success: true,
       message: `PDF enviado via WhatsApp para ${phoneNumber}`,
@@ -739,15 +767,20 @@ router.post('/crediario/send-pdf-whatsapp-simple', async (req, res) => {
         filename,
         phoneNumber,
         mediaId: uploadResult.id,
-        whatsappMessageId: sendResult.messages?.[0]?.id
+        whatsappMessageId: sendResult.messages?.[0]?.id,
+        timestamp
       }
     });
     
   } catch (err) {
-    console.error('[CrediarioWhatsApp] Erro:', err);
+    console.error(`[PDF_WHATSAPP] ❌ ERRO FATAL:`, err);
+    console.error('[PDF_WHATSAPP] Stack:', err.stack);
+    console.error('[PDF_WHATSAPP] ========================================\n');
+    
     res.status(500).json({ 
       error: 'Erro ao enviar PDF via WhatsApp', 
-      details: err.message 
+      details: err.message,
+      timestamp
     });
   }
 });

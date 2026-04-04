@@ -40,6 +40,15 @@ try {
   process.exit(1);
 }
 
+// Validar configurações WhatsApp na inicialização
+console.log('\n🚀 INICIANDO SERVIDOR - VALIDAÇÃO DE CONFIGURAÇÕES WHATSAPP');
+try {
+  const { validateAndLogWhatsAppEnv } = require('./models/whatsappCloudApi');
+  validateAndLogWhatsAppEnv();
+} catch (err) {
+  console.warn('[WHATSAPP_CONFIG] Aviso: Não foi possível validar configurações WhatsApp:', err.message);
+}
+
 app.use((req, res, next) => {
   req.db = db;
   next();

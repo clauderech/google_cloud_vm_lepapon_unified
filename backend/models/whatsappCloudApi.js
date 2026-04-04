@@ -1,5 +1,52 @@
 'use strict';
 
+/**
+ * Valida e loga as configurações do WhatsApp .env
+ */
+function validateAndLogWhatsAppEnv() {
+  const timestamp = new Date().toISOString();
+  
+  console.log(`\n[WHATSAPP_ENV_CHECK][${timestamp}] ========================================`);
+  console.log('[WHATSAPP_ENV_CHECK] Validando configurações WhatsApp do .env:');
+  
+  const configs = {
+    WHATSAPP_ACCESS_TOKEN: process.env.WHATSAPP_ACCESS_TOKEN,
+    WHATSAPP_PHONE_NUMBER_ID: process.env.WHATSAPP_PHONE_NUMBER_ID,
+    WHATSAPP_GRAPH_VERSION: process.env.WHATSAPP_GRAPH_VERSION,
+    WHATSAPP_TEMPLATE_NAME: process.env.WHATSAPP_TEMPLATE_NAME,
+    WHATSAPP_TEMPLATE_LANG: process.env.WHATSAPP_TEMPLATE_LANG,
+    WHATSAPP_TEMPLATE_RECIPIENT_TYPE: process.env.WHATSAPP_TEMPLATE_RECIPIENT_TYPE,
+    WHATSAPP_TEXT_RECIPIENT_TYPE: process.env.WHATSAPP_TEXT_RECIPIENT_TYPE,
+  };
+  
+  let allValid = true;
+  
+  // Validar configurações críticas
+  const criticalConfigs = ['WHATSAPP_ACCESS_TOKEN', 'WHATSAPP_PHONE_NUMBER_ID'];
+  
+  for (const key in configs) {
+    const value = configs[key];
+    const isCritical = criticalConfigs.includes(key);
+    
+    if (key.includes('TOKEN')) {
+      // Mascarar token por segurança
+      const maskedValue = value ? `${value.substring(0, 8)}***${value.substring(value.length - 4)}` : 'UNDEFINED';
+      console.log(`[WHATSAPP_ENV_CHECK] ${key}: ${maskedValue} ${value ? '✅' : '❌'}`);
+    } else {
+      console.log(`[WHATSAPP_ENV_CHECK] ${key}: ${value || 'UNDEFINED'} ${value ? '✅' : (isCritical ? '❌' : '⚠️')}`);
+    }
+    
+    if (isCritical && !value) {
+      allValid = false;
+    }
+  }
+  
+  console.log(`[WHATSAPP_ENV_CHECK] Status geral: ${allValid ? '✅ CONFIGURADO' : '❌ ERRO - CONFIGURAÇÕES CRÍTICAS FALTANDO'}`);
+  console.log('[WHATSAPP_ENV_CHECK] ========================================\n');
+  
+  return allValid;
+}
+
 function buildTemplateComponentsFromEnv() {
   const footerText = process.env.WHATSAPP_TEMPLATE_FOOTER_TEXT;
 
@@ -373,8 +420,35 @@ async function sendFlowMessage({
  * Upload do arquivo para Meta Cloud API
  */
 async function uploadMediaToMeta(fileBuffer, filename, mimeType) {
+  const timestamp = new Date().toISOString();
+  
+  console.log(`\n[UPLOAD_MEDIA][${timestamp}] ========================================`);
+  console.log('[UPLOAD_MEDIA] Iniciando upload para Meta Cloud API');
+  
+  // Validar configurações antes do upload
+  console.log('[UPLOAD_MEDIA] Verificando variáveis de ambiente...');
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
   const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+  
+  console.log(`[UPLOAD_MEDIA] WHATSAPP_PHONE_NUMBER_ID: ${phoneNumberId ? `${phoneNumberId.substring(0, 8)}***${phoneNumberId.substring(phoneNumberId.length - 4)}` : 'UNDEFINED'} ${phoneNumberId ? '✅' : '❌'}`);
+  console.log(`[UPLOAD_MEDIA] WHATSAPP_ACCESS_TOKEN: ${accessToken ? `${accessToken.substring(0, 8)}***${accessToken.substring(accessToken.length - 4)}` : 'UNDEFINED'} ${accessToken ? '✅' : '❌'}`);
+  
+  if (!phoneNumberId) {
+    const error = 'WHATSAPP_PHONE_NUMBER_ID não definido no .env';
+    console.error(`[UPLOAD_MEDIA] ❌ ERRO: ${error}`);
+    throw new Error(error);
+  }
+  
+  if (!accessToken) {
+    const error = 'WHATSAPP_ACCESS_TOKEN não definido no .env';
+    console.error(`[UPLOAD_MEDIA] ❌ ERRO: ${error}`);
+    throw new Error(error);
+  }
+  
+  console.log(`[UPLOAD_MEDIA] Parâmetros do arquivo:`);
+  console.log(`[UPLOAD_MEDIA] - Filename: ${filename}`);
+  console.log(`[UPLOAD_MEDIA] - MIME Type: ${mimeType}`);
+  console.log(`[UPLOAD_MEDIA] - Buffer Size: ${fileBuffer.length} bytes`);
   
   const FormData = require('form-data');
   const form = new FormData();
@@ -383,7 +457,12 @@ async function uploadMediaToMeta(fileBuffer, filename, mimeType) {
   form.append('type', mimeType);
   form.append('messaging_product', 'whatsapp');
 
-  const response = await fetch(`https://graph.facebook.com/v20.0/${phoneNumberId}/media`, {
+  const uploadUrl = `https://graph.facebook.com/v20.0/${phoneNumberId}/media`;
+  console.log(`[UPLOAD_MEDIA] URL de upload: ${uploadUrl}`);
+  
+  console.log('[UPLOAD_MEDIA] Enviando requisição para Meta API...');
+  
+  const response = await fetch(uploadUrl, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${accessToken}`,
@@ -392,8 +471,20 @@ async function uploadMediaToMeta(fileBuffer, filename, mimeType) {
     body: form
   });
 
+  console.log(`[UPLOAD_MEDIA] Resposta recebida - Status: ${response.status}`);
+  
   const json = await response.json();
-  if (!response.ok) throw new Error(`Upload failed: ${response.status}`);
+  
+  if (!response.ok) {
+    console.error(`[UPLOAD_MEDIA] ❌ ERRO no upload:`);
+    console.error(`[UPLOAD_MEDIA] Status: ${response.status}`);
+    console.error(`[UPLOAD_MEDIA] Response:`, JSON.stringify(json, null, 2));
+    throw new Error(`Upload failed: ${response.status} - ${JSON.stringify(json)}`);
+  }
+  
+  console.log(`[UPLOAD_MEDIA] ✅ Upload bem-sucedido!`);
+  console.log(`[UPLOAD_MEDIA] Media ID: ${json.id}`);
+  console.log('[UPLOAD_MEDIA] ========================================\n');
   
   return json;
 }
@@ -402,8 +493,36 @@ async function uploadMediaToMeta(fileBuffer, filename, mimeType) {
  * Envia documento via WhatsApp
  */
 async function sendMediaMessage({ to, mediaId, filename, caption }) {
+  const timestamp = new Date().toISOString();
+  
+  console.log(`\n[SEND_MEDIA][${timestamp}] ========================================`);
+  console.log('[SEND_MEDIA] Enviando documento via WhatsApp');
+  
+  // Validar configurações antes do envio
+  console.log('[SEND_MEDIA] Verificando variáveis de ambiente...');
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
   const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+  
+  console.log(`[SEND_MEDIA] WHATSAPP_PHONE_NUMBER_ID: ${phoneNumberId ? `${phoneNumberId.substring(0, 8)}***${phoneNumberId.substring(phoneNumberId.length - 4)}` : 'UNDEFINED'} ${phoneNumberId ? '✅' : '❌'}`);
+  console.log(`[SEND_MEDIA] WHATSAPP_ACCESS_TOKEN: ${accessToken ? `${accessToken.substring(0, 8)}***${accessToken.substring(accessToken.length - 4)}` : 'UNDEFINED'} ${accessToken ? '✅' : '❌'}`);
+  
+  if (!phoneNumberId) {
+    const error = 'WHATSAPP_PHONE_NUMBER_ID não definido no .env';
+    console.error(`[SEND_MEDIA] ❌ ERRO: ${error}`);
+    throw new Error(error);
+  }
+  
+  if (!accessToken) {
+    const error = 'WHATSAPP_ACCESS_TOKEN não definido no .env';
+    console.error(`[SEND_MEDIA] ❌ ERRO: ${error}`);
+    throw new Error(error);
+  }
+  
+  console.log(`[SEND_MEDIA] Parâmetros da mensagem:`);
+  console.log(`[SEND_MEDIA] - Destinatário: ${to}`);
+  console.log(`[SEND_MEDIA] - Media ID: ${mediaId}`);
+  console.log(`[SEND_MEDIA] - Filename: ${filename}`);
+  console.log(`[SEND_MEDIA] - Caption: ${caption ? caption.substring(0, 100) + (caption.length > 100 ? '...' : '') : 'Sem caption'}`);
   
   const payload = {
     messaging_product: 'whatsapp',
@@ -417,7 +536,13 @@ async function sendMediaMessage({ to, mediaId, filename, caption }) {
     }
   };
 
-  const response = await fetch(`https://graph.facebook.com/v20.0/${phoneNumberId}/messages`, {
+  const sendUrl = `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`;
+  console.log(`[SEND_MEDIA] URL de envio: ${sendUrl}`);
+  console.log(`[SEND_MEDIA] Payload:`, JSON.stringify(payload, null, 2));
+  
+  console.log('[SEND_MEDIA] Enviando mensagem para WhatsApp API...');
+
+  const response = await fetch(sendUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -426,13 +551,27 @@ async function sendMediaMessage({ to, mediaId, filename, caption }) {
     body: JSON.stringify(payload),
   });
 
+  console.log(`[SEND_MEDIA] Resposta recebida - Status: ${response.status}`);
+
   const json = await response.json();
-  if (!response.ok) throw new Error(`Send failed: ${response.status}`);
+  
+  if (!response.ok) {
+    console.error(`[SEND_MEDIA] ❌ ERRO no envio:`);
+    console.error(`[SEND_MEDIA] Status: ${response.status}`);
+    console.error(`[SEND_MEDIA] Response:`, JSON.stringify(json, null, 2));
+    console.error(`[SEND_MEDIA] Payload enviado:`, JSON.stringify(payload, null, 2));
+    throw new Error(`Send failed: ${response.status} - ${JSON.stringify(json)}`);
+  }
+  
+  console.log(`[SEND_MEDIA] ✅ Mensagem enviada com sucesso!`);
+  console.log(`[SEND_MEDIA] WhatsApp Message ID: ${json.messages?.[0]?.id}`);
+  console.log('[SEND_MEDIA] ========================================\n');
   
   return json;
 }
 
 module.exports = {
+  validateAndLogWhatsAppEnv,
   buildTemplateComponentsFromEnv,
   sendTemplateMessage,
   sendTextMessage,
