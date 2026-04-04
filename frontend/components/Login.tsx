@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Lock, User, Eye, EyeOff, LogIn } from 'lucide-react';
+import { User as UserType } from '../hooks/useAuth';
 
 interface LoginProps {
-  onLogin: (user: { id: string; name: string; role: string }) => void;
+  onLogin: (user: UserType) => void;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
@@ -32,10 +33,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
     if (user) {
       // Salvar sessão
-      const session = {
+      const session: UserType = {
         id: user.id,
         name: user.name,
-        role: user.role,
+        role: user.role as 'admin' | 'operador' | 'caixa',
         loginAt: new Date().toISOString()
       };
       

@@ -240,7 +240,7 @@ export const storageService = {
     }
     // Fallback local: formatar clientes existentes
     console.log('[DEBUG] Usando fallback local');
-    const state = await this.loadInitialState();
+    const state = await this.loadState();
     console.log('[DEBUG] Estado carregado:', state);
     const customers = state.customers || [];
     console.log('[DEBUG] Clientes encontrados:', customers);
@@ -501,7 +501,7 @@ function mapComandaFromDB(c: any): Comanda {
     status: item.status,
     notes: item.notes
   })) : [];
-  const total = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+  const total = items.reduce((sum: number, item: any) => sum + (item.quantity * item.unitPrice), 0);
   return {
     id: c.id,
     customerName: c.customer_name,

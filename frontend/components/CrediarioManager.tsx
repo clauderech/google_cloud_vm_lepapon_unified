@@ -1,21 +1,31 @@
-import React, { useState, useEffect } from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react' with { type: 'module' };
+import type { FC } from 'react';
 import { CreditCard, Plus, Search, X, FileText, Download } from 'lucide-react';
 import type { MonthlyAccount, MonthlyPurchase, MonthlyPayment } from '../types';
 
 interface CrediarioManagerProps {
-  customers: any[];
+  customers?: any[];
 }
 
-const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
+const CrediarioManager: FC<CrediarioManagerProps> = () => {
   // Estados para contas mensais
   const [monthlyAccounts, setMonthlyAccounts] = useState<MonthlyAccount[]>([]);
   const [selectedMonthlyAccount, setSelectedMonthlyAccount] = useState<MonthlyAccount | null>(null);
   const [monthlyPurchases, setMonthlyPurchases] = useState<MonthlyPurchase[]>([]);
   const [monthlyPayments, setMonthlyPayments] = useState<MonthlyPayment[]>([]);
   const [showMonthlyPaymentModal, setShowMonthlyPaymentModal] = useState(false);
-  const [monthlyPayment, setMonthlyPayment] = useState({
+  const [monthlyPayment, setMonthlyPayment] = useState<{
+    amount: number;
+    paymentMethod: 'cash' | 'card' | 'pix' | 'transfer';
+    paymentDate: string;
+    receiptNumber: string;
+    receivedBy: string;
+    notes: string;
+  }>({
     amount: 0,
-    paymentMethod: 'cash' as const,
+    paymentMethod: 'cash',
     paymentDate: '',
     receiptNumber: '',
     receivedBy: '',
@@ -74,7 +84,7 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
     const loadingKey = `${customerId}_${monthYear}`;
     
     try {
-      setPdfLoading(prev => ({ ...prev, [loadingKey]: true }));
+      setPdfLoading((prev: {[key: string]: boolean}) => ({ ...prev, [loadingKey]: true }));
       
       const res = await fetch('/api/comandas/crediario/generate-pdf', {
         method: 'POST',
@@ -103,12 +113,12 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
       console.error('Erro ao gerar PDF:', error);
       alert('Erro ao gerar PDF. Tente novamente.');
     } finally {
-      setPdfLoading(prev => ({ ...prev, [loadingKey]: false }));
+      setPdfLoading((prev: {[key: string]: boolean}) => ({ ...prev, [loadingKey]: false }));
     }
   };
 
   // Formatar itens de uma compra
-  const formatPurchaseItems = (itemsJson: string | null) => {
+  const formatPurchaseItems = (itemsJson: string | null | undefined) => {
     if (!itemsJson) return null;
     
     try {
@@ -133,15 +143,16 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
   }, []);
 
   // Filtro de busca
-  const filteredAccounts = monthlyAccounts.filter(acc => {
+  const filteredAccounts = monthlyAccounts.filter((acc: MonthlyAccount) => {
     const fullName = `${acc.customer_name} ${acc.customer_surname || ''}`.toLowerCase();
     return fullName.includes(searchTerm.toLowerCase());
   });
+
   return (
     <div className="p-6 max-w-5xl w-full mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <CreditCard className="text-blue-600" /> Gestão de Crediário Mensal
+          <CreditCard className="text-blue-600" size={24} /> Gestão de Crediário Mensal
         </h2>
       </div>
 
@@ -205,7 +216,7 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
                       <Plus className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleGeneratePDF(acc.customer_id, acc.month_year)}
+                      onClick={() => handleGeneratePDF(String(acc.customer_id), acc.month_year)}
                       disabled={pdfLoading[`${acc.customer_id}_${acc.month_year}`]}
                       className="text-green-600 hover:text-green-800 p-1 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Gerar PDF"
@@ -324,7 +335,7 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
                 Registrar Pagamento
               </button>
               <button
-                onClick={() => handleGeneratePDF(selectedMonthlyAccount.customer_id, selectedMonthlyAccount.month_year)}
+                onClick={() => handleGeneratePDF(String(selectedMonthlyAccount.customer_id), selectedMonthlyAccount.month_year)}
                 disabled={pdfLoading[`${selectedMonthlyAccount.customer_id}_${selectedMonthlyAccount.month_year}`]}
                 className="bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
@@ -373,7 +384,7 @@ const CrediarioManager: React.FC<CrediarioManagerProps> = ({ customers }) => {
                 <select
                   className="w-full border border-gray-400 p-2 rounded-lg text-black bg-white"
                   value={monthlyPayment.paymentMethod}
-                  onChange={e => setMonthlyPayment({ ...monthlyPayment, paymentMethod: e.target.value })}
+                  onChange={e => setMonthlyPayment({ ...monthlyPayment, paymentMethod: e.target.value as 'cash' | 'card' | 'pix' | 'transfer' })}
                 >
                   <option value="cash">Dinheiro</option>
                   <option value="card">Cartão</option>

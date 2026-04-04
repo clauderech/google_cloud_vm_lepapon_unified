@@ -230,7 +230,7 @@ export const FinancialDashboard: React.FC = () => {
             <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`} tick={{ fill: '#6b7280', fontSize: 12 }} />
             <Tooltip 
               contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-              formatter={(value: number) => financialService.formatCurrency(value)}
+              formatter={(value: any) => typeof value === 'number' ? financialService.formatCurrency(value) : ''}
             />
             <Line type="monotone" dataKey="receitas" stroke="#10b981" strokeWidth={3} dot={{ r: 4 }} name="Receitas" />
             <Line type="monotone" dataKey="despesas" stroke="#ef4444" strokeWidth={3} dot={{ r: 4 }} name="Despesas" />

@@ -244,6 +244,7 @@ export interface Expense {
   id: string;
   date: string;
   category: ExpenseCategory;
+  reference: string;
   description: string;
   amount: number;
   paymentMethod: Exclude<PurchasePaymentMethod, 'credit'>;

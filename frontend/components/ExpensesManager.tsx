@@ -40,9 +40,10 @@ export const ExpensesManager: React.FC = () => {
     category: 'outros',
     description: '',
     amount: 0,
-    paymentMethod: 'dinheiro',
-    supplier: '',
-    reference: ''
+    paymentMethod: 'cash',
+    isRecurring: false,
+    supplierName: '',
+    reference: '',
   });
 
   useEffect(() => {
@@ -52,7 +53,11 @@ export const ExpensesManager: React.FC = () => {
   const loadExpenses = async () => {
     try {
       setLoading(true);
-      const data = await financialService.getExpenses(filters);
+      const data = await financialService.getExpenses(
+        filters.category || undefined,
+        filters.startDate || undefined,
+        filters.endDate || undefined
+      );
       setExpenses(data);
     } catch (err) {
       console.error('Erro ao carregar despesas:', err);
@@ -77,9 +82,10 @@ export const ExpensesManager: React.FC = () => {
         category: 'outros',
         description: '',
         amount: 0,
-        paymentMethod: 'dinheiro',
-        supplier: '',
-        reference: ''
+        paymentMethod: 'cash',
+        isRecurring: false,
+        supplierName: '',
+        reference: '',
       });
       loadExpenses();
     } catch (err) {
@@ -204,8 +210,8 @@ export const ExpensesManager: React.FC = () => {
               <label className="block text-sm font-bold text-gray-700 mb-2">Fornecedor (opcional)</label>
               <input
                 type="text"
-                value={formData.supplier}
-                onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
+                value={formData.supplierName}
+                onChange={(e) => setFormData({ ...formData, supplierName: e.target.value })}
                 placeholder="Nome do fornecedor"
                 className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none font-medium"
               />
@@ -290,7 +296,7 @@ export const ExpensesManager: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-45} textAnchor="end" height={100} />
                 <YAxis tickFormatter={(value) => financialService.formatCurrency(value)} tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(value: number) => financialService.formatCurrency(value)} />
+                <Tooltip formatter={(value) => value !== undefined ? financialService.formatCurrency(value as number) : ''} />
                 <Bar dataKey="value" fill="#ef4444" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -358,10 +364,10 @@ export const ExpensesManager: React.FC = () => {
                       {financialService.formatCurrency(expense.amount)}
                     </td>
                     <td className="p-3 text-sm text-gray-600 capitalize">{expense.paymentMethod}</td>
-                    <td className="p-3 text-sm text-gray-600">{expense.supplier || '-'}</td>
+                    <td className="p-3 text-sm text-gray-600">{expense.supplierName || '-'}</td>
                     <td className="p-3 text-center">
                       <button
-                        onClick={() => expense.id && handleDelete(expense.id)}
+                        onClick={() => expense.id && handleDelete(Number(expense.id))}
                         className="text-red-600 hover:text-red-800 transition-colors"
                         title="Excluir"
                       >

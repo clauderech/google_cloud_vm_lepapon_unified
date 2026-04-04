@@ -64,7 +64,7 @@ const KitchenDashboard: React.FC<KitchenDashboardProps> = () => {
     });
 
     // Evento: Atualização de status
-    socket.on('kitchen_status_update', ({ itemId, status, responsavel }) => {
+    socket.on('kitchen_status_update', ({ itemId, status, responsavel }: { itemId: string; status: CozinhaItemStatus; responsavel: string }) => {
       console.log(`[KitchenDashboard] Status atualizado: ${itemId} -> ${status}`);
       setItems(prevItems => 
         prevItems.map(item => 

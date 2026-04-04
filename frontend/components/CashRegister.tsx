@@ -83,7 +83,7 @@ export const CashRegisterComponent: React.FC = () => {
       await financialService.closeCashRegister(
         currentRegister.id,
         closeForm.actualAmount,
-        currentRegister.responsibleUser,
+        openForm.responsibleUser,
         closeForm.observations
       );
       setCloseForm({ actualAmount: 0, observations: '' });
@@ -146,7 +146,7 @@ export const CashRegisterComponent: React.FC = () => {
             </h3>
             {currentRegister && (
               <p className="text-sm text-gray-600">
-                Responsável: <span className="font-bold">{currentRegister.responsibleUser}</span>
+                Responsável: <span className="font-bold">{openForm.responsibleUser}</span>
               </p>
             )}
           </div>
@@ -330,7 +330,7 @@ export const CashRegisterComponent: React.FC = () => {
                       </td>
                       <td className="p-3 text-sm text-gray-900 flex items-center gap-1">
                         <User className="w-4 h-4 text-gray-500" />
-                        {register.responsibleUser}
+                        {openForm.responsibleUser}
                       </td>
                       <td className="p-3 text-right text-sm font-bold text-gray-900">
                         {financialService.formatCurrency(register.initialAmount)}

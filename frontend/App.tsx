@@ -756,7 +756,7 @@ const App = () => {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) => `${name}: ${((percent || 0) * 100).toFixed(0)}%`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
@@ -765,7 +765,7 @@ const App = () => {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number) => `R$ ${value.toFixed(2)}`} />
+                <Tooltip formatter={(value) => value !== undefined ? `R$ ${(value as number).toFixed(2)}` : ''} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -820,10 +820,10 @@ const App = () => {
     const handleAddPratoToCart = () => {
       if (!pratoSelecionado) return;
       setCart(prev => {
-        const existing = prev.find(item => item.productId === pratoSelecionado.id && item.notes === pratoObs);
+        const existing = prev.find(item => item.productId === pratoSelecionado.id);
         if (existing) {
           return prev.map(item =>
-            item.productId === pratoSelecionado.id && item.notes === pratoObs
+            item.productId === pratoSelecionado.id
               ? { ...item, quantity: item.quantity + pratoQtd }
               : item
           );
@@ -834,8 +834,7 @@ const App = () => {
             productId: pratoSelecionado.id,
             productName: pratoSelecionado.name,
             quantity: pratoQtd,
-            unitPrice: pratoSelecionado.price,
-            notes: pratoObs
+            unitPrice: pratoSelecionado.price
           }
         ];
       });
@@ -1657,7 +1656,7 @@ const App = () => {
     const [showForm, setShowForm] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [editProd, setEditProd] = useState<Partial<Product> | null>(null);
-    const [editMode, setEditMode] = useState<'insumo' | 'insumo_bebida' | 'prato' | 'drink'>('insumo');
+    const [editMode, setEditMode] = useState<'insumo' | 'insumo_bebida' | 'prato' | 'drink' | 'revenda'>('insumo');
         const handleEditProduct = (product: Product) => {
           setEditProd({ ...product });
           setEditMode(product.type);
@@ -1677,7 +1676,7 @@ const App = () => {
             unit: editProd.unit || 'un',
             category: editProd.category || '',
             recipe: editProd.recipe || [],
-            is_active: editProd.is_active ? 1 : 0,
+            is_active: editProd.is_active ? true : false,
           } as Product;
           console.log('[EDIT PRODUTO] Enviando para o DB:', updated);
           setState(prev => ({
@@ -1720,7 +1719,7 @@ const App = () => {
         price: Number(newProd.price || 0),
         cost: Number(newProd.cost || 0),
         supplierId: newProd.supplierId || '',
-        is_active: newProd.is_active ? 1 : 0,
+        is_active: newProd.is_active === true,
       } as Product;
 
       try {

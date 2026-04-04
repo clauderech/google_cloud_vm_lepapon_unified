@@ -50,7 +50,8 @@ const ProductionManager: React.FC<ProductionManagerProps> = ({ onError }) => {
       setAvailableProductions(data.data || []);
     } catch (error) {
       console.error('[PRODUCTION_FRONTEND] Erro ao buscar produções:', error);
-      onError(`Erro ao carregar produções: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      onError(`Erro ao carregar produções: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
