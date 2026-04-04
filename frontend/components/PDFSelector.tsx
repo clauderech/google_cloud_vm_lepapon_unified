@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react' with { type: 'module' };
 import type { FC } from 'react';
-import { FileText, Download, Search, Eye, Trash2, Calendar, User, Filter } from 'lucide-react';
+import { FileText, Download, Search, Eye, Trash2, Calendar, User, Filter, MessageCircle } from 'lucide-react';
 
 interface PDFFile {
   filename: string;
@@ -94,6 +94,39 @@ const PDFSelector: FC<PDFSelectorProps> = () => {
   // Handler: Preview PDF (nova aba)
   const handlePreview = (pdf: PDFFile) => {
     window.open(`https://snackbartio.com.br${pdf.downloadUrl}`, '_blank');
+  };
+
+  // Handler: Enviar via WhatsApp
+  const handleSendWhatsApp = async (pdf: PDFFile) => {
+    try {
+      const phoneNumber = prompt('Digite o número do WhatsApp (ex: 5511999887766):');
+      if (!phoneNumber) return;
+      
+      if (!confirm(`Enviar ${pdf.customerName} (${pdf.monthYear}) para ${phoneNumber}?`)) {
+        return;
+      }
+      
+      const res = await fetch('https://snackbartio.com.br/api/comandas/crediario/send-pdf-whatsapp-simple', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: pdf.filename,
+          phoneNumber: phoneNumber
+        })
+      });
+      
+      const result = await res.json();
+      
+      if (result.success) {
+        alert(`✅ ${result.message}`);
+      } else {
+        alert(`❌ Erro: ${result.error}`);
+      }
+      
+    } catch (err) {
+      console.error('Erro ao enviar WhatsApp:', err);
+      alert('Erro ao enviar via WhatsApp');
+    }
   };
 
   // Formatação de tamanho de arquivo
@@ -268,6 +301,13 @@ const PDFSelector: FC<PDFSelectorProps> = () => {
                           title="Baixar PDF"
                         >
                           <Download className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleSendWhatsApp(pdf)}
+                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                          title="Enviar via WhatsApp"
+                        >
+                          <MessageCircle className="w-4 h-4" />
                         </button>
                       </div>
                     </td>

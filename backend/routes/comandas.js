@@ -676,4 +676,80 @@ router.get('/crediario/pdf/:filename', async (req, res) => {
   }
 });
 
+// Enviar PDF existente via WhatsApp (versão simples)
+router.post('/crediario/send-pdf-whatsapp-simple', async (req, res) => {
+  try {
+    const { filename, phoneNumber } = req.body;
+    
+    if (!filename || !phoneNumber) {
+      return res.status(400).json({ 
+        error: 'filename e phoneNumber são obrigatórios' 
+      });
+    }
+    
+    // Validar filename por segurança
+    if (!filename.match(/^conta_[a-zA-Z0-9_-]+_\d{4}-\d{2}_[0-9T\-Z]+\.pdf$/)) {
+      return res.status(400).json({ error: 'Nome de arquivo inválido' });
+    }
+    
+    const fs = require('fs');
+    const path = require('path');
+    const { uploadMediaToMeta, sendMediaMessage } = require('../models/whatsappCloudApi');
+    
+    console.log(`[CrediarioWhatsApp] Enviando ${filename} para ${phoneNumber}`);
+    
+    // Verificar se arquivo existe
+    const filePath = path.join(__dirname, '..', 'uploads', 'reports', 'crediario', filename);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Arquivo PDF não encontrado' });
+    }
+    
+    // Ler arquivo PDF
+    const pdfBuffer = fs.readFileSync(filePath);
+    
+    // Extrair informações do nome do arquivo
+    const matches = filename.match(/^conta_(.+)_(\d{4}-\d{2})_(.+)\.pdf$/);
+    const customerName = matches ? matches[1].replace(/_/g, ' ') : 'Cliente';
+    const monthYear = matches ? matches[2] : '';
+    
+    // Upload para Meta Cloud API
+    const uploadResult = await uploadMediaToMeta(
+      pdfBuffer,
+      `Extrato_${customerName}_${monthYear}.pdf`,
+      'application/pdf'
+    );
+    
+    // Enviar via WhatsApp
+    const caption = `📊 *Extrato de Crediário*\n\n` +
+      `Cliente: *${customerName}*\n` +
+      `Período: *${monthYear}*\n\n` +
+      `_Enviado pelo sistema_`;
+    
+    const sendResult = await sendMediaMessage({
+      to: phoneNumber,
+      mediaId: uploadResult.id,
+      filename: `Extrato_${customerName}_${monthYear}.pdf`,
+      caption: caption
+    });
+    
+    res.json({
+      success: true,
+      message: `PDF enviado via WhatsApp para ${phoneNumber}`,
+      details: {
+        filename,
+        phoneNumber,
+        mediaId: uploadResult.id,
+        whatsappMessageId: sendResult.messages?.[0]?.id
+      }
+    });
+    
+  } catch (err) {
+    console.error('[CrediarioWhatsApp] Erro:', err);
+    res.status(500).json({ 
+      error: 'Erro ao enviar PDF via WhatsApp', 
+      details: err.message 
+    });
+  }
+});
+
 module.exports = router;

@@ -369,10 +369,75 @@ async function sendFlowMessage({
   return json;
 }
 
+/**
+ * Upload do arquivo para Meta Cloud API
+ */
+async function uploadMediaToMeta(fileBuffer, filename, mimeType) {
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+  
+  const FormData = require('form-data');
+  const form = new FormData();
+  
+  form.append('file', fileBuffer, { filename, contentType: mimeType });
+  form.append('type', mimeType);
+  form.append('messaging_product', 'whatsapp');
+
+  const response = await fetch(`https://graph.facebook.com/v20.0/${phoneNumberId}/media`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      ...form.getHeaders()
+    },
+    body: form
+  });
+
+  const json = await response.json();
+  if (!response.ok) throw new Error(`Upload failed: ${response.status}`);
+  
+  return json;
+}
+
+/**
+ * Envia documento via WhatsApp
+ */
+async function sendMediaMessage({ to, mediaId, filename, caption }) {
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+  
+  const payload = {
+    messaging_product: 'whatsapp',
+    recipient_type: 'individual',
+    to: String(to),
+    type: 'document',
+    document: {
+      id: mediaId,
+      filename: filename,
+      caption: caption
+    }
+  };
+
+  const response = await fetch(`https://graph.facebook.com/v20.0/${phoneNumberId}/messages`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const json = await response.json();
+  if (!response.ok) throw new Error(`Send failed: ${response.status}`);
+  
+  return json;
+}
+
 module.exports = {
   buildTemplateComponentsFromEnv,
   sendTemplateMessage,
   sendTextMessage,
   sendCatalogMessage,
   sendFlowMessage,
+  uploadMediaToMeta,
+  sendMediaMessage,
 };
