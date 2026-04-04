@@ -86,6 +86,7 @@ import ReportsView from './components/ReportsView';
 import CustomersManager from './components/CustomersManager';
 import LoyaltyProgram from './components/LoyaltyProgram';
 import CrediarioManager from './components/CrediarioManager';
+import PDFSelector from './components/PDFSelector';
 import HelpMenu from './components/HelpMenu';
 import Login from './components/Login';
 import KitchenDashboard from './components/KitchenDashboard';
@@ -2416,6 +2417,8 @@ const App = () => {
           {hasPermission('view_reports') && <SidebarItem icon={FileText} label="Relatórios" active={view === 'reports'} onClick={() => setView('reports')} />}
           <div className="my-2 border-t border-gray-200"></div>
           {hasPermission('view_financial') && <SidebarItem icon={DollarSign} label="Crediário" active={view === 'crediario'} onClick={() => setView('crediario')} />}
+          {hasPermission('view_financial') && <SidebarItem icon={FileText} label="PDFs Crediário" active={view === 'pdf-selector'} onClick={() => setView('pdf-selector')} />}
+          {hasPermission('view_financial') && <SidebarItem icon={FileText} label="PDFs Crediário" active={view === 'pdf-selector'} onClick={() => setView('pdf-selector')} />}
         </nav>
         <div className="p-4 border-t border-gray-200">
           <button
@@ -2446,6 +2449,7 @@ const App = () => {
             {view === 'cash-register' && <CashRegister />}
             {view === 'reports' && <ReportsView />}
             {view === 'crediario' && <CrediarioManager customers={state.customers} />}
+            {view === 'pdf-selector' && <PDFSelector />}
            </>
         )}
       </main>

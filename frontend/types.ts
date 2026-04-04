@@ -437,4 +437,5 @@ export type PageView =
   | 'reports'
   | 'cozinha'
   | 'crediario'
+  | 'pdf-selector'
   | 'production';

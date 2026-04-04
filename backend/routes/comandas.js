@@ -412,6 +412,58 @@ router.post('/crediario/:monthlyAccountId/pay', async (req, res) => {
   }
 });
 
+// Nova rota: Listar PDFs gerados do crediário
+router.get('/crediario/pdfs', async (req, res) => {
+  /*
+    Lista todos os PDFs gerados do crediário armazenados em /backend/uploads/reports/crediario/
+    Retorna: array com {filename, customerName, monthYear, createdAt, size, downloadUrl}
+  */
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    
+    const uploadsDir = path.join(__dirname, '..', 'uploads', 'reports', 'crediario');
+    
+    // Verificar se diretório existe
+    if (!fs.existsSync(uploadsDir)) {
+      return res.json([]);
+    }
+    
+    // Ler arquivos do diretório
+    const files = fs.readdirSync(uploadsDir)
+      .filter(file => file.endsWith('.pdf'))
+      .filter(file => /^conta_[a-zA-Z0-9_-]+_\d{4}-\d{2}_[0-9T\-Z]+\.pdf$/.test(file)) // Validação segurança
+      .map(filename => {
+        const filePath = path.join(uploadsDir, filename);
+        const stats = fs.statSync(filePath);
+        
+        // Extrair metadata do filename: conta_CLIENTE_NOME_2025-01_timestamp.pdf
+        const matches = filename.match(/^conta_(.+)_(\d{4}-\d{2})_(.+)\.pdf$/);
+        if (!matches) return null;
+        
+        const [, customerName, monthYear, timestamp] = matches;
+        
+        return {
+          filename,
+          customerName: customerName.replace(/_/g, ' '), // João_Silva -> João Silva
+          monthYear,
+          createdAt: stats.mtime,
+          size: stats.size,
+          downloadUrl: `/api/comandas/crediario/pdf/${filename}`
+        };
+      })
+      .filter(Boolean) // Remove nulls
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // Mais recentes primeiro
+    
+    console.log(`[CrediarioAPI] Found ${files.length} PDF files`);
+    res.json(files);
+    
+  } catch (err) {
+    console.error('[CrediarioAPI] Error listing PDFs:', err);
+    res.status(500).json({ error: 'Erro ao listar PDFs', details: err.message });
+  }
+});
+
 // Consultar contas mensais de crediário
 router.get('/crediario/accounts', async (req, res) => {
   try {
