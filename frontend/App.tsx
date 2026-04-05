@@ -2418,7 +2418,6 @@ const App = () => {
           <div className="my-2 border-t border-gray-200"></div>
           {hasPermission('view_financial') && <SidebarItem icon={DollarSign} label="Crediário" active={view === 'crediario'} onClick={() => setView('crediario')} />}
           {hasPermission('view_financial') && <SidebarItem icon={FileText} label="PDFs Crediário" active={view === 'pdf-selector'} onClick={() => setView('pdf-selector')} />}
-          {hasPermission('view_financial') && <SidebarItem icon={FileText} label="PDFs Crediário" active={view === 'pdf-selector'} onClick={() => setView('pdf-selector')} />}
         </nav>
         <div className="p-4 border-t border-gray-200">
           <button
