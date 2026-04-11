@@ -68,6 +68,7 @@ export interface CartItem {
   productName: string;
   quantity: number;
   unitPrice: number;
+  observation: string;
 }
 
 export type ShoppingListPriority = 'low' | 'medium' | 'high' | 'urgent';

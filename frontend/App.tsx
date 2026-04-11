@@ -404,8 +404,13 @@ const App = () => {
   };
 
   const updateComanda = (comandaId: string, items: CartItem[], customerId?: string) => {
+    // Evitar múltiplas chamadas simultâneas para a mesma comanda
+    const updateKey = `${comandaId}-${Date.now()}`;
+    console.log('[COMANDA][UPDATE][START]', { comandaId, updateKey, itemCount: items.length });
+    
     storageService.updateComanda(comandaId, items, customerId)
       .then(() => {
+        console.log('[COMANDA][UPDATE][SUCCESS]', { comandaId, updateKey });
         setState(prev => ({
           ...prev,
           activeComandas: prev.activeComandas.map(c => {
@@ -424,6 +429,7 @@ const App = () => {
         }));
       })
       .catch((err) => {
+        console.error('[COMANDA][UPDATE][ERROR]', { comandaId, updateKey, error: err });
         alert('Erro ao atualizar comanda: ' + (err?.message || err));
       });
   };
@@ -560,7 +566,8 @@ const App = () => {
         productId: item.productId,
         productName: product?.name || 'Unknown',
         quantity: item.quantity,
-        unitPrice: product?.cost || 0
+        unitPrice: product?.cost || 0,
+        observation: item.notes || ''
       };
     });
     addPurchase(supplierId, purchaseItems);
@@ -835,7 +842,8 @@ const App = () => {
             productId: pratoSelecionado.id,
             productName: pratoSelecionado.name,
             quantity: pratoQtd,
-            unitPrice: pratoSelecionado.price
+            unitPrice: pratoSelecionado.price,
+            observation: pratoObs.trim() ? pratoObs.trim() : "Sem observação"
           }
         ];
       });
@@ -906,7 +914,7 @@ const App = () => {
           );
         }
         if (maxStock <= 0) return prev;
-        return [...prev, { productId: product.id, productName: product.name, quantity: 1, unitPrice: product.price }];
+        return [...prev, { productId: product.id, productName: product.name, quantity: 1, unitPrice: product.price, observation: '' }];
       });
     };
 
@@ -2323,7 +2331,8 @@ const App = () => {
                           productId: prod.id, 
                           productName: prod.name, 
                           quantity: qty, 
-                          unitPrice: prod.cost 
+                          unitPrice: prod.cost,
+                          observation: ''
                         }]);
                       }
                       

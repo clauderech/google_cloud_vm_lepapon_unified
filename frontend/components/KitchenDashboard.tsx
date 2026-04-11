@@ -54,9 +54,12 @@ const KitchenDashboard: React.FC<KitchenDashboardProps> = () => {
       console.log('[KitchenDashboard] Novo item recebido:', newItem);
       setItems(prevItems => {
         // Evitar duplicações
-        if (prevItems.some(item => item.id === newItem.id)) {
+        const isDuplicate = prevItems.some(item => item.id === newItem.id);
+        if (isDuplicate) {
+          console.warn('[KitchenDashboard] Item duplicado ignorado:', newItem.id);
           return prevItems;
         }
+        console.log('[KitchenDashboard] Item adicionado à lista:', newItem.id);
         setNewItemsCount(prev => prev + 1);
         playNotificationSound();
         return [...prevItems, newItem];
