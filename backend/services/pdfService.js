@@ -235,7 +235,7 @@ class PDFService {
             // Exibe itens detalhados em linha separada se existirem
             if (hasItems) {
               doc.fillColor('#666666').fontSize(8)
-                 .text(`→ ${purchase.items_detail}`, 155, currentY + 6, {
+                 .text(`→ ${purchase.items_detail}`, 155, currentY + 20, {
                    width: 300,
                    lineGap: 2
                  });
