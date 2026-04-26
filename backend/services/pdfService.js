@@ -194,15 +194,22 @@ class PDFService {
           const tableTop = doc.y;
           doc.y = tableTop + 25;
           
-          // Headers da tabela
-          doc.rect(50, tableTop, 495, 25).fillColor('#1e40af').fill();
-          doc.fillColor('white').fontSize(11)
-             .text('Data', 60, tableTop + 8)
-             .text('Descrição / Itens', 150, tableTop + 8)              
-             .text('Valor', 450, tableTop + 8);
+          // Função para desenhar cabeçalhos
+          const drawPurchaseHeaders = (y) => {
+            doc.rect(50, y, 495, 25).fillColor('#1e40af').fill();
+            doc.fillColor('white').fontSize(11)
+               .text('Data', 60, y + 8)
+               .text('Descrição / Itens', 150, y + 8)              
+               .text('Valor', 450, y + 8);
+          };
+          
+          // Headers da primeira página
+          drawPurchaseHeaders(tableTop);
 
           // Linhas de dados
           let currentY = tableTop + 25;
+          const pageHeight = 720; // Limite antes do footer
+          
           data.purchases.forEach((purchase, index) => {
             const rowColor = index % 2 === 0 ? '#ffffff' : '#f9fafb';
             
@@ -218,7 +225,15 @@ class PDFService {
                 fontSize: 8,
                 lineGap: 2
               });
-              rowHeight = Math.max(20, 6 + textHeight + 6); // Margens superior/inferior
+              rowHeight = 20 + textHeight;
+            }
+            
+            // Verifica se precisa de nova página
+            if (currentY + rowHeight > pageHeight) {
+              doc.addPage();
+              currentY = 50; // Margem superior da nova página
+              drawPurchaseHeaders(currentY);
+              currentY += 25; // Após cabeçalhos
             }
             
             doc.rect(50, currentY, 495, rowHeight).fillColor(rowColor).fill()
@@ -255,21 +270,38 @@ class PDFService {
           const tableTop = doc.y;
           doc.y = tableTop + 25;
           
-          // Headers
-          doc.rect(50, tableTop, 495, 25).fillColor('#1e40af').fill();
-          doc.fillColor('white').fontSize(11)
-             .text('Data', 60, tableTop + 8)
-             .text('Forma', 130, tableTop + 8)
-             .text('Recibo', 220, tableTop + 8)
-             .text('Recebido por', 290, tableTop + 8)
-             .text('Valor', 450, tableTop + 8);
+          // Função para desenhar cabeçalhos de pagamentos
+          const drawPaymentHeaders = (y) => {
+            doc.rect(50, y, 495, 25).fillColor('#1e40af').fill();
+            doc.fillColor('white').fontSize(11)
+               .text('Data', 60, y + 8)
+               .text('Forma', 130, y + 8)
+               .text('Recibo', 220, y + 8)
+               .text('Recebido por', 290, y + 8)
+               .text('Valor', 450, y + 8);
+          };
+          
+          // Headers da primeira página
+          drawPaymentHeaders(tableTop);
 
           // Dados
           let currentY = tableTop + 25;
+          const pageHeight = 720; // Limite antes do footer
+          const rowHeight = 20; // Altura fixa para pagamentos
+          
           data.payments.forEach((payment, index) => {
             const rowColor = index % 2 === 0 ? '#ffffff' : '#f9fafb';
-            doc.rect(50, currentY, 495, 20).fillColor(rowColor).fill()
-               .rect(50, currentY, 495, 20).strokeColor('#e5e7eb').lineWidth(0.5).stroke();
+            
+            // Verifica se precisa de nova página
+            if (currentY + rowHeight > pageHeight) {
+              doc.addPage();
+              currentY = 50; // Margem superior da nova página
+              drawPaymentHeaders(currentY);
+              currentY += 25; // Após cabeçalhos
+            }
+            
+            doc.rect(50, currentY, 495, rowHeight).fillColor(rowColor).fill()
+               .rect(50, currentY, 495, rowHeight).strokeColor('#e5e7eb').lineWidth(0.5).stroke();
                
             doc.fillColor('#333333').fontSize(9)
                .text(payment.date_formatted, 60, currentY + 6)
@@ -279,7 +311,7 @@ class PDFService {
             
             doc.fillColor('#059669').text(`R$ ${payment.amount}`, 450, currentY + 6);
             
-            currentY += 20;
+            currentY += rowHeight;
           });
           
           doc.y = currentY + 10;
