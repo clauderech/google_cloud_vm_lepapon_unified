@@ -208,7 +208,18 @@ class PDFService {
             
             // Calcula altura da linha baseada no conteúdo
             const hasItems = purchase.items_detail && purchase.items_detail.length > 0;
-            const rowHeight = hasItems ? 35 : 20;
+            let rowHeight = 20; // Altura base
+            
+            if (hasItems) {
+              // Calcula altura necessária para os itens detalhados
+              const itemsText = `→ ${purchase.items_detail}`;
+              const textHeight = doc.heightOfString(itemsText, {
+                width: 300, // Largura disponível para o texto
+                fontSize: 8,
+                lineGap: 2
+              });
+              rowHeight = Math.max(20, 6 + textHeight + 6); // Margens superior/inferior
+            }
             
             doc.rect(50, currentY, 495, rowHeight).fillColor(rowColor).fill()
                .rect(50, currentY, 495, rowHeight).strokeColor('#e5e7eb').lineWidth(0.5).stroke();
@@ -224,7 +235,10 @@ class PDFService {
             // Exibe itens detalhados em linha separada se existirem
             if (hasItems) {
               doc.fillColor('#666666').fontSize(8)
-                 .text(`→ ${purchase.items_detail}`, 155, currentY + 20);
+                 .text(`→ ${purchase.items_detail}`, 155, currentY + 6, {
+                   width: 300,
+                   lineGap: 2
+                 });
             }
             
             currentY += rowHeight;
