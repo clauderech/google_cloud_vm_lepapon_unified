@@ -254,6 +254,98 @@ async function sendTextMessage({
   return json;
 }
 
+async function sendInteractiveMenuMessage({
+  to,
+  bodyText,
+  buttons,
+  recipientType,
+  accessToken,
+  phoneNumberId,
+  graphVersion,
+}) {
+  if (!to) throw new Error('sendInteractiveMenuMessage: "to" é obrigatório');
+  if (!bodyText) throw new Error('sendInteractiveMenuMessage: "bodyText" é obrigatório');
+  if (!Array.isArray(buttons) || buttons.length === 0) {
+    throw new Error('sendInteractiveMenuMessage: "buttons" deve ser um array não vazio');
+  }
+
+  const token = accessToken || process.env.WHATSAPP_ACCESS_TOKEN;
+  const pnid = phoneNumberId || process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const version = graphVersion || process.env.WHATSAPP_GRAPH_VERSION || '20.0';
+
+  if (!token) throw new Error('WHATSAPP_ACCESS_TOKEN não definido');
+  if (!pnid) throw new Error('WHATSAPP_PHONE_NUMBER_ID não definido');
+
+  const url = `https://graph.facebook.com/v${version}/${pnid}/messages`;
+  const rt = recipientType || 'individual';
+
+  const payload = {
+    messaging_product: 'whatsapp',
+    recipient_type: String(rt),
+    to: String(to),
+    type: 'interactive',
+    interactive: {
+      type: 'button',
+      body: {
+        text: String(bodyText),
+      },
+      action: {
+        buttons: buttons.map((button, index) => ({
+          type: 'reply',
+          reply: {
+            id: String(button.id),
+            title: String(button.title),
+          },
+        })),
+      },
+    },
+  };
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const text = await response.text();
+  let json;
+  try {
+    json = text ? JSON.parse(text) : null;
+  } catch {
+    json = { raw: text };
+  }
+
+  if (!response.ok) {
+    const apiMessage = json?.error?.message;
+    const err = new Error(
+      `WhatsApp API error ${response.status}${apiMessage ? `: ${apiMessage}` : ''}`
+    );
+    err.status = response.status;
+    err.details = json;
+    err.detailsText = (() => {
+      try {
+        return JSON.stringify(json, null, 2);
+      } catch {
+        return String(json);
+      }
+    })();
+    err.requestPayload = payload;
+    err.requestPayloadText = (() => {
+      try {
+        return JSON.stringify(payload, null, 2);
+      } catch {
+        return String(payload);
+      }
+    })();
+    throw err;
+  }
+
+  return json;
+}
+
 async function sendCatalogMessage(catalogPayload) {
   if (!catalogPayload) throw new Error('sendCatalogMessage: catalogPayload é obrigatório');
 
@@ -871,6 +963,7 @@ module.exports = {
   buildTemplateComponentsFromEnv,
   sendTemplateMessage,
   sendTextMessage,
+  sendInteractiveMenuMessage,
   sendCatalogMessage,
   sendFlowMessage,
   uploadMediaToMeta,

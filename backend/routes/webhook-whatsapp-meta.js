@@ -1,6 +1,6 @@
 
 const express = require('express');
-const { handleVerifyWebhook, handleWebhookEvent } = require('../controllers/processwhatsapp');
+const { handleVerifyWebhook, handleWebhookEvent } = require('../controllers/processwhatsapp_simple');
 const router = express.Router();
 
 router.get('/webhook', handleVerifyWebhook);
