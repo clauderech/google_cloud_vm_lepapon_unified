@@ -78,6 +78,7 @@ import {
 type PaymentMethod = 'cash' | 'card' | 'pix' | 'credit';
 import { generateBusinessInsight, suggestRestockOrder } from './services/geminiService';
 import { storageService } from './services/storage';
+import FileUploadModal from './components/FileUploadModal';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Legend } from 'recharts';
 import FinancialDashboard from './components/FinancialDashboard';
 import ExpensesManager from './components/ExpensesManager';
@@ -115,12 +116,30 @@ const App = () => {
   const [loading, setLoading] = useState(true);
   const [showHelp, setShowHelp] = useState(false);
   const [customersDropdown, setCustomersDropdown] = useState<CustomerDropdownItem[]>([]);
+  const [showFileUploadModal, setShowFileUploadModal] = useState(false);
   
   // Estados para funcionalidades de comanda
   const [selectedComandaCustomerId, setSelectedComandaCustomerId] = useState<string>('');
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelingComandaId, setCancelingComandaId] = useState<string | null>(null);
-  
+
+  const handleUploadFile = async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      const message = await response.text().catch(() => 'Erro no upload');
+      throw new Error(message || 'Falha ao enviar o arquivo');
+    }
+
+    return response.json().catch(() => null);
+  };
+
   const [state, setState] = useState<AppState>({
     products: [],
     suppliers: [],
@@ -2409,6 +2428,13 @@ const App = () => {
             <HelpCircle className="w-4 h-4" />
             Ajuda (F1)
           </button>
+          <button
+            onClick={() => setShowFileUploadModal(true)}
+            className="mt-2 w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Upload de arquivo
+          </button>
         </div>
         <nav className="flex-1 p-4">
           {hasPermission('view_dashboard') && <SidebarItem icon={LayoutDashboard} label="Dashboard" active={view === 'dashboard'} onClick={() => setView('dashboard')} />}
@@ -2440,6 +2466,15 @@ const App = () => {
       </aside>
 
       <main className="flex-1 overflow-auto">
+        <FileUploadModal
+          open={showFileUploadModal}
+          onClose={() => setShowFileUploadModal(false)}
+          onSubmit={async (file) => {
+            await handleUploadFile(file);
+            setShowFileUploadModal(false);
+            alert('Arquivo enviado com sucesso.');
+          }}
+        />
         {loading ? (
            <div className="flex h-full items-center justify-center text-blue-600 font-bold text-xl">Carregando Sistema...</div>
         ) : (

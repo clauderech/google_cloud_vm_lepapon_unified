@@ -74,6 +74,8 @@ app.use('/api/cash-register', cashRegisterRouter);
 // Rotas de comandas
 const comandasRouter = require('./routes/comandas');
 app.use('/api/comandas', comandasRouter);
+const uploadRouter = require('./routes/upload');
+app.use('/api/upload', uploadRouter);
 // Rota de estado inicial
 const initialStateRouter = require('./routes/initialState');
 app.use('/api/initial-state', initialStateRouter);
