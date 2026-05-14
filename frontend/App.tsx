@@ -1754,7 +1754,7 @@ const App = () => {
         await addProduct(productToSave);
         setShowForm(false);
         setNewProd({ category: 'Geral', minStock: 10, unit: 'un', recipe: [] });
-        alert(`${mode === 'insumo' ? 'Insumo' : mode === 'prato' ? 'Prato' : mode === 'drink' ? 'Drink' : 'Item'} cadastrado com sucesso!`);
+        alert(`${mode === 'insumo' ? 'Insumo' : mode === 'insumo_bebida' ? 'Insumo Bebida' : mode === 'prato' ? 'Prato' : mode === 'drink' ? 'Drink' : mode === 'revenda' ? 'Revenda' : 'Item'} cadastrado com sucesso!`);
       } catch (err) {
         // Erro já foi tratado em addProduct
         console.error('[HANDLERSAVE][ERROR]', err);
@@ -1822,13 +1822,19 @@ const App = () => {
               >
                 Drink (Receita)
               </button>
+              <button 
+                onClick={() => setMode('revenda')} 
+                className={`px-4 py-2 rounded-lg font-bold whitespace-nowrap landscape:px-2 landscape:py-1 landscape:text-xs ${mode === 'revenda' ? 'bg-blue-100 text-blue-800' : 'text-gray-600'}`}
+              >
+                Revenda
+              </button>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4 landscape:grid-cols-2 landscape:gap-2">
               <input placeholder="Nome" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.name || ''} onChange={e => setNewProd({...newProd, name: e.target.value})} />
               <input placeholder="Categoria" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.category || ''} onChange={e => setNewProd({...newProd, category: e.target.value})} />
               
-              {(mode === 'insumo' || mode === 'insumo_bebida') && (
+              {(mode === 'insumo' || mode === 'insumo_bebida' || mode === 'revenda') && (
                 <>
                   <select className="border border-gray-400 p-2 rounded text-black bg-white" value={newProd.unit} onChange={e => setNewProd({...newProd, unit: e.target.value as any})}>
                     <option value="un">Unidade</option>
@@ -1847,7 +1853,7 @@ const App = () => {
                 </>
               )}
 
-              {(mode === 'prato' || mode === 'drink') && (
+              {(mode === 'prato' || mode === 'drink' || mode === 'revenda') && (
                 <>
                   <input type="number" placeholder="Preço de Venda" className="border border-gray-400 p-2 rounded font-bold text-black bg-white placeholder-gray-600" onChange={e => setNewProd({...newProd, price: Number(e.target.value)})} />
                 </>

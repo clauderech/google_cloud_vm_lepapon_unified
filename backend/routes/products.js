@@ -3,6 +3,11 @@ const express = require('express');
 const ProductModel = require('../models/product');
 const router = express.Router();
 
+const ALLOWED_PRODUCT_TYPES = ['prato', 'drink', 'insumo', 'insumo_bebida', 'revenda'];
+
+const validateProductType = (type) => {
+  return ALLOWED_PRODUCT_TYPES.includes(type);
+};
 
 // Listar todos os produtos
 router.get('/', async (req, res) => {
@@ -27,6 +32,19 @@ router.get('/pratos', async (req, res) => {
   }
 });
 
+// Listar apenas produtos do tipo 'revenda' com campos id e name
+router.get('/revendas', async (req, res) => {
+  try {
+    const products = await ProductModel.list();
+    const revendas = products
+      .filter(p => p.type === 'revenda')
+      .map(p => ({ id: p.id, name: p.name }));
+    res.json(revendas);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao listar revendas', details: err.message });
+  }
+});
+
 // Buscar produto por ID
 router.get('/:id', async (req, res) => {
   try {
@@ -41,6 +59,10 @@ router.get('/:id', async (req, res) => {
 // Criar produto
 router.post('/', async (req, res) => {
   try {
+    if (!validateProductType(req.body.type)) {
+      return res.status(400).json({ error: 'Tipo de produto inválido', details: `Tipos válidos: ${ALLOWED_PRODUCT_TYPES.join(', ')}` });
+    }
+
     console.log('[PRODUCT][ROUTE][CREATE][REQ]', {
       id: req.body.id,
       name: req.body.name,
@@ -75,6 +97,10 @@ router.post('/', async (req, res) => {
 // Atualizar produto
 router.put('/:id', async (req, res) => {
   try {
+    if (req.body.type && !validateProductType(req.body.type)) {
+      return res.status(400).json({ error: 'Tipo de produto inválido', details: `Tipos válidos: ${ALLOWED_PRODUCT_TYPES.join(', ')}` });
+    }
+
     await ProductModel.update(req.params.id, req.body);
     res.json({ success: true });
   } catch (err) {
