@@ -2382,8 +2382,27 @@ const App = () => {
                           <span className="text-gray-900 font-bold">{item.productName}</span>
                           <span className="text-gray-600 ml-2">(x{item.quantity})</span>
                         </div>
+
                         <div className="flex items-center gap-3">
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={item.unitPrice}
+                            onChange={e => {
+                              const updatedCart = [...purchaseCart];
+                              updatedCart[idx] = {
+                                ...updatedCart[idx],
+                                unitPrice: Number(e.target.value) || 0
+                              };
+                              setPurchaseCart(updatedCart);
+                            }}
+                            className="w-28 p-2 border border-gray-300 rounded-md text-right"
+                            title="Preço unitário"
+                          />
+
                           <span className="text-gray-800 font-medium">R$ {(item.quantity * item.unitPrice).toFixed(2)}</span>
+
                           <button 
                             onClick={() => {
                               const updatedCart = purchaseCart.filter((_, index) => index !== idx);
