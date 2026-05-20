@@ -45,6 +45,22 @@ router.get('/revendas', async (req, res) => {
   }
 });
 
+// Listar produtos ativos de tipos específicos (prato e revenda) com id, name e price
+router.get('/simple', async (req, res) => {
+  try {
+    const { db } = require('../config/knex');
+    const products = await db('products')
+      .select('id', 'name', 'price')
+      .where('is_active', 1)
+      .whereIn('type', ['prato', 'revenda'])
+      .orderBy('name', 'asc');
+    
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao listar produtos', details: err.message });
+  }
+});
+
 // Buscar produto por ID
 router.get('/:id', async (req, res) => {
   try {
