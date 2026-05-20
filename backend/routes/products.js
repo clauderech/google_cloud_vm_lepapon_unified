@@ -45,12 +45,12 @@ router.get('/revendas', async (req, res) => {
   }
 });
 
-// Listar produtos ativos de tipos específicos (prato e revenda) com id, name e price
+// Listar produtos ativos de tipos específicos (prato e revenda) com id, name, price e stock
 router.get('/simple', async (req, res) => {
   try {
     const { db } = require('../config/knex');
     const products = await db('products')
-      .select('id', 'name', 'price')
+      .select('id', 'name', 'price', 'stock')
       .where('is_active', 1)
       .whereIn('type', ['prato', 'revenda'])
       .orderBy('name', 'asc');
