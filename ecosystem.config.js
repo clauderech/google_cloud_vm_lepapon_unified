@@ -4,7 +4,7 @@ const path = require('path');
 
 module.exports = {
   apps: [
-    {
+    /*{
       name: 'webhook-whatsapp-meta',
       script: './processwhatsapp.js',
       cwd: path.join(__dirname, 'backend'),
@@ -27,7 +27,7 @@ module.exports = {
         NODE_ENV: 'development',
         PORT: 3000,
       },
-    },
+    },*/
     {
       name: 'app-server',
       script: './app.js',
