@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 
+const USE_API = process.env.NODE_ENV === 'production'; // Toggle para usar API ou mock local
+
 // Extende a interface Window para incluir __ERROR_LOGGER_INSTALLED__
 declare global {
   interface Window {
@@ -93,6 +95,7 @@ import Login from './components/Login';
 import KitchenDashboard from './components/KitchenDashboard';
 import ProductionManager from './components/ProductionManager';
 import { useAuth } from './hooks/useAuth';
+import { unstable_batchedUpdates } from 'react-dom';
 
 const App = () => {
       // Menu de navegação global para mobile
@@ -383,14 +386,25 @@ const App = () => {
     }
   };
 
-  const addCustomer = (customer: Omit<Customer, 'id' | 'created_at' | 'updated_at'>) => {
-    const newCustomer: Customer = {
-      ...customer,
-      id: `customer_${generateId()}`,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    setState(prev => ({ ...prev, customers: [...prev.customers, newCustomer] }));
+  const addCustomer = async (customer: Omit<Customer, 'id' | 'created_at' | 'updated_at'>) => {
+    if (USE_API) {
+      const result = await storageService.saveCustomer(customer);
+      const newCustomer: Customer = {
+        ...customer,
+        id: result.id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      setState(prev => ({ ...prev, customers: [...prev.customers, newCustomer] }));
+    } else {
+      const newCustomer: Customer = {
+        ...customer,
+        id: `customer_${generateId()}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      setState(prev => ({ ...prev, customers: [...prev.customers, newCustomer] }));
+    }
   };
 
   const updateCustomer = (id: string, data: Partial<Customer>) => {

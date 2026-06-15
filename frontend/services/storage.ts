@@ -149,6 +149,23 @@ export const storageService = {
   },
 
   // =========================================
+  // CLIENTES
+  // =========================================
+  
+  async saveCustomer(customer: Omit<Customer, 'id' | 'created_at' | 'updated_at'>): Promise<{ id: string }> {
+    if (USE_API) {
+      const response = await fetch(`${API_URL}/customers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(customer)
+      });
+      if (!response.ok) throw new Error('Erro ao criar cliente');
+      return response.json();
+    }
+    return { id: `customer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` };
+  },
+
+  // =========================================
   // COMANDAS
   // =========================================
   
