@@ -145,4 +145,42 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+const axios = require('axios');
+const fs = require('fs/promises');
+const path = require('path');
+
+const LEPAPON_REMOTE_URL = process.env.LEPAPON_REMOTE_URL || 'https://lepapon.com.br/api/atualiza-prod';
+const LEPAPON_REMOTE_TOKEN = process.env.LEPAPON_REMOTE_TOKEN || ''; // opcional, defina no .env se precisar
+
+// Envia produtos tipo prato/drink/revenda para lepapon remoto
+router.post('/send-to-lepapon', async (req, res) => {
+  try {
+    const products = await ProductModel.list();
+    const filtered = products.filter(p => ['prato', 'drink', 'revenda'].includes(p.type));
+
+    // opcional: ajuste do payload se o endpoint remoto exigir outro formato
+    const payload = { products: filtered };
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (LEPAPON_REMOTE_TOKEN) headers.Authorization = `Bearer ${LEPAPON_REMOTE_TOKEN}`;
+
+    const resp = await axios.post(LEPAPON_REMOTE_URL, payload, { headers, timeout: 15000 });
+
+    // opcional: salvar cópia local para auditoria (comente se não quiser)
+    // const exportDir = '/var/www/lepapon.com.br/Android-LePapon-Pedidos/files';
+    // await fs.mkdir(exportDir, { recursive: true });
+    // await fs.writeFile(path.join(exportDir, 'products.json'), JSON.stringify(filtered, null, 2), 'utf8');
+
+    res.json({
+      success: true,
+      remoteStatus: resp.status,
+      remoteData: resp.data,
+      sentCount: filtered.length
+    });
+  } catch (err) {
+    console.error('[PRODUCT][SEND_TO_LEPAPON][ERROR]', err?.message || err);
+    res.status(500).json({ error: 'Falha ao enviar produtos para Lepapon', details: err?.message || String(err) });
+  }
+});
+
 module.exports = router;
