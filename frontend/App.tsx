@@ -389,6 +389,7 @@ const App = () => {
   const addCustomer = async (customer: Omit<Customer, 'id' | 'created_at' | 'updated_at'>) => {
     if (USE_API) {
       const result = await storageService.saveCustomer(customer);
+      console.log('[CUSTOMER][CREATE][API]', result);
       const newCustomer: Customer = {
         ...customer,
         id: result.id,
