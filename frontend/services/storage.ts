@@ -387,7 +387,7 @@ export const storageService = {
   },
   // Função para atualizar stock no Lepapon para o gemini
   async patchProductStockToLepapon(productId: string, stock: number): Promise<void> {
-    const url = `https://lepapon.com.br/api/produtos/${encodeURIComponent(productId)}/stock`;
+    const url = `${API_URL}/products/${encodeURIComponent(productId)}/lepapon-stock`;
     const res = await fetch(url, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },

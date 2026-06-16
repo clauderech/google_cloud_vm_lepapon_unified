@@ -150,7 +150,38 @@ const fs = require('fs/promises');
 const path = require('path');
 
 const LEPAPON_REMOTE_URL = process.env.LEPAPON_REMOTE_URL || 'https://lepapon.com.br/api/atualiza-prod';
+const LEPAPON_REMOTE_STOCK_URL = process.env.LEPAPON_REMOTE_STOCK_URL || 'https://lepapon.com.br/api/produtos';
 const LEPAPON_REMOTE_TOKEN = process.env.LEPAPON_REMOTE_TOKEN || ''; // opcional, defina no .env se precisar
+
+// Proxy para atualizar stock de produto no Lepapon através do backend, evitando CORS
+router.patch('/:id/lepapon-stock', async (req, res) => {
+  try {
+    const { stock } = req.body;
+    if (stock === undefined || stock === null) {
+      return res.status(400).json({ error: 'Campo stock é obrigatório' });
+    }
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (LEPAPON_REMOTE_TOKEN) headers.Authorization = `Bearer ${LEPAPON_REMOTE_TOKEN}`;
+
+    const resp = await axios.patch(
+      `${LEPAPON_REMOTE_STOCK_URL}/${encodeURIComponent(req.params.id)}/stock`,
+      { stock },
+      { headers, timeout: 15000 }
+    );
+
+    res.json({
+      success: true,
+      remoteStatus: resp.status,
+      remoteData: resp.data
+    });
+  } catch (err) {
+    console.error('[PRODUCT][LEPAPON_STOCK_PATCH][ERROR]', err?.message || err);
+    const status = err.response?.status || 500;
+    const data = err.response?.data || err.message || String(err);
+    res.status(status).json({ error: 'Falha ao atualizar estoque no Lepapon', details: data });
+  }
+});
 
 // Envia produtos tipo prato/drink/revenda para lepapon remoto (campos mínimos)
 router.post('/send-to-lepapon', async (req, res) => {
