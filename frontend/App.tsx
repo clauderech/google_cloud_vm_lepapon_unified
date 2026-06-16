@@ -252,7 +252,7 @@ const App = () => {
   };
 
   // --- Sync calculado com Lepapon ---
-  useEffect(() => {
+  /*useEffect(() => {
     if (!USE_API) return;
     let mounted = true;
 
@@ -272,7 +272,7 @@ const App = () => {
 
     syncStocks();
     return () => { mounted = false; };
-  }, [state.products]);
+  }, [state.products]);*/
 
   // --- Actions ---
   const addSale = async (
