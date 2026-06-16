@@ -1,6 +1,7 @@
 
 const express = require('express');
 const ProductModel = require('../models/product');
+const StockService = require('../services/stockService');
 const router = express.Router();
 
 const ALLOWED_PRODUCT_TYPES = ['prato', 'drink', 'insumo', 'insumo_bebida', 'revenda'];
@@ -87,13 +88,26 @@ router.post('/', async (req, res) => {
     });
     
     const result = await ProductModel.create(req.body);
+    const createdProductId = req.body.id || result[0];
     
+    if (req.body.stock !== undefined && ['prato', 'revenda'].includes(req.body.type)) {
+      try {
+        await StockService.syncProductStockToLepapon(createdProductId);
+      } catch (syncErr) {
+        console.error('[PRODUCT][ROUTE][CREATE][LEPAPON_SYNC_ERROR]', {
+          productId: createdProductId,
+          error: syncErr.message,
+          stack: syncErr.stack
+        });
+      }
+    }
+
     console.log('[PRODUCT][ROUTE][CREATE][SUCCESS]', {
       id: req.body.id,
       resultId: result[0]
     });
     
-    res.status(201).json({ success: true, productId: req.body.id || result[0] });
+    res.status(201).json({ success: true, productId: createdProductId });
   } catch (err) {
     console.error('[PRODUCT][ROUTE][CREATE][ERROR]', {
       id: req.body.id,
@@ -117,7 +131,27 @@ router.put('/:id', async (req, res) => {
       return res.status(400).json({ error: 'Tipo de produto inválido', details: `Tipos válidos: ${ALLOWED_PRODUCT_TYPES.join(', ')}` });
     }
 
-    await ProductModel.update(req.params.id, req.body);
+    const existingProduct = await ProductModel.getById(req.params.id);
+    if (!existingProduct) {
+      return res.status(404).json({ error: 'Produto não encontrado' });
+    }
+
+    const { stock, ...updateData } = req.body;
+    if (Object.keys(updateData).length > 0) {
+      await ProductModel.update(req.params.id, updateData);
+    }
+
+    if (stock !== undefined && stock !== null) {
+      await StockService.adjustStock({
+        productId: req.params.id,
+        newStock: parseFloat(stock),
+        reason: 'Atualização de produto',
+        userId: req.body.userId || null
+      });
+    } else if (req.body.type && req.body.type !== existingProduct.type && ['prato', 'revenda'].includes(req.body.type)) {
+      await StockService.syncProductStockToLepapon(req.params.id);
+    }
+
     res.json({ success: true });
   } catch (err) {
     console.error('[ERRO PRODUTO PUT]', {

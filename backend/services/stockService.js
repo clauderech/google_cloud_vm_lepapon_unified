@@ -1,5 +1,9 @@
+const axios = require('axios');
 const ProductModel = require('../models/product');
 const StockMovementModel = require('../models/stockMovement');
+
+const LEPAPON_REMOTE_STOCK_URL = process.env.LEPAPON_REMOTE_STOCK_URL || 'https://lepapon.com.br/api/produtos';
+const LEPAPON_REMOTE_TOKEN = process.env.LEPAPON_REMOTE_TOKEN || '';
 
 /**
  * Service centralizado para gerenciamento de estoque
@@ -64,6 +68,22 @@ class StockService {
         quantity: quantityNum
       });
 
+      // Sincroniza estoque com Lepapon para produtos relevantes
+      try {
+        const productType = product.type;
+        if (productType === 'revenda' || productType === 'prato') {
+          await this.syncProductStockToLepapon(productId);
+        } else if (productType === 'insumo' || productType === 'insumo_bebida') {
+          await this.syncRecipeProductsAffectedByIngredient(productId);
+        }
+      } catch (syncError) {
+        console.error('[STOCK_SERVICE][LEPAPON_SYNC][ERROR]', {
+          productId,
+          error: syncError.message,
+          stack: syncError.stack
+        });
+      }
+
       return {
         success: true,
         productId,
@@ -79,6 +99,85 @@ class StockService {
         stack: error.stack
       });
       throw error;
+    }
+  }
+
+  async sendStockToLepapon(productId, stock) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (LEPAPON_REMOTE_TOKEN) headers.Authorization = `Bearer ${LEPAPON_REMOTE_TOKEN}`;
+
+    try {
+      const response = await axios.patch(
+        `${LEPAPON_REMOTE_STOCK_URL}/${encodeURIComponent(productId)}/stock`,
+        { stock },
+        { headers, timeout: 15000 }
+      );
+
+      console.log('[STOCK_SERVICE][LEPAPON_SYNC][SUCCESS]', {
+        productId,
+        stock,
+        status: response.status
+      });
+    } catch (err) {
+      console.error('[STOCK_SERVICE][LEPAPON_SYNC][HTTP_ERROR]', {
+        productId,
+        stock,
+        error: err.message,
+        status: err.response?.status,
+        data: err.response?.data
+      });
+      throw err;
+    }
+  }
+
+  async calculateLepaponStock(product) {
+    if (!product) return 0;
+
+    if (product.type === 'revenda') {
+      return Math.max(0, Math.floor(parseFloat(product.stock) || 0));
+    }
+
+    if ((product.type === 'prato' || product.type === 'drink') && product.recipe && product.recipe.length > 0) {
+      let maxCount = Infinity;
+      for (const recipeItem of product.recipe) {
+        const ingredient = await ProductModel.getById(recipeItem.ingredientId);
+        if (!ingredient) return 0;
+        const qtyNeeded = parseFloat(recipeItem.quantity) || 0;
+        if (qtyNeeded <= 0) return 0;
+        const possible = Math.floor((parseFloat(ingredient.stock) || 0) / qtyNeeded);
+        maxCount = Math.min(maxCount, possible);
+      }
+      return maxCount === Infinity ? 0 : Math.max(0, maxCount);
+    }
+
+    return 0;
+  }
+
+  async syncProductStockToLepapon(productId) {
+    const product = await ProductModel.getById(productId);
+    if (!product) {
+      console.warn('[STOCK_SERVICE][LEPAPON_SYNC][PRODUCT_NOT_FOUND]', { productId });
+      return;
+    }
+
+    if (!['prato', 'revenda'].includes(product.type)) {
+      return;
+    }
+
+    const stock = await this.calculateLepaponStock(product);
+    await this.sendStockToLepapon(product.id, stock);
+  }
+
+  async syncRecipeProductsAffectedByIngredient(ingredientId) {
+    const products = await ProductModel.list();
+    const affected = products.filter(product =>
+      (product.type === 'prato' || product.type === 'drink') &&
+      Array.isArray(product.recipe) &&
+      product.recipe.some(item => item.ingredientId === ingredientId)
+    );
+
+    for (const product of affected) {
+      await this.syncProductStockToLepapon(product.id);
     }
   }
 
