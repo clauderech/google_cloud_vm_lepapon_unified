@@ -25,6 +25,27 @@ const API_URL = process.env.NODE_ENV === 'production'
 
 const LOCAL_STORAGE_KEY = 'lanchonete_app_state_v5';
 
+export function calculateMaxProduciableFor(productId: string, allProducts: Product[]): number {
+  const product = allProducts.find(p => p.id === productId);
+  if (!product) return 0;
+  if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda') {
+    return Number(product.stock) || 0;
+  }
+  if (!product.recipe || product.recipe.length === 0) return 0;
+
+  let maxCount = Infinity;
+  for (const item of product.recipe) {
+    const qtyNeeded = Number(item.quantity);
+    if (!qtyNeeded || qtyNeeded <= 0) return 0;
+    const ingredient = allProducts.find(p => p.id === item.ingredientId);
+    if (!ingredient) return 0;
+    const possible = Math.floor((Number(ingredient.stock) || 0) / qtyNeeded);
+    if (possible < maxCount) maxCount = possible;
+  }
+
+  return maxCount === Infinity ? 0 : maxCount;
+}
+
 export const storageService = {
     async updateProduct(product: Product): Promise<void> {
       if (USE_API) {

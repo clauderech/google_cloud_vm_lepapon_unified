@@ -79,7 +79,7 @@ import {
 // Define PaymentMethod type if not imported from types
 type PaymentMethod = 'cash' | 'card' | 'pix' | 'credit';
 import { generateBusinessInsight, suggestRestockOrder } from './services/geminiService';
-import { storageService } from './services/storage';
+import { storageService, calculateMaxProduciableFor } from './services/storage';
 import FileUploadModal from './components/FileUploadModal';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Legend } from 'recharts';
 import FinancialDashboard from './components/FinancialDashboard';
@@ -251,29 +251,7 @@ const App = () => {
     return maxCount === Infinity ? 0 : maxCount;
   };
 
-  // --- Sync calculado com Lepapon ---
-  /*useEffect(() => {
-    if (!USE_API) return;
-    let mounted = true;
-
-    const syncStocks = async () => {
-      for (const p of state.products) {
-        if (p.type === 'prato' || p.type === 'revenda') {
-          const computed = calculateMaxProduciable(p, state.products);
-          try {
-            await storageService.patchProductStockToLepapon(p.id, Number(computed || 0));
-            if (mounted) console.log('[LEPAPON][AUTO_SYNC]', { id: p.id, stock: computed });
-          } catch (err) {
-            console.error('[LEPAPON][AUTO_SYNC][ERROR]', p.id, err);
-          }
-        }
-      }
-    };
-
-    syncStocks();
-    return () => { mounted = false; };
-  }, [state.products]);*/
-
+  
   // --- Actions ---
   const addSale = async (
     items: CartItem[], 
@@ -1752,13 +1730,14 @@ const App = () => {
           try {
             await storageService.updateProduct(updated);
             if (updated.type === 'prato' || updated.type === 'revenda') {
-            try {
-              await storageService.patchProductStockToLepapon(updated.id, Number(updated.stock || 0));
-              console.log('[LEPAPON][STOCK][SENT]', { id: updated.id, stock: updated.stock });
-            } catch (err) {
-              console.error('[LEPAPON][STOCK][ERROR]', err);
+              try {
+                const maxProduciable = updated.type === 'prato' ? calculateMaxProduciableFor(updated.id, state.products) : updated.stock;
+                await storageService.patchProductStockToLepapon(updated.id, Number(maxProduciable || 0));
+                console.log('[LEPAPON][STOCK][SENT]', { id: updated.id, stock: maxProduciable });
+              } catch (err) {
+                console.error('[LEPAPON][STOCK][ERROR]', err);
+              }
             }
-          }
           } catch (err) {
             alert('Erro ao salvar produto no banco!');
           }
@@ -2008,7 +1987,8 @@ const App = () => {
                               try {
                                 await storageService.updateProduct({ ...p, stock: newStock });
                                 if (p.type === 'prato' || p.type === 'revenda') {
-                                  await storageService.patchProductStockToLepapon(p.id, newStock);
+                                  const maxProduciable = p.type === 'prato' ?  calculateMaxProduciableFor(p.id, state.products) : newStock;
+                                  await storageService.patchProductStockToLepapon(p.id, maxProduciable);
                                 }
                               } catch (err) {
                                 alert('Erro ao salvar estoque no banco!');
