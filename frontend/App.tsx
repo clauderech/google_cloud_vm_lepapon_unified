@@ -251,6 +251,29 @@ const App = () => {
     return maxCount === Infinity ? 0 : maxCount;
   };
 
+  // --- Sync calculado com Lepapon ---
+  useEffect(() => {
+    if (!USE_API) return;
+    let mounted = true;
+
+    const syncStocks = async () => {
+      for (const p of state.products) {
+        if (p.type === 'prato' || p.type === 'revenda') {
+          const computed = calculateMaxProduciable(p, state.products);
+          try {
+            await storageService.patchProductStockToLepapon(p.id, Number(computed || 0));
+            if (mounted) console.log('[LEPAPON][AUTO_SYNC]', { id: p.id, stock: computed });
+          } catch (err) {
+            console.error('[LEPAPON][AUTO_SYNC][ERROR]', p.id, err);
+          }
+        }
+      }
+    };
+
+    syncStocks();
+    return () => { mounted = false; };
+  }, [state.products]);
+
   // --- Actions ---
   const addSale = async (
     items: CartItem[], 
