@@ -166,7 +166,7 @@ router.post('/send-to-lepapon', async (req, res) => {
         updated_at: p.updated_at
       }));
 
-    const payload = { products: filtered };
+    const payload = filtered;
 
     const headers = { 'Content-Type': 'application/json' };
     if (LEPAPON_REMOTE_TOKEN) headers.Authorization = `Bearer ${LEPAPON_REMOTE_TOKEN}`;
