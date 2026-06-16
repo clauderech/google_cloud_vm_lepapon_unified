@@ -1728,6 +1728,14 @@ const App = () => {
           }));
           try {
             await storageService.updateProduct(updated);
+            if (updated.type === 'prato' || updated.type === 'revenda') {
+            try {
+              await storageService.patchProductStockToLepapon(updated.id, Number(updated.stock || 0));
+              console.log('[LEPAPON][STOCK][SENT]', { id: updated.id, stock: updated.stock });
+            } catch (err) {
+              console.error('[LEPAPON][STOCK][ERROR]', err);
+            }
+          }
           } catch (err) {
             alert('Erro ao salvar produto no banco!');
           }
@@ -1977,7 +1985,7 @@ const App = () => {
                               try {
                                 await storageService.updateProduct({ ...p, stock: newStock });
                                 if (p.type === 'prato' || p.type === 'revenda') {
-                                  await storageService.patchProductStockToLepapon({ ...p, stock: newStock });
+                                  await storageService.patchProductStockToLepapon(p.id, newStock);
                                 }
                               } catch (err) {
                                 alert('Erro ao salvar estoque no banco!');

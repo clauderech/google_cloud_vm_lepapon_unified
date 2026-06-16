@@ -365,23 +365,16 @@ export const storageService = {
     return { productId: product.id };
   },
   // Função para atualizar stock no Lepapon para o gemini
-  async patchProductStockToLepapon(product: Product): Promise<void> {
-    if (!USE_API) return;
-    if (!['prato', 'revenda'].includes(product.type)) return;
-
-    const url = `https://lepapon.com.br/api/produtos/${encodeURIComponent(product.id)}/stock`;
-
-    const response = await fetch(url, {
+  async patchProductStockToLepapon(productId: string, stock: number): Promise<void> {
+    const url = `https://lepapon.com.br/api/produtos/${encodeURIComponent(productId)}/stock`;
+    const res = await fetch(url, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ stock: product.stock })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stock })
     });
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => response.statusText);
-      throw new Error(`Falha Lepapon stock patch: ${response.status} ${errorText}`);
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`Lepapon update failed: ${res.status} ${res.statusText} ${body}`);
     }
   },
 
