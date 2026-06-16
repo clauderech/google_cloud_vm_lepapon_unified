@@ -1976,6 +1976,9 @@ const App = () => {
                               }));
                               try {
                                 await storageService.updateProduct({ ...p, stock: newStock });
+                                if (p.type === 'prato' || p.type === 'revenda') {
+                                  await storageService.patchProductStockToLepapon({ ...p, stock: newStock });
+                                }
                               } catch (err) {
                                 alert('Erro ao salvar estoque no banco!');
                               }
