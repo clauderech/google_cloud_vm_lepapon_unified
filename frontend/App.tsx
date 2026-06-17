@@ -1186,15 +1186,7 @@ const App = () => {
                     : '1fr'
             }}
           >
-            {filteredProducts.slice().sort((p1, p2) => {
-              const max1 = calculateMaxProduciable(p1, state.products);
-              const cur1 = cart.find(c => c.productId === p1.id)?.quantity || 0;
-              const avail1 = max1 - cur1;
-              const max2 = calculateMaxProduciable(p2, state.products);
-              const cur2 = cart.find(c => c.productId === p2.id)?.quantity || 0;
-              const avail2 = max2 - cur2;
-              return avail1 - avail2;
-            }).map(product => {
+            {filteredProducts.map(product => {
               const maxStock = calculateMaxProduciable(product, state.products);
               const currentInCart = cart.find(c => c.productId === product.id)?.quantity || 0;
               const available = maxStock - currentInCart;
@@ -1807,13 +1799,20 @@ const App = () => {
         </div>
         {/* Tabs de tipos de produto */}
         <div className="flex gap-2 mb-4 overflow-x-auto landscape:gap-1 landscape:text-sm">
-          {['insumo', 'insumo_bebida', 'prato', 'drink', 'revenda'].map(tipo => (
+          {[
+            { key: 'insumo', label: 'insumo', comment: 'Insumos de comida: matérias-primas compradas e usadas diretamente em receitas ou vendas.' },
+            { key: 'insumo_bebida', label: 'insumo bebida', comment: 'Insumos de bebida: ingredientes líquidos e insumos específicos para bebidas.' },
+            { key: 'prato', label: 'prato', comment: 'Pratos: produtos finais preparados com receita, estoque calculado a partir dos ingredientes.' },
+            { key: 'drink', label: 'drink', comment: 'Drinks: bebidas com receita, estoque calculado a partir dos insumos de bebida.' },
+            { key: 'revenda', label: 'revenda', comment: 'Revenda: itens comprados para revenda sem produção, controlados por estoque direto.' }
+          ].map(tabOption => (
             <button
-              key={tipo}
-              className={`px-4 py-2 rounded-lg font-bold capitalize whitespace-nowrap landscape:px-2 landscape:py-1 landscape:text-xs ${tab === tipo ? 'bg-blue-100 text-blue-800' : 'text-gray-600 bg-gray-50'}`}
-              onClick={() => setTab(tipo as any)}
+              key={tabOption.key}
+              className={`px-4 py-2 rounded-lg font-bold capitalize whitespace-nowrap landscape:px-2 landscape:py-1 landscape:text-xs ${tab === tabOption.key ? 'bg-blue-100 text-blue-800' : 'text-gray-600 bg-gray-50'}`}
+              onClick={() => setTab(tabOption.key as any)}
+              title={tabOption.comment}
             >
-              {tipo.replace('_', ' ')}
+              {tabOption.label}
             </button>
           ))}
         </div>
@@ -1976,6 +1975,12 @@ const App = () => {
                         p.name.toLowerCase().includes(termo) ||
                         (p.category && p.category.toLowerCase().includes(termo))
                       );
+                    })
+                    .sort((a, b) => {
+                      if (tab === 'insumo') {
+                        if (a.stock !== b.stock) return a.stock - b.stock;
+                      }
+                      return a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' });
                     })
                     .map(p => (
                       <tr key={p.id} className="hover:bg-gray-50 text-gray-900">
