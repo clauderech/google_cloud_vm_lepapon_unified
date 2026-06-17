@@ -1186,7 +1186,15 @@ const App = () => {
                     : '1fr'
             }}
           >
-            {filteredProducts.map(product => {
+            {filteredProducts.slice().sort((p1, p2) => {
+              const max1 = calculateMaxProduciable(p1, state.products);
+              const cur1 = cart.find(c => c.productId === p1.id)?.quantity || 0;
+              const avail1 = max1 - cur1;
+              const max2 = calculateMaxProduciable(p2, state.products);
+              const cur2 = cart.find(c => c.productId === p2.id)?.quantity || 0;
+              const avail2 = max2 - cur2;
+              return avail1 - avail2;
+            }).map(product => {
               const maxStock = calculateMaxProduciable(product, state.products);
               const currentInCart = cart.find(c => c.productId === product.id)?.quantity || 0;
               const available = maxStock - currentInCart;
