@@ -114,6 +114,16 @@ const App = () => {
   // --- Authentication ---
   const { user, isAuthenticated, login, logout, hasPermission } = useAuth();
   
+  // Debug authentication state
+  useEffect(() => {
+    console.log('[App] Auth state updated:', {
+      isAuthenticated,
+      user: user?.name || 'No user',
+      role: user?.role || 'No role',
+      timestamp: new Date().toISOString()
+    });
+  }, [isAuthenticated, user]);
+  
   // --- State Management ---
   const [view, setView] = useState<PageView>('dashboard');
   const [loading, setLoading] = useState(true);

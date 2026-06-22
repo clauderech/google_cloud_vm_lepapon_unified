@@ -10,15 +10,20 @@ const USER_STORAGE_KEY = 'lanchonete_user';
  * Armazena o token de autenticação
  */
 export const setAuthToken = (token: string) => {
+  console.log('[AUTH] Salvando token no localStorage:', token.substring(0, 30) + '...');
   localStorage.setItem(STORAGE_KEY, token);
-  console.log('[AUTH] Token armazenado');
+  // Verificar se foi salvo
+  const verified = localStorage.getItem(STORAGE_KEY);
+  console.log('[AUTH] Token verificado após save:', verified ? verified.substring(0, 30) + '...' : 'FALHOU!');
 };
 
 /**
  * Obtém o token de autenticação armazenado
  */
 export const getAuthToken = (): string | null => {
-  return localStorage.getItem(STORAGE_KEY);
+  const token = localStorage.getItem(STORAGE_KEY);
+  console.log('[AUTH] Recuperando token do localStorage:', token ? token.substring(0, 30) + '...' : 'NULL');
+  return token;
 };
 
 /**
@@ -51,17 +56,27 @@ export const getAuthHeaders = (): Record<string, string> => {
  */
 export const login = async (username: string, password: string) => {
   try {
+    console.log('[AUTH] Iniciando login com username:', username);
     const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
     });
 
+    console.log('[AUTH] Login response status:', response.status);
+
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[AUTH] Login failed with status', response.status, ':', errorText);
       throw new Error(`Login failed: ${response.statusText}`);
     }
 
     const data = await response.json();
+    console.log('[AUTH] Backend retornou:', {
+      token: data.token ? data.token.substring(0, 30) + '...' : 'MISSING',
+      user: data.user?.name || 'MISSING',
+      role: data.user?.role || 'MISSING'
+    });
 
     // Armazenar token e dados do usuário
     setAuthToken(data.token);

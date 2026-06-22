@@ -73,19 +73,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const savedToken = authService.getAuthToken();
     const storedUser = authService.getStoredUser();
 
+    console.log('[AuthProvider] Inicializando context...');
+    console.log('[AuthProvider] savedSession:', savedSession ? 'Found' : 'Not found');
+    console.log('[AuthProvider] savedToken:', savedToken ? savedToken.substring(0, 30) + '...' : 'Not found');
+    console.log('[AuthProvider] storedUser:', storedUser);
+
     if (savedToken) {
+      console.log('[AuthProvider] Token encontrado, restaurando sessão...');
       setToken(savedToken);
       if (storedUser) {
+        console.log('[AuthProvider] Usando storedUser:', storedUser);
         setUser(storedUser);
       } else if (savedSession) {
         try {
           const parsed = JSON.parse(savedSession);
+          console.log('[AuthProvider] Usando parsed savedSession:', parsed);
           setUser(parsed);
         } catch (e) {
           console.error('Erro ao carregar sessão:', e);
           localStorage.removeItem(STORAGE_KEY);
         }
       }
+    } else {
+      console.log('[AuthProvider] Nenhum token encontrado no localStorage');
     }
   }, []);
 

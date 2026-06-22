@@ -17,6 +17,11 @@ const ProductionManager: React.FC<ProductionManagerProps> = ({ onError }) => {
   const [productionQuantities, setProductionQuantities] = useState<{[key: string]: number}>({});
   const [productionNotes, setProductionNotes] = useState<{[key: string]: string}>({});
 
+  // Monitore token updates
+  useEffect(() => {
+    console.log('[ProductionManager] Token updated:', token ? token.substring(0, 30) + '...' : 'NULL/EMPTY');
+  }, [token]);
+
   // Buscar produções disponíveis
   const fetchAvailableProductions = async () => {
     try {
