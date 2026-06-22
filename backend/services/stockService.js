@@ -587,7 +587,7 @@ class StockService {
     return products.filter(product => {
       const stock = parseFloat(product.stock) || 0;
       const minStock = parseFloat(product.min_stock) || 0;
-      return stock <= minStock && product.type === 'insumo';
+      return stock <= minStock && product.type === 'insumo' && product.is_active === 1;
     }).map(product => ({
       productId: product.id,
       productName: product.name,
