@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const ProductionController = require('../controllers/production');
+const { requireAuth } = require('../middleware/authUnified');
 const { requireOperador } = require('../middleware/roleAuth');
 
 console.log('[PRODUCTION][ROUTES] Production routes loaded successfully');
@@ -20,7 +21,7 @@ router.get('/test', (req, res) => {
  * Lista insumos que podem ser produzidos (têm receitas)
  * Retorna informações de disponibilidade baseado no estoque dos ingredientes
  */
-router.get('/available', requireOperador, (req, res) => {
+router.get('/available', requireAuth, requireOperador, (req, res) => {
   console.log('[PRODUCTION][ROUTES] GET /available called');
   ProductionController.listAvailableProductions(req, res);
 });
@@ -30,13 +31,13 @@ router.get('/available', requireOperador, (req, res) => {
  * Produz um insumo caseiro consumindo ingredientes conforme receita
  * Body: { productId: string, quantity: number, notes?: string }
  */
-router.post('/produce', requireOperador, ProductionController.produceItem);
+router.post('/produce', requireAuth, requireOperador, ProductionController.produceItem);
 
 /**
  * GET /api/production/history
  * Obtém histórico de produções realizadas
  * Query params: productId (opcional), limit (padrão 50)
  */
-router.get('/history', requireOperador, ProductionController.getProductionHistory);
+router.get('/history', requireAuth, requireOperador, ProductionController.getProductionHistory);
 
 module.exports = router;
