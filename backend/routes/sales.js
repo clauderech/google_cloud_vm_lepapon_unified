@@ -1,10 +1,11 @@
 
 const express = require('express');
 const SaleModel = require('../models/sale');
+const { requireAuth } = require('../middleware/authUnified');
 const router = express.Router();
 
 // Listar todas as vendas
-router.get('/', async (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
   try {
     const sales = await SaleModel.list();
     res.json(sales);
@@ -25,7 +26,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Criar venda
-router.post('/', async (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
   try {
     console.log('[SALES][POST][REQ]', { 
       bodySize: JSON.stringify(req.body).length,
@@ -63,7 +64,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Remover venda
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth, async (req, res) => {
   try {
     await SaleModel.remove(req.params.id);
     res.json({ success: true });

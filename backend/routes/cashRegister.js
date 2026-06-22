@@ -1,10 +1,11 @@
 
 const express = require('express');
 const { db } = require('../config/knex');
+const { requireAuth } = require('../middleware/authUnified');
 const router = express.Router();
 
 // Abrir caixa
-router.post('/open', async (req, res) => {
+router.post('/open', requireAuth, async (req, res) => {
   // Aceita tanto camelCase quanto snake_case
   const initial_amount = req.body.initial_amount ?? req.body.initialAmount;
   const opened_by = req.body.opened_by ?? req.body.openedBy;
@@ -34,7 +35,7 @@ router.post('/open', async (req, res) => {
 });
 
 // Fechar caixa
-router.post('/close', async (req, res) => {
+router.post('/close', requireAuth, async (req, res) => {
   // Aceita tanto id quanto registerId, e tanto final_amount quanto actualAmount
   const id = req.body.id ?? req.body.registerId;
   const final_amount = req.body.final_amount ?? req.body.actualAmount;

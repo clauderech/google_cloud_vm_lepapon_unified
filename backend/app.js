@@ -53,6 +53,11 @@ app.use((req, res, next) => {
   req.db = db;
   next();
 });
+
+// Rotas de autenticação (PUBLIC - sem middleware)
+const authRouter = require('./routes/auth');
+app.use('/api/auth', authRouter);
+
 const productsRouter = require('./routes/products');
 app.use('/api/products', productsRouter);
 // Rotas de fornecedores

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Lock, User, Eye, EyeOff, LogIn } from 'lucide-react';
-import { User as UserType } from '../hooks/useAuth';
+import { User as UserType, useAuth } from '../hooks/useAuth';
 
 interface LoginProps {
   onLogin: (user: UserType) => void;
@@ -12,6 +12,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const { loginWithCredentials } = useAuth();
 
   // Usuários de demonstração (em produção, verificar no backend)
   const demoUsers = [
@@ -25,28 +26,50 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     setError('');
     setLoading(true);
 
-    // Simular delay de rede
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    // Verificar credenciais
-    const user = demoUsers.find(u => u.username === username && u.password === password);
-
-    if (user) {
-      // Salvar sessão
-      const session: UserType = {
-        id: user.id,
-        name: user.name,
-        role: user.role as 'admin' | 'operador' | 'caixa',
-        loginAt: new Date().toISOString()
-      };
-      
-      localStorage.setItem('lanchonete_session', JSON.stringify(session));
-      onLogin(session);
-    } else {
-      setError('Usuário ou senha incorretos');
+    try {
+      // Tentar login via backend
+      try {
+        await loginWithCredentials(username, password);
+        
+        // Se sucesso, obter dados do usuário e chamar onLogin
+        const user = demoUsers.find(u => u.username === username);
+        if (user) {
+          const session: UserType = {
+            id: user.id,
+            name: user.name,
+            role: user.role as 'admin' | 'operador' | 'caixa',
+            loginAt: new Date().toISOString()
+          };
+          onLogin(session);
+        }
+      } catch (backendError) {
+        // Se backend falhar, usar validação local (fallback)
+        console.warn('Backend login failed, usando validação local:', backendError);
+        
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const user = demoUsers.find(u => u.username === username && u.password === password);
+        if (user) {
+          const session: UserType = {
+            id: user.id,
+            name: user.name,
+            role: user.role as 'admin' | 'operador' | 'caixa',
+            loginAt: new Date().toISOString()
+          };
+          
+          // Armazenar sessão localmente (sem token backend)
+          localStorage.setItem('lanchonete_session', JSON.stringify(session));
+          onLogin(session);
+        } else {
+          setError('Usuário ou senha incorretos');
+        }
+      }
+    } catch (err) {
+      setError('Erro ao fazer login. Tente novamente.');
+      console.error('Login error:', err);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (

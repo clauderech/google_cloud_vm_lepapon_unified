@@ -1,10 +1,11 @@
 
 const express = require('express');
 const PurchaseModel = require('../models/purchase');
+const { requireAuth } = require('../middleware/authUnified');
 const router = express.Router();
 
 // Listar todas as compras
-router.get('/', async (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
   try {
     const purchases = await PurchaseModel.list();
     res.json(purchases);
@@ -25,7 +26,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Criar compra
-router.post('/', async (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
   try {
     const result = await PurchaseModel.create(req.body);
     res.status(201).json({ success: true, id: result[0] });
@@ -45,7 +46,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Remover compra
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth, async (req, res) => {
   try {
     await PurchaseModel.remove(req.params.id);
     res.json({ success: true });
