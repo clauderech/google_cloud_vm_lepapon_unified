@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Factory, Plus, Clock, Package, AlertCircle, CheckCircle, Loader } from 'lucide-react';
 import { ProductionItem, ProductionHistory } from '../types';
+import { useAuth } from '../hooks/useAuth';
 
 interface ProductionManagerProps {
   onError: (message: string) => void;
 }
 
 const ProductionManager: React.FC<ProductionManagerProps> = ({ onError }) => {
+  const { token } = useAuth();
   const [activeTab, setActiveTab] = useState<'available' | 'history'>('available');
   const [availableProductions, setAvailableProductions] = useState<ProductionItem[]>([]);
   const [productionHistory, setProductionHistory] = useState<ProductionHistory[]>([]);
@@ -32,8 +34,13 @@ const ProductionManager: React.FC<ProductionManagerProps> = ({ onError }) => {
         console.error('[PRODUCTION_FRONTEND] Test route failed:', testError);
       }
       
-      // Agora fazer a requisição real
-      const response = await fetch('/api/production/available');
+      // Agora fazer a requisição real com token
+      const response = await fetch('/api/production/available', {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
       console.log('[PRODUCTION_FRONTEND] Available response status:', response.status);
       console.log('[PRODUCTION_FRONTEND] Available response headers:', response.headers);
       
@@ -61,7 +68,12 @@ const ProductionManager: React.FC<ProductionManagerProps> = ({ onError }) => {
   const fetchProductionHistory = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/production/history?limit=20');
+      const response = await fetch('/api/production/history?limit=20', {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
       
       if (!response.ok) {
         throw new Error('Erro ao buscar histórico');
@@ -85,7 +97,8 @@ const ProductionManager: React.FC<ProductionManagerProps> = ({ onError }) => {
       const response = await fetch('/api/production/produce', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           productId,
