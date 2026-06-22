@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, createElement } from 'react';
 import * as authService from '../services/authService';
 
 export interface User {
@@ -12,8 +12,8 @@ export interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   token: string | null;
-  login: (user: User) => void;
-  loginWithCredentials: (username: string, password: string) => Promise<void>;
+  login: (user: User, authToken?: string) => void;
+  loginWithCredentials: (username: string, password: string) => Promise<{ user: User; token: string }>;
   logout: () => Promise<void>;
   hasPermission: (permission: string) => boolean;
   isLoading: boolean;
@@ -21,6 +21,7 @@ export interface AuthState {
 }
 
 const STORAGE_KEY = 'lanchonete_session';
+const AuthContext = createContext<AuthState | undefined>(undefined);
 
 // Definição de permissões por role
 const PERMISSIONS = {
@@ -60,7 +61,7 @@ const PERMISSIONS = {
   ]
 };
 
-export const useAuth = (): AuthState => {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -88,26 +89,44 @@ export const useAuth = (): AuthState => {
     }
   }, []);
 
-  const login = (userData: User) => {
-    setUser(userData);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
+  const login = (userData: User, authToken?: string) => {
+    const normalizedUser: User = {
+      ...userData,
+      loginAt: userData.loginAt || new Date().toISOString()
+    };
+
+    let nextToken = authToken || authService.getAuthToken();
+    if (!nextToken) {
+      // Fallback para login local/offline sem backend.
+      nextToken = `session_${normalizedUser.role}_${normalizedUser.id}_${Date.now()}`;
+      authService.setAuthToken(nextToken);
+    }
+
+    setToken(nextToken);
+    setUser(normalizedUser);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedUser));
     setError(null);
   };
 
-  const loginWithCredentials = async (username: string, password: string) => {
+  const loginWithCredentials = async (username: string, password: string): Promise<{ user: User; token: string }> => {
     setIsLoading(true);
     setError(null);
 
     try {
       const data = await authService.login(username, password);
-      
-      setUser(data.user);
+      const normalizedUser: User = {
+        ...data.user,
+        loginAt: data.user.loginAt || new Date().toISOString()
+      };
+
+      setUser(normalizedUser);
       setToken(data.token);
-      
+
       // Manter compatibilidade com localStorage antigo
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data.user));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedUser));
       
       console.log('[useAuth] Login bem-sucedido com credenciais');
+      return { user: normalizedUser, token: data.token };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao fazer login';
       setError(errorMessage);
@@ -145,7 +164,7 @@ export const useAuth = (): AuthState => {
     return rolePermissions.includes(permission);
   };
 
-  return {
+  const value: AuthState = {
     user,
     token,
     isAuthenticated: !!user && !!token,
@@ -156,4 +175,15 @@ export const useAuth = (): AuthState => {
     isLoading,
     error
   };
+
+  return createElement(AuthContext.Provider, { value }, children);
+};
+
+export const useAuth = (): AuthState => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth deve ser usado dentro de AuthProvider');
+  }
+
+  return context;
 };

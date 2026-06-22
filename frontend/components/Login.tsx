@@ -3,7 +3,7 @@ import { Lock, User, Eye, EyeOff, LogIn } from 'lucide-react';
 import { User as UserType, useAuth } from '../hooks/useAuth';
 
 interface LoginProps {
-  onLogin: (user: UserType) => void;
+  onLogin: (user: UserType, authToken?: string) => void;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
@@ -29,19 +29,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     try {
       // Tentar login via backend
       try {
-        await loginWithCredentials(username, password);
-        
-        // Se sucesso, obter dados do usuário e chamar onLogin
-        const user = demoUsers.find(u => u.username === username);
-        if (user) {
-          const session: UserType = {
-            id: user.id,
-            name: user.name,
-            role: user.role as 'admin' | 'operador' | 'caixa',
-            loginAt: new Date().toISOString()
-          };
-          onLogin(session);
-        }
+        const authData = await loginWithCredentials(username, password);
+        onLogin(authData.user, authData.token);
       } catch (backendError) {
         // Se backend falhar, usar validação local (fallback)
         console.warn('Backend login failed, usando validação local:', backendError);
