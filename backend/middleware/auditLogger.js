@@ -127,7 +127,8 @@ const recordAudit = async (req, statusCode, responseBody, error = null) => {
       duration_ms: duration,
       ip_address: req.ip || req.connection.remoteAddress,
       user_agent: req.get('user-agent'),
-      timestamp: new Date().toISOString(),
+      // Usar Date nativo para MySQL DATETIME/TIMESTAMP (evita ISO com "T" e "Z").
+      timestamp: new Date(),
       created_at: new Date()
     };
 
@@ -177,7 +178,8 @@ const recordSecurityEvent = async (req, eventType, details = {}) => {
       ip_address: req.ip || req.connection.remoteAddress,
       user_agent: req.get('user-agent'),
       http_status: eventType,
-      timestamp: new Date().toISOString(),
+      // Usar Date nativo para MySQL DATETIME/TIMESTAMP (evita ISO com "T" e "Z").
+      timestamp: new Date(),
       created_at: new Date()
     };
 
