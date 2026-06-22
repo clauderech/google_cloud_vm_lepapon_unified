@@ -2,6 +2,7 @@
 const express = require('express');
 const ProductModel = require('../models/product');
 const StockService = require('../services/stockService');
+const { requireAdmin } = require('../middleware/roleAuth');
 const router = express.Router();
 
 const ALLOWED_PRODUCT_TYPES = ['prato', 'drink', 'insumo', 'insumo_bebida', 'revenda'];
@@ -74,7 +75,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Criar produto
-router.post('/', async (req, res) => {
+router.post('/', requireAdmin, async (req, res) => {
   try {
     if (!validateProductType(req.body.type)) {
       return res.status(400).json({ error: 'Tipo de produto inválido', details: `Tipos válidos: ${ALLOWED_PRODUCT_TYPES.join(', ')}` });
@@ -125,7 +126,7 @@ router.post('/', async (req, res) => {
 });
 
 // Atualizar produto
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireAdmin, async (req, res) => {
   try {
     if (req.body.type && !validateProductType(req.body.type)) {
       return res.status(400).json({ error: 'Tipo de produto inválido', details: `Tipos válidos: ${ALLOWED_PRODUCT_TYPES.join(', ')}` });
@@ -170,7 +171,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Remover produto
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAdmin, async (req, res) => {
   try {
     await ProductModel.remove(req.params.id);
     res.json({ success: true });

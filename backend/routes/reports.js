@@ -2,12 +2,13 @@ const express = require('express');
 const router = express.Router();
 const StockService = require('../services/stockService');
 const { db } = require('../config/knex');
+const { requireOperador } = require('../middleware/roleAuth');
 
 /**
  * Rota para relatório de produtos com estoque baixo
  * GET /api/reports/low-stock
  */
-router.get('/low-stock', async (req, res) => {
+router.get('/low-stock', requireOperador, async (req, res) => {
   try {
     console.log('[REPORTS][LOW_STOCK][REQUEST]');
     
@@ -34,7 +35,7 @@ router.get('/low-stock', async (req, res) => {
  * Rota para estatísticas gerais de estoque
  * GET /api/reports/stock-stats
  */
-router.get('/stock-stats', async (req, res) => {
+router.get('/stock-stats', requireOperador, async (req, res) => {
   try {
     console.log('[REPORTS][STOCK_STATS][REQUEST]');
     
@@ -62,7 +63,7 @@ router.get('/stock-stats', async (req, res) => {
  * Rota para histórico de movimentações de um produto
  * GET /api/reports/stock-movements/:productId
  */
-router.get('/stock-movements/:productId', async (req, res) => {
+router.get('/stock-movements/:productId', requireOperador, async (req, res) => {
   try {
     const { productId } = req.params;
     const { limit, movement_type } = req.query;
@@ -97,7 +98,7 @@ router.get('/stock-movements/:productId', async (req, res) => {
  * Rota para relatório de vendas por produto
  * GET /api/reports/sales-by-product
  */
-router.get('/sales-by-product', async (req, res) => {
+router.get('/sales-by-product', requireOperador, async (req, res) => {
   try {
     const { start_date, end_date, limit } = req.query;
     

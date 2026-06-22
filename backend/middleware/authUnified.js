@@ -89,8 +89,34 @@ function validateCombined(req, res, next) {
 }
 
 /**
+ * Decodificar token de sessão frontend
+ * Formato: session_{role}_{id}_{timestamp}
+ */
+function decodeSessionToken(token) {
+  try {
+    if (!token.startsWith('session_')) return null;
+    
+    const parts = token.split('_');
+    if (parts.length < 4) return null;
+    
+    const role = parts[1];
+    const id = parts[2];
+    
+    return {
+      id,
+      role,
+      type: 'frontend_session'
+    };
+  } catch (error) {
+    console.error('[Auth] Erro ao decodificar token:', error);
+    return null;
+  }
+}
+
+/**
  * Validar autenticação genérica (Frontend + WhatsApp + API Key)
  * Aceita: Authorization Bearer token (frontend ou whatsapp) OU X-API-Key
+ * Extrai informações do usuário para req.user (frontend tokens)
  */
 function requireAuth(req, res, next) {
   try {
@@ -103,12 +129,16 @@ function requireAuth(req, res, next) {
       
       // Validar sessão do frontend (session_*)
       if (token.startsWith('session_')) {
-        req.auth = { 
-          type: 'frontend_session',
-          authenticated: true,
-          token
-        };
-        return next();
+        const userInfo = decodeSessionToken(token);
+        if (userInfo) {
+          req.auth = { 
+            type: 'frontend_session',
+            authenticated: true,
+            token
+          };
+          req.user = userInfo; // Adicionar informações do usuário
+          return next();
+        }
       }
       
       // Validar WhatsApp token
@@ -117,6 +147,7 @@ function requireAuth(req, res, next) {
           type: 'whatsapp_token',
           authenticated: true 
         };
+        // WhatsApp não tem user info
         return next();
       }
     }
@@ -177,5 +208,6 @@ module.exports = {
   authDevMode,
   validateCombined,
   requireAuth,
-  requireWhatsappAuth
+  requireWhatsappAuth,
+  decodeSessionToken
 };

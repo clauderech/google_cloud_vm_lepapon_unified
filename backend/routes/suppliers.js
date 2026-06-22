@@ -1,6 +1,7 @@
 
 const express = require('express');
 const SupplierModel = require('../models/supplier');
+const { requireAdmin } = require('../middleware/roleAuth');
 const router = express.Router();
 
 // Listar todos os fornecedores
@@ -25,7 +26,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Criar fornecedor
-router.post('/', async (req, res) => {
+router.post('/', requireAdmin, async (req, res) => {
   try {
     const result = await SupplierModel.create(req.body);
     res.status(201).json({ success: true, id: result[0] });
@@ -35,7 +36,7 @@ router.post('/', async (req, res) => {
 });
 
 // Atualizar fornecedor
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireAdmin, async (req, res) => {
   try {
     await SupplierModel.update(req.params.id, req.body);
     res.json({ success: true });
@@ -45,7 +46,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Remover fornecedor
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAdmin, async (req, res) => {
   try {
     await SupplierModel.remove(req.params.id);
     res.json({ success: true });

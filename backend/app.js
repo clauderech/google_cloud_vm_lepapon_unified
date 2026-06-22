@@ -28,6 +28,11 @@ app.use(cors({
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// Middleware de auditoria - registra todas as requisições
+const { auditLogger, auditAuthFailure } = require('./middleware/auditLogger');
+app.use(auditLogger);
+app.use(auditAuthFailure);
+
 let db;
 try {
   console.log('DEBUG ENV: NODE_ENV =', process.env.NODE_ENV);
@@ -101,6 +106,11 @@ app.use('/api/stock', stockRouter);
 const productionRouter = require('./routes/production');
 app.use('/api/production', productionRouter);
 console.log('[APP] Production routes registered at /api/production');
+
+// Rotas de auditoria (apenas admin)
+const auditRouter = require('./routes/audit');
+app.use('/api/audit', auditRouter);
+console.log('[APP] Audit routes registered at /api/audit');
 
 // Health check
 app.get('/api/health', (req, res) => {

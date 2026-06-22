@@ -35,8 +35,10 @@ try {
   console.warn('[UPLOAD] multer não encontrado. Rota de upload ficará indisponível.');
 }
 
+const { requireAuth } = require('../middleware/authUnified');
+
 if (upload) {
-  router.post('/', upload.single('file'), async (req, res) => {
+  router.post('/', requireAuth, upload.single('file'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: 'Nenhum arquivo recebido.' });

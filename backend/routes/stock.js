@@ -3,12 +3,13 @@ const router = express.Router();
 const StockService = require('../services/stockService');
 const StockSyncService = require('../services/stockSyncService');
 const { db } = require('../config/knex');
+const { requireOperador } = require('../middleware/roleAuth');
 
 /**
  * Ajuste manual de estoque de um produto
  * PUT /api/stock/:productId/adjust
  */
-router.put('/:productId/adjust', async (req, res) => {
+router.put('/:productId/adjust', requireOperador, async (req, res) => {
   try {
     const { productId } = req.params;
     const { newStock, reason, userId } = req.body;
@@ -54,7 +55,7 @@ router.put('/:productId/adjust', async (req, res) => {
  * Histórico de movimentações de um produto
  * GET /api/stock/:productId/movements
  */
-router.get('/:productId/movements', async (req, res) => {
+router.get('/:productId/movements', requireOperador, async (req, res) => {
   try {
     const { productId } = req.params;
     const { limit, movement_type } = req.query;
@@ -89,7 +90,7 @@ router.get('/:productId/movements', async (req, res) => {
  * Alertas de estoque baixo
  * GET /api/stock/alerts
  */
-router.get('/alerts', async (req, res) => {
+router.get('/alerts', requireOperador, async (req, res) => {
   try {
     console.log('[STOCK][ALERTS]');
     
@@ -115,7 +116,7 @@ router.get('/alerts', async (req, res) => {
  * Estatísticas gerais de estoque
  * GET /api/stock/stats
  */
-router.get('/stats', async (req, res) => {
+router.get('/stats', requireOperador, async (req, res) => {
   try {
     console.log('[STOCK][STATS]');
     
@@ -143,7 +144,7 @@ router.get('/stats', async (req, res) => {
  * Sincronizar estoque com catálogo WhatsApp
  * POST /api/stock/sync/whatsapp
  */
-router.post('/sync/whatsapp', async (req, res) => {
+router.post('/sync/whatsapp', requireOperador, async (req, res) => {
   try {
     console.log('[STOCK][SYNC][WHATSAPP]');
     
@@ -173,7 +174,7 @@ router.post('/sync/whatsapp', async (req, res) => {
  * Verificar consistência de estoque
  * GET /api/stock/consistency
  */
-router.get('/consistency', async (req, res) => {
+router.get('/consistency', requireOperador, async (req, res) => {
   try {
     console.log('[STOCK][CONSISTENCY]');
     
@@ -201,7 +202,7 @@ router.get('/consistency', async (req, res) => {
  * Sincronizar produto específico com WhatsApp
  * POST /api/stock/:productId/sync/whatsapp
  */
-router.post('/:productId/sync/whatsapp', async (req, res) => {
+router.post('/:productId/sync/whatsapp', requireOperador, async (req, res) => {
   try {
     const { productId } = req.params;
     
@@ -241,7 +242,7 @@ router.post('/:productId/sync/whatsapp', async (req, res) => {
  * Buscar todas as movimentações com filtros
  * GET /api/stock/movements
  */
-router.get('/movements', async (req, res) => {
+router.get('/movements', requireOperador, async (req, res) => {
   try {
     const { start_date, end_date, movement_type, limit } = req.query;
     

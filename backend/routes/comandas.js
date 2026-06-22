@@ -123,9 +123,10 @@ function formatDateForMySQL(date) {
 });
 
 const ComandaModel = require('../models/comanda');
+const { requireAuth } = require('../middleware/authUnified');
 
 // Listar todas as comandas
-router.get('/', async (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
   try {
     const comandas = await ComandaModel.list();
     res.json(comandas);
@@ -135,7 +136,7 @@ router.get('/', async (req, res) => {
 });
 
 // Buscar comanda por ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireAuth, async (req, res) => {
   try {
     console.log('[COMANDA][OPEN][INFO]', {
       id: req.params.id,

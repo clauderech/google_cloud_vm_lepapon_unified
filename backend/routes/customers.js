@@ -1,10 +1,12 @@
 
 const express = require('express');
 const CustomerModel = require('../models/customer');
+const { requireAuth } = require('../middleware/authUnified');
+const { requireAdmin } = require('../middleware/roleAuth');
 const router = express.Router();
 
 // Listar todos os clientes
-router.get('/', async (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
   try {
     const customers = await CustomerModel.list();
     res.json(customers);
@@ -14,7 +16,7 @@ router.get('/', async (req, res) => {
 });
 
 // Dropdown de clientes formatado (id_nome_sobrenome)
-router.get('/dropdown', async (req, res) => {
+router.get('/dropdown', requireAuth, async (req, res) => {
   try {
     console.log('[CUSTOMER][DROPDOWN][REQ]', { timestamp: new Date().toISOString() });
     const dropdownCustomers = await CustomerModel.listForDropdown();
@@ -27,7 +29,7 @@ router.get('/dropdown', async (req, res) => {
 });
 
 // Buscar cliente por ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireAuth, async (req, res) => {
   try {
     const customer = await CustomerModel.getById(req.params.id);
     if (!customer) return res.status(404).json({ error: 'Cliente não encontrado' });
@@ -38,7 +40,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Criar cliente
-router.post('/', async (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
   try {
     const result = await CustomerModel.create(req.body);
     res.status(201).json({ success: true, id: result[0] });
@@ -48,7 +50,7 @@ router.post('/', async (req, res) => {
 });
 
 // Atualizar cliente
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireAuth, async (req, res) => {
   try {
     await CustomerModel.update(req.params.id, req.body);
     res.json({ success: true });
@@ -58,7 +60,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Remover cliente
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAdmin, async (req, res) => {
   try {
     await CustomerModel.remove(req.params.id);
     res.json({ success: true });
