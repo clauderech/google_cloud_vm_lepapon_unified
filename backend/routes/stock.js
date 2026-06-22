@@ -4,6 +4,198 @@ const StockService = require('../services/stockService');
 const StockSyncService = require('../services/stockSyncService');
 const { db } = require('../config/knex');
 const { requireOperador } = require('../middleware/roleAuth');
+const { validateApiKey } = require('../middleware/authUnified');
+
+console.log('[STOCK][ROUTES] Stock routes loaded successfully');
+
+/**
+ * ============================================
+ * ROTAS ANDROID - Autenticação via API Key
+ * ============================================
+ */
+
+/**
+ * GET /api/stock/android/stats
+ * Estatísticas gerais de estoque (Android)
+ */
+router.get('/android/stats', validateApiKey, async (req, res) => {
+  try {
+    console.log('[STOCK][ANDROID][STATS]');
+    
+    const stats = await StockService.getStockStats();
+    
+    console.log('[STOCK][ANDROID][STATS][SUCCESS]', { 
+      totalProducts: stats.totalProducts,
+      lowStockCount: stats.lowStockCount 
+    });
+    
+    res.json({
+      success: true,
+      data: stats
+    });
+  } catch (err) {
+    console.error('[STOCK][ANDROID][STATS][ERROR]', {
+      error: err.message
+    });
+    res.status(500).json({ 
+      error: 'Erro ao buscar estatísticas de estoque', 
+      message: err.message 
+    });
+  }
+});
+
+/**
+ * GET /api/stock/android/alerts
+ * Alertas de estoque baixo (Android)
+ */
+router.get('/android/alerts', validateApiKey, async (req, res) => {
+  try {
+    console.log('[STOCK][ANDROID][ALERTS]');
+    
+    const stockSyncService = new StockSyncService(db);
+    const alerts = await stockSyncService.getStockAlerts();
+    
+    console.log('[STOCK][ANDROID][ALERTS][SUCCESS]', { count: alerts.length });
+    
+    res.json({
+      success: true,
+      data: alerts
+    });
+  } catch (err) {
+    console.error('[STOCK][ANDROID][ALERTS][ERROR]', {
+      error: err.message
+    });
+    res.status(500).json({ 
+      error: 'Erro ao buscar alertas de estoque', 
+      message: err.message 
+    });
+  }
+});
+
+/**
+ * GET /api/stock/android/movements
+ * Histórico de movimentações com filtros (Android)
+ */
+router.get('/android/movements', validateApiKey, async (req, res) => {
+  try {
+    const { start_date, end_date, movement_type, limit } = req.query;
+    
+    console.log('[STOCK][ANDROID][MOVEMENTS]', { start_date, end_date, movement_type, limit });
+    
+    const StockMovementModel = require('../models/stockMovement');
+    const movements = await StockMovementModel.list({
+      start_date,
+      end_date,
+      movement_type,
+      limit: limit ? parseInt(limit) : 100
+    });
+    
+    console.log('[STOCK][ANDROID][MOVEMENTS][SUCCESS]', { count: movements.length });
+    
+    res.json({
+      success: true,
+      data: movements
+    });
+  } catch (err) {
+    console.error('[STOCK][ANDROID][MOVEMENTS][ERROR]', {
+      error: err.message
+    });
+    res.status(500).json({ 
+      error: 'Erro ao buscar movimentações', 
+      message: err.message 
+    });
+  }
+});
+
+/**
+ * GET /api/stock/android/:productId/movements
+ * Movimentações de um produto específico (Android)
+ */
+router.get('/android/:productId/movements', validateApiKey, async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { limit, movement_type } = req.query;
+    
+    console.log('[STOCK][ANDROID][PRODUCT][MOVEMENTS]', { productId, limit, movement_type });
+    
+    const movements = await StockService.getProductMovements(productId, {
+      limit: limit ? parseInt(limit) : 50,
+      movement_type
+    });
+    
+    console.log('[STOCK][ANDROID][PRODUCT][MOVEMENTS][SUCCESS]', { 
+      productId, 
+      count: movements.length 
+    });
+    
+    res.json({
+      success: true,
+      data: movements
+    });
+  } catch (err) {
+    console.error('[STOCK][ANDROID][PRODUCT][MOVEMENTS][ERROR]', {
+      productId: req.params.productId,
+      error: err.message
+    });
+    res.status(500).json({ 
+      error: 'Erro ao buscar movimentações', 
+      message: err.message 
+    });
+  }
+});
+
+/**
+ * PUT /api/stock/android/:productId/adjust
+ * Ajuste manual de estoque (Android)
+ */
+router.put('/android/:productId/adjust', validateApiKey, async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { newStock, reason } = req.body;
+    
+    console.log('[STOCK][ANDROID][ADJUST]', { productId, newStock, reason });
+    
+    if (newStock === undefined || newStock === null) {
+      return res.status(400).json({ 
+        error: 'Campo newStock é obrigatório' 
+      });
+    }
+    
+    const result = await StockService.adjustStock({
+      productId,
+      newStock: parseFloat(newStock),
+      reason: reason || 'Ajuste manual (Android)',
+      userId: 'android_app'
+    });
+    
+    console.log('[STOCK][ANDROID][ADJUST][SUCCESS]', { productId, result });
+    
+    res.json({
+      success: true,
+      data: {
+        productId,
+        previousStock: result.previousStock,
+        newStock: result.newStock,
+        adjustment: result.quantity
+      }
+    });
+  } catch (err) {
+    console.error('[STOCK][ANDROID][ADJUST][ERROR]', {
+      productId: req.params.productId,
+      error: err.message
+    });
+    res.status(500).json({ 
+      error: 'Erro ao ajustar estoque', 
+      message: err.message 
+    });
+  }
+});
+
+/**
+ * ============================================
+ * ROTAS WEB - Autenticação via Sessão
+ * ============================================
+ */
 
 /**
  * Ajuste manual de estoque de um produto
