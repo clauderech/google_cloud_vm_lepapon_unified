@@ -1,4 +1,9 @@
-export function up(knex) {
+export async function up(knex) {
+  const exists = await knex.schema.hasTable('cozinha_items');
+  if (exists) {
+    return;
+  }
+
   return knex.schema.createTable('cozinha_items', function(table) {
     table.increments('id').primary();
     table.integer('comanda_id').notNullable().references('id').inTable('comandas');
@@ -13,6 +18,11 @@ export function up(knex) {
   });
 }
 
-export function down(knex) {
+export async function down(knex) {
+  const exists = await knex.schema.hasTable('cozinha_items');
+  if (!exists) {
+    return;
+  }
+
   return knex.schema.dropTable('cozinha_items');
 }

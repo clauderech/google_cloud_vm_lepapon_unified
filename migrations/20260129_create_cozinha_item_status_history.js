@@ -1,4 +1,9 @@
-export function up(knex) {
+export async function up(knex) {
+  const exists = await knex.schema.hasTable('cozinha_item_status_history');
+  if (exists) {
+    return;
+  }
+
   return knex.schema.createTable('cozinha_item_status_history', function(table) {
     table.increments('id').primary();
     table.integer('cozinha_item_id').notNullable().references('id').inTable('cozinha_items');
@@ -8,6 +13,11 @@ export function up(knex) {
   });
 }
 
-export function down(knex) {
+export async function down(knex) {
+  const exists = await knex.schema.hasTable('cozinha_item_status_history');
+  if (!exists) {
+    return;
+  }
+
   return knex.schema.dropTable('cozinha_item_status_history');
 }
