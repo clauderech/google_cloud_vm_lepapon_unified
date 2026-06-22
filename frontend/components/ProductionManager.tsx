@@ -22,23 +22,21 @@ const ProductionManager: React.FC<ProductionManagerProps> = ({ onError }) => {
     try {
       setLoading(true);
       console.log('[PRODUCTION_FRONTEND] Fetching available productions...');
+      console.log('[PRODUCTION_FRONTEND] Token:', token ? token.substring(0, 30) + '...' : 'EMPTY/NULL');
       
-      // Primeiro, testar se a rota está funcionando
-      console.log('[PRODUCTION_FRONTEND] Testing route connectivity...');
-      try {
-        const testResponse = await fetch('/api/production/test');
-        console.log('[PRODUCTION_FRONTEND] Test response status:', testResponse.status);
-        const testData = await testResponse.json();
-        console.log('[PRODUCTION_FRONTEND] Test response data:', testData);
-      } catch (testError) {
-        console.error('[PRODUCTION_FRONTEND] Test route failed:', testError);
+      // Verificar se token existe
+      if (!token) {
+        throw new Error('Token não disponível. Faça login novamente.');
       }
       
       // Agora fazer a requisição real com token
+      const authHeader = `Bearer ${token}`;
+      console.log('[PRODUCTION_FRONTEND] Authorization header:', authHeader.substring(0, 30) + '...');
+      
       const response = await fetch('/api/production/available', {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': authHeader
         }
       });
       console.log('[PRODUCTION_FRONTEND] Available response status:', response.status);
@@ -68,6 +66,13 @@ const ProductionManager: React.FC<ProductionManagerProps> = ({ onError }) => {
   const fetchProductionHistory = async () => {
     try {
       setLoading(true);
+      console.log('[PRODUCTION_FRONTEND] Fetching production history...');
+      console.log('[PRODUCTION_FRONTEND] Token:', token ? token.substring(0, 30) + '...' : 'EMPTY/NULL');
+      
+      if (!token) {
+        throw new Error('Token não disponível. Faça login novamente.');
+      }
+      
       const response = await fetch('/api/production/history?limit=20', {
         headers: {
           'Content-Type': 'application/json',
@@ -75,8 +80,11 @@ const ProductionManager: React.FC<ProductionManagerProps> = ({ onError }) => {
         }
       });
       
+      console.log('[PRODUCTION_FRONTEND] History response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Erro ao buscar histórico');
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText || 'Erro ao buscar histórico'}`);
       }
       
       const data = await response.json();
@@ -93,6 +101,13 @@ const ProductionManager: React.FC<ProductionManagerProps> = ({ onError }) => {
   const produceItem = async (productId: string, quantity: number, notes?: string) => {
     try {
       setProducing(productId);
+      
+      console.log('[PRODUCTION_FRONTEND] Producing item...');
+      console.log('[PRODUCTION_FRONTEND] Token:', token ? token.substring(0, 30) + '...' : 'EMPTY/NULL');
+      
+      if (!token) {
+        throw new Error('Token não disponível. Faça login novamente.');
+      }
       
       const response = await fetch('/api/production/produce', {
         method: 'POST',
@@ -139,7 +154,7 @@ const ProductionManager: React.FC<ProductionManagerProps> = ({ onError }) => {
     } else {
       fetchProductionHistory();
     }
-  }, [activeTab]);
+  }, [activeTab, token]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('pt-BR');

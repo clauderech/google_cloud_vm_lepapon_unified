@@ -122,10 +122,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(normalizedUser);
       setToken(data.token);
 
+      // Salvar token no localStorage via authService (CRÍTICO)
+      authService.setAuthToken(data.token);
+      
       // Manter compatibilidade com localStorage antigo
       localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedUser));
       
-      console.log('[useAuth] Login bem-sucedido com credenciais');
+      console.log('[useAuth] Login bem-sucedido com credenciais. Token salvo:', data.token.substring(0, 20) + '...');
       return { user: normalizedUser, token: data.token };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao fazer login';
