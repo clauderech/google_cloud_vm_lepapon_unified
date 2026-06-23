@@ -243,30 +243,9 @@ class StockSyncService {
   async getStockAlerts() {
     try {
       const lowStockProducts = await StockService.getLowStockProducts();
-      
-      // Buscar produtos que também estão no catálogo WhatsApp
-      const alerts = [];
-      
-      for (const product of lowStockProducts) {
-        const catalogMapping = await this.db('whatsapp_catalog_products')
-          .where('product_id', product.productId)
-          .first();
-        
-        if (catalogMapping) {
-          alerts.push({
-            ...product,
-            catalogProductId: catalogMapping.catalog_product_id,
-            inWhatsappCatalog: true
-          });
-        } else {
-          alerts.push({
-            ...product,
-            inWhatsappCatalog: false
-          });
-        }
-      }
-      
-      return alerts;
+
+      // Alertas baseados somente na tabela products via StockService.
+      return lowStockProducts;
     } catch (error) {
       console.error('[StockSync] Erro ao buscar alertas:', error);
       throw error;
