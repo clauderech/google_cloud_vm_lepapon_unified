@@ -7,6 +7,81 @@ const { validateApiKey } = require('../middleware/authUnified');
 
 console.log('[REPORTS][ROUTES] Reports routes loaded successfully');
 
+const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const MAX_REPORT_LIMIT = 1000;
+
+function parseIsoDateOnly(value) {
+  if (typeof value !== 'string' || !ISO_DATE_REGEX.test(value)) {
+    return null;
+  }
+
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return value;
+}
+
+function validateSalesByProductQuery(query) {
+  const { start_date, end_date, limit } = query;
+
+  const startDate = start_date ? parseIsoDateOnly(start_date) : null;
+  if (start_date && !startDate) {
+    return {
+      valid: false,
+      error: 'Parâmetro start_date inválido. Use formato YYYY-MM-DD.'
+    };
+  }
+
+  const endDate = end_date ? parseIsoDateOnly(end_date) : null;
+  if (end_date && !endDate) {
+    return {
+      valid: false,
+      error: 'Parâmetro end_date inválido. Use formato YYYY-MM-DD.'
+    };
+  }
+
+  if (startDate && endDate && startDate > endDate) {
+    return {
+      valid: false,
+      error: 'Parâmetro inválido: start_date não pode ser maior que end_date.'
+    };
+  }
+
+  let parsedLimit = null;
+  if (limit !== undefined) {
+    const limitString = String(limit).trim();
+    if (!/^\d+$/.test(limitString)) {
+      return {
+        valid: false,
+        error: 'Parâmetro limit inválido. Informe um inteiro positivo.'
+      };
+    }
+
+    parsedLimit = parseInt(limitString, 10);
+    if (parsedLimit < 1 || parsedLimit > MAX_REPORT_LIMIT) {
+      return {
+        valid: false,
+        error: `Parâmetro limit fora da faixa permitida (1-${MAX_REPORT_LIMIT}).`
+      };
+    }
+  }
+
+  return {
+    valid: true,
+    startDate,
+    endDate,
+    limit: parsedLimit
+  };
+}
+
 /**
  * ============================================
  * ROTAS ANDROID - Autenticação via API Key
@@ -115,9 +190,21 @@ router.get('/android/stock-movements/:productId', validateApiKey, async (req, re
  */
 router.get('/android/sales-by-product', validateApiKey, async (req, res) => {
   try {
-    const { start_date, end_date, limit } = req.query;
+    const validation = validateSalesByProductQuery(req.query);
+    if (!validation.valid) {
+      return res.status(400).json({
+        error: 'Parâmetros inválidos',
+        message: validation.error
+      });
+    }
+
+    const { startDate, endDate, limit } = validation;
     
-    console.log('[REPORTS][ANDROID][SALES_BY_PRODUCT][REQUEST]', { start_date, end_date });
+    console.log('[REPORTS][ANDROID][SALES_BY_PRODUCT][REQUEST]', {
+      start_date: startDate,
+      end_date: endDate,
+      limit
+    });
     
     let query = db('sale_items')
       .select('product_id', 'product_name')
@@ -127,16 +214,16 @@ router.get('/android/sales-by-product', validateApiKey, async (req, res) => {
       .groupBy('product_id', 'product_name')
       .orderBy('total_quantity', 'desc');
     
-    if (start_date) {
+    if (startDate) {
       query = query.join('sales', 'sale_items.sale_id', 'sales.id')
-        .where('sales.date', '>=', start_date);
+        .where('sales.date', '>=', startDate);
     }
     
-    if (end_date) {
-      if (!start_date) {
+    if (endDate) {
+      if (!startDate) {
         query = query.join('sales', 'sale_items.sale_id', 'sales.id');
       }
-      query = query.where('sales.date', '<=', end_date);
+      query = query.where('sales.date', '<=', endDate);
     }
     
     if (limit) {
@@ -266,9 +353,21 @@ router.get('/stock-movements/:productId', requireOperador, async (req, res) => {
  */
 router.get('/sales-by-product', requireOperador, async (req, res) => {
   try {
-    const { start_date, end_date, limit } = req.query;
+    const validation = validateSalesByProductQuery(req.query);
+    if (!validation.valid) {
+      return res.status(400).json({
+        error: 'Parâmetros inválidos',
+        details: validation.error
+      });
+    }
+
+    const { startDate, endDate, limit } = validation;
     
-    console.log('[REPORTS][SALES_BY_PRODUCT][REQUEST]', { start_date, end_date });
+    console.log('[REPORTS][SALES_BY_PRODUCT][REQUEST]', {
+      start_date: startDate,
+      end_date: endDate,
+      limit
+    });
     
     let query = db('sale_items')
       .select('product_id', 'product_name')
@@ -278,16 +377,16 @@ router.get('/sales-by-product', requireOperador, async (req, res) => {
       .groupBy('product_id', 'product_name')
       .orderBy('total_quantity', 'desc');
     
-    if (start_date) {
+    if (startDate) {
       query = query.join('sales', 'sale_items.sale_id', 'sales.id')
-        .where('sales.date', '>=', start_date);
+        .where('sales.date', '>=', startDate);
     }
     
-    if (end_date) {
-      if (!start_date) {
+    if (endDate) {
+      if (!startDate) {
         query = query.join('sales', 'sale_items.sale_id', 'sales.id');
       }
-      query = query.where('sales.date', '<=', end_date);
+      query = query.where('sales.date', '<=', endDate);
     }
     
     if (limit) {
