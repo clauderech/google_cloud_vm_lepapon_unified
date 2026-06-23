@@ -122,7 +122,7 @@ router.get('/android/sales-by-product', validateApiKey, async (req, res) => {
     let query = db('sale_items')
       .select('product_id', 'product_name')
       .sum('quantity as total_quantity')
-      .sum(db.raw('quantity * unit_price as total_value'))
+      .sum({ total_value: db.raw('quantity * unit_price') })
       .count('* as total_sales')
       .groupBy('product_id', 'product_name')
       .orderBy('total_quantity', 'desc');
@@ -273,7 +273,7 @@ router.get('/sales-by-product', requireOperador, async (req, res) => {
     let query = db('sale_items')
       .select('product_id', 'product_name')
       .sum('quantity as total_quantity')
-      .sum(db.raw('quantity * unit_price as total_value'))
+      .sum({ total_value: db.raw('quantity * unit_price') })
       .count('* as total_sales')
       .groupBy('product_id', 'product_name')
       .orderBy('total_quantity', 'desc');
