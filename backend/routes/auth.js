@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcryptjs');
 
 /**
  * Usuários de teste e suas credenciais
@@ -9,6 +10,48 @@ const DEMO_USERS = [
   { id: 'op_1', username: 'operador', password: 'op123', name: 'Operador', role: 'operador' },
   { id: 'caixa_1', username: 'caixa', password: 'caixa123', name: 'Caixa', role: 'caixa' }
 ];
+
+function isTruthyFlag(value) {
+  if (value === true || value === 1) return true;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    return ['1', 'true', 'yes', 'active', 'enabled'].includes(normalized);
+  }
+  return false;
+}
+
+async function verifyPassword(inputPassword, dbUser) {
+  const hashCandidate = dbUser.password_hash || dbUser.passwordHash;
+  const plainCandidate = dbUser.password;
+
+  if (typeof hashCandidate === 'string' && hashCandidate.length > 0) {
+    if (hashCandidate.startsWith('$2a$') || hashCandidate.startsWith('$2b$') || hashCandidate.startsWith('$2y$')) {
+      return bcrypt.compare(inputPassword, hashCandidate);
+    }
+
+    // Compatibilidade: alguns ambientes antigos salvaram senha em texto na coluna password_hash.
+    return inputPassword === hashCandidate;
+  }
+
+  if (typeof plainCandidate === 'string' && plainCandidate.length > 0) {
+    if (plainCandidate.startsWith('$2a$') || plainCandidate.startsWith('$2b$') || plainCandidate.startsWith('$2y$')) {
+      return bcrypt.compare(inputPassword, plainCandidate);
+    }
+
+    return inputPassword === plainCandidate;
+  }
+
+  return false;
+}
+
+function mapUserFromDb(dbUser) {
+  return {
+    id: String(dbUser.id),
+    name: dbUser.name || dbUser.full_name || dbUser.username,
+    role: dbUser.role || 'operador',
+    loginAt: new Date().toISOString()
+  };
+}
 
 /**
  * POST /api/auth/login
@@ -28,15 +71,58 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Validar credenciais
-    const user = DEMO_USERS.find(u => u.username === username && u.password === password);
+    const db = req.db;
+    if (!db) {
+      return res.status(500).json({
+        error: 'Internal Server Error',
+        message: 'Conexão com banco indisponível'
+      });
+    }
 
-    if (!user) {
+    const usersTable = process.env.AUTH_USERS_TABLE || 'users';
+    const hasUsersTable = await db.schema.hasTable(usersTable);
+
+    if (!hasUsersTable) {
+      return res.status(503).json({
+        error: 'Service Unavailable',
+        message: `Tabela de autenticação '${usersTable}' não encontrada no banco`,
+        hint: 'Configure AUTH_USERS_TABLE ou crie a tabela users com username/senha'
+      });
+    }
+
+    // Validar credenciais no banco
+    const dbUser = await db(usersTable)
+      .where({ username })
+      .first();
+
+    if (!dbUser) {
       return res.status(401).json({
         error: 'Unauthorized',
         message: 'Usuário ou senha incorretos'
       });
     }
+
+    // Bloqueio para usuários inativos em schemas diferentes.
+    if (
+      (dbUser.is_active !== undefined && !isTruthyFlag(dbUser.is_active)) ||
+      (typeof dbUser.status === 'string' && dbUser.status.toLowerCase() !== 'active')
+    ) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'Usuário inativo'
+      });
+    }
+
+    const passwordMatches = await verifyPassword(password, dbUser);
+
+    if (!passwordMatches) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Usuário ou senha incorretos'
+      });
+    }
+
+    const user = mapUserFromDb(dbUser);
 
     // Gerar token de sessão (Fase 1: simples; Fase 4: JWT)
     const token = `session_${user.role}_${user.id}_${Date.now()}`;
@@ -51,12 +137,7 @@ router.post('/login', async (req, res) => {
     res.json({
       success: true,
       token,
-      user: {
-        id: user.id,
-        name: user.name,
-        role: user.role,
-        loginAt: new Date().toISOString()
-      }
+      user
     });
   } catch (error) {
     console.error('[AUTH][LOGIN][ERROR]', error);
