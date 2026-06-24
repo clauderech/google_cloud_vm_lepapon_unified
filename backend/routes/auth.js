@@ -53,6 +53,18 @@ function mapUserFromDb(dbUser) {
   };
 }
 
+function validateNewPassword(password) {
+  if (typeof password !== 'string' || password.length < 8) {
+    return 'A nova senha deve ter pelo menos 8 caracteres';
+  }
+
+  if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+    return 'A nova senha deve conter letras e números';
+  }
+
+  return null;
+}
+
 /**
  * POST /api/auth/login
  * Gera um token de sessão para autenticação
@@ -142,6 +154,137 @@ router.post('/login', async (req, res) => {
   } catch (error) {
     console.error('[AUTH][LOGIN][ERROR]', error);
     res.status(500).json({
+      error: 'Internal Server Error',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * PATCH /api/auth/change-credentials
+ * Altera username e senha do usuário autenticando com credenciais atuais
+ *
+ * Body: { currentUsername, currentPassword, newUsername, newPassword }
+ */
+router.patch('/change-credentials', async (req, res) => {
+  try {
+    const { currentUsername, currentPassword, newUsername, newPassword } = req.body;
+
+    if (!currentUsername || !currentPassword || !newUsername || !newPassword) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'currentUsername, currentPassword, newUsername e newPassword são obrigatórios'
+      });
+    }
+
+    if (typeof newUsername !== 'string' || newUsername.trim().length < 3) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'newUsername deve ter no mínimo 3 caracteres'
+      });
+    }
+
+    const passwordValidationMessage = validateNewPassword(newPassword);
+    if (passwordValidationMessage) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: passwordValidationMessage
+      });
+    }
+
+    const db = req.db;
+    if (!db) {
+      return res.status(500).json({
+        error: 'Internal Server Error',
+        message: 'Conexão com banco indisponível'
+      });
+    }
+
+    const usersTable = process.env.AUTH_USERS_TABLE || 'users';
+    const hasUsersTable = await db.schema.hasTable(usersTable);
+
+    if (!hasUsersTable) {
+      return res.status(503).json({
+        error: 'Service Unavailable',
+        message: `Tabela de autenticação '${usersTable}' não encontrada no banco`,
+        hint: 'Configure AUTH_USERS_TABLE ou crie a tabela users'
+      });
+    }
+
+    const trimmedCurrentUsername = currentUsername.trim();
+    const trimmedNewUsername = newUsername.trim();
+
+    const dbUser = await db(usersTable)
+      .where({ username: trimmedCurrentUsername })
+      .first();
+
+    if (!dbUser) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Credenciais atuais inválidas'
+      });
+    }
+
+    const passwordMatches = await verifyPassword(currentPassword, dbUser);
+    if (!passwordMatches) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Credenciais atuais inválidas'
+      });
+    }
+
+    if (trimmedCurrentUsername !== trimmedNewUsername) {
+      const usernameInUse = await db(usersTable)
+        .where({ username: trimmedNewUsername })
+        .whereNot({ id: dbUser.id })
+        .first();
+
+      if (usernameInUse) {
+        return res.status(409).json({
+          error: 'Conflict',
+          message: 'newUsername já está em uso'
+        });
+      }
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    const updateData = {
+      username: trimmedNewUsername,
+      password_hash: hashedPassword
+    };
+
+    const hasPasswordColumn = await db.schema.hasColumn(usersTable, 'password');
+    if (hasPasswordColumn) {
+      updateData.password = hashedPassword;
+    }
+
+    const hasUpdatedAtColumn = await db.schema.hasColumn(usersTable, 'updated_at');
+    if (hasUpdatedAtColumn) {
+      updateData.updated_at = db.fn.now();
+    }
+
+    await db(usersTable)
+      .where({ id: dbUser.id })
+      .update(updateData);
+
+    console.log('[AUTH][CHANGE_CREDENTIALS][SUCCESS]', {
+      userId: dbUser.id,
+      oldUsername: trimmedCurrentUsername,
+      newUsername: trimmedNewUsername,
+      timestamp: new Date().toISOString()
+    });
+
+    return res.json({
+      success: true,
+      message: 'Credenciais atualizadas com sucesso',
+      user: {
+        id: String(dbUser.id),
+        username: trimmedNewUsername
+      }
+    });
+  } catch (error) {
+    console.error('[AUTH][CHANGE_CREDENTIALS][ERROR]', error);
+    return res.status(500).json({
       error: 'Internal Server Error',
       message: error.message
     });
