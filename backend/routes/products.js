@@ -2,7 +2,7 @@
 const express = require('express');
 const ProductModel = require('../models/product');
 const StockService = require('../services/stockService');
-const { requireAdmin } = require('../middleware/roleAuth');
+const { requireAdmin, requireOperador } = require('../middleware/roleAuth');
 const { requireAuth, validateApiKey } = require('../middleware/authUnified');
 const router = express.Router();
 
@@ -165,7 +165,7 @@ router.post('/', requireAdmin, async (req, res) => {
 });
 
 // Atualizar produto
-router.put('/:id', requireAdmin, async (req, res) => {
+router.put('/:id', requireOperador, async (req, res) => {
   try {
     if (req.body.type && !validateProductType(req.body.type)) {
       return res.status(400).json({ error: 'Tipo de produto inválido', details: `Tipos válidos: ${ALLOWED_PRODUCT_TYPES.join(', ')}` });
