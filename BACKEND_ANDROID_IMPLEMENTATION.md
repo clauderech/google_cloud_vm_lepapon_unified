@@ -8,7 +8,7 @@
 - **Arquivo**: `backend/routes/products.js`
 - **Autenticação**: X-API-Key obrigatório
 - **Filtro**: apenas tipos `insumo`, `insumo_bebida`, `revenda`
-- **Retorno**: `{ success: true, data: [{ id, name, type, price, stock }, ...] }`
+- **Retorno**: `{ success: true, data: [{ id, name, type, price, cost, stock }, ...] }`
 - **Códigos HTTP**: 200 (sucesso), 401 (sem chave), 500 (erro)
 
 #### ✅ POST /api/purchases/android

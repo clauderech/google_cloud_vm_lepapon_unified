@@ -79,7 +79,7 @@ router.get('/android', validateApiKey, async (req, res) => {
     console.log('[PRODUCT][ANDROID][LIST]');
 
     const products = await db('products')
-      .select('id', 'name', 'type', 'price', 'stock')
+      .select('id', 'name', 'type', 'price', 'cost', 'stock')
       .where('is_active', 1)
       .whereIn('type', ['insumo', 'insumo_bebida', 'revenda'])
       .orderBy('name', 'asc');
