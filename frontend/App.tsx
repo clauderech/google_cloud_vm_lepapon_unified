@@ -112,7 +112,7 @@ const App = () => {
     // Estado do menu mobile
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   // --- Authentication ---
-  const { user, isAuthenticated, login, logout, hasPermission } = useAuth();
+  const { user, token, isAuthenticated, login, logout, hasPermission } = useAuth();
   const mobileMenuItems = adminMenu.filter(item => hasPermission(item.permission));
   
   // Debug authentication state
@@ -143,6 +143,7 @@ const App = () => {
 
     const response = await fetch('/api/upload', {
       method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       body: formData
     });
 

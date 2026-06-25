@@ -4,10 +4,20 @@
  */
 
 import type { DailyAssets, Expense, CashRegister } from '../types';
+import { getAuthToken } from './authService';
 
 const API_URL = process.env.NODE_ENV === 'production' 
   ? '/api' 
   : 'http://localhost:3001/api';
+
+function withAuthHeaders(headers: Record<string, string> = {}): Record<string, string> {
+  const token = getAuthToken();
+  if (!token) return headers;
+  return {
+    ...headers,
+    Authorization: `Bearer ${token}`
+  };
+}
 
 export const financialService = {
   // =========================================
@@ -37,7 +47,7 @@ export const financialService = {
   async addExpense(expense: Omit<Expense, 'id' | 'created_at' | 'updated_at'>): Promise<{ expenseId: string }> {
     const response = await fetch(`${API_URL}/expenses`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: withAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(expense)
     });
     
@@ -63,7 +73,7 @@ export const financialService = {
   async openCashRegister(initialAmount: number, openedBy: string): Promise<{ registerId: string }> {
     const response = await fetch(`${API_URL}/cash-register/open`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: withAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ initialAmount, openedBy })
     });
     
@@ -79,7 +89,7 @@ export const financialService = {
   ): Promise<{ result: CashRegister }> {
     const response = await fetch(`${API_URL}/cash-register/close`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: withAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ registerId, actualAmount, closedBy, notes })
     });
     

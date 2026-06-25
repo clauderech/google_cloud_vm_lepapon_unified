@@ -16,6 +16,7 @@ import type {
   Comanda,
   CartItem
 } from '../types';
+import { getAuthToken } from './authService';
 
 // CONFIGURAÇÃO: Automático baseado no ambiente
 const USE_API = process.env.NODE_ENV === 'production';
@@ -24,6 +25,15 @@ const API_URL = process.env.NODE_ENV === 'production'
   : 'http://localhost:3001/api';
 
 const LOCAL_STORAGE_KEY = 'lanchonete_app_state_v5';
+
+function withAuthHeaders(headers: Record<string, string> = {}): Record<string, string> {
+  const token = getAuthToken();
+  if (!token) return headers;
+  return {
+    ...headers,
+    Authorization: `Bearer ${token}`
+  };
+}
 
 export function calculateMaxProduciableFor(productId: string, allProducts: Product[]): number {
   const product = allProducts.find(p => p.id === productId);
@@ -69,7 +79,7 @@ export const storageService = {
         };
         const response = await fetch(`${API_URL}/products/${product.id}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: withAuthHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify(payload)
         });
         if (!response.ok) throw new Error('Erro ao atualizar produto');
@@ -83,7 +93,9 @@ export const storageService = {
   loadState: async (): Promise<AppState> => {
     if (USE_API) {
       try {
-        const response = await fetch(`${API_URL}/initial-state`);
+        const response = await fetch(`${API_URL}/initial-state`, {
+          headers: withAuthHeaders()
+        });
         if (!response.ok) throw new Error('Erro ao carregar estado inicial');
         
         const data = await response.json();
@@ -148,7 +160,7 @@ export const storageService = {
       
       const response = await fetch(`${API_URL}/sales`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: withAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(payload)
       });
       
@@ -177,7 +189,7 @@ export const storageService = {
     if (USE_API) {
       const response = await fetch(`${API_URL}/customers`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: withAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(customer)
       });
       if (!response.ok) throw new Error('Erro ao criar cliente');
@@ -204,7 +216,7 @@ export const storageService = {
       };
       const response = await fetch(`${API_URL}/comandas`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: withAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(payload)
       });
       if (!response.ok) throw new Error('Erro ao criar comanda');
@@ -223,7 +235,7 @@ export const storageService = {
       
       const response = await fetch(`${API_URL}/comandas/${comandaId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: withAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(payload)
       });
       
@@ -235,7 +247,7 @@ export const storageService = {
     if (USE_API) {
       const response = await fetch(`${API_URL}/comandas/${comandaId}/close`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: withAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ paymentMethod, customerId })
       });
       
@@ -249,7 +261,7 @@ export const storageService = {
     if (USE_API) {
       const response = await fetch(`${API_URL}/comandas/${comandaId}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' }
+        headers: withAuthHeaders({ 'Content-Type': 'application/json' })
       });
       
       if (!response.ok) {
@@ -267,7 +279,9 @@ export const storageService = {
     if (USE_API) {
       try {
         console.log('[DEBUG] Tentando buscar via API:', `${API_URL}/customers/dropdown`);
-        const response = await fetch(`${API_URL}/customers/dropdown`);
+        const response = await fetch(`${API_URL}/customers/dropdown`, {
+          headers: withAuthHeaders()
+        });
         if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         const result = await response.json();
         console.log('[DEBUG] Resultado da API:', result);
@@ -300,7 +314,7 @@ export const storageService = {
     if (USE_API) {
       const response = await fetch(`${API_URL}/purchases`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: withAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           supplierId: purchase.supplierId,
           items: purchase.items,
@@ -322,7 +336,9 @@ export const storageService = {
   async getProducts(): Promise<Product[]> {
     if (USE_API) {
       try {
-        const response = await fetch(`${API_URL}/products`);
+        const response = await fetch(`${API_URL}/products`, {
+          headers: withAuthHeaders()
+        });
         if (!response.ok) throw new Error('Erro ao buscar produtos');
         
         const products = await response.json();
@@ -368,7 +384,7 @@ export const storageService = {
       
       const response = await fetch(`${API_URL}/products`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: withAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(payload)
       });
       
@@ -390,7 +406,7 @@ export const storageService = {
     const url = `${API_URL}/products/${encodeURIComponent(productId)}/lepapon-stock`;
     const res = await fetch(url, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: withAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ stock })
     });
     if (!res.ok) {

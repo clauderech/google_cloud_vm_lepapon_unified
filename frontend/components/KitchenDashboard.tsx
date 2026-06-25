@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Clock, ChefHat, AlertCircle, CheckCircle, Play, Pause, MessageCircle, Trash2, RefreshCw, Bell } from 'lucide-react';
 import type { CozinhaItem, CozinhaItemStatus, CozinhaPrioridade } from '../types';
+import { useAuth } from '../hooks/useAuth';
 
 // Socket.IO cliente (com fallback se não estiver disponível)
 let io: any = null;
@@ -16,6 +17,7 @@ interface KitchenDashboardProps {
 }
 
 const KitchenDashboard: React.FC<KitchenDashboardProps> = () => {
+  const { token } = useAuth();
   const [items, setItems] = useState<CozinhaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [connected, setConnected] = useState(false);
@@ -111,7 +113,11 @@ const KitchenDashboard: React.FC<KitchenDashboardProps> = () => {
       if (filter.prioridade) params.append('prioridade', filter.prioridade);
       if (filter.responsavel) params.append('responsavel', filter.responsavel);
       
-      const response = await fetch(`/api/cozinha/items?${params}`);
+      const response = await fetch(`/api/cozinha/items?${params}`, {
+        headers: {
+          Authorization: `Bearer ${token || ''}`
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setItems(data);
@@ -132,6 +138,7 @@ const KitchenDashboard: React.FC<KitchenDashboardProps> = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token || ''}`,
         },
         body: JSON.stringify({
           status: newStatus,
