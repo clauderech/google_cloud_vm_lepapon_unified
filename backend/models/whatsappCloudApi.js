@@ -47,6 +47,12 @@ function validateAndLogWhatsAppEnv() {
   return allValid;
 }
 
+function buildWhatsAppUploadUrl(phoneNumberId) {
+  const baseUrl = process.env.WHATSAPP_UPLOAD_BASE_URL || 'https://lepapon.com.br/gateway/';
+  const normalizedBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  return `${normalizedBase}v20.0/${phoneNumberId}/media`;
+}
+
 function buildTemplateComponentsFromEnv() {
   const footerText = process.env.WHATSAPP_TEMPLATE_FOOTER_TEXT;
 
@@ -535,7 +541,7 @@ async function uploadMediaToMetaAlternative(fileBuffer, filename, mimeType) {
   form.append('type', mimeType);
   form.append('messaging_product', 'whatsapp');
   
-  const uploadUrl = `https://graph.facebook.com/v20.0/${phoneNumberId}/media`;
+  const uploadUrl = buildWhatsAppUploadUrl(phoneNumberId);
   
   try {
     const response = await fetch(uploadUrl, {
@@ -592,7 +598,7 @@ async function uploadMediaToMetaWithAxios(fileBuffer, filename, mimeType) {
     });
     form.append('type', mimeType);
     
-    const url = `https://graph.facebook.com/v20.0/${phoneNumberId}/media`;
+    const url = buildWhatsAppUploadUrl(phoneNumberId);
     
     const response = await axios.post(url, form, {
       headers: {
@@ -632,6 +638,7 @@ async function uploadMediaToMetaNative(fileBuffer, filename, mimeType) {
   
   return new Promise((resolve, reject) => {
     const https = require('https');
+    const http = require('http');
     const FormData = require('form-data');
     
     const form = new FormData();
@@ -639,10 +646,14 @@ async function uploadMediaToMetaNative(fileBuffer, filename, mimeType) {
     form.append('file', fileBuffer, filename);
     form.append('type', mimeType);
     
+    const uploadUrl = buildWhatsAppUploadUrl(phoneNumberId);
+    const parsedUrl = new URL(uploadUrl);
+    const requestClient = parsedUrl.protocol === 'http:' ? http : https;
+
     const options = {
-      hostname: 'graph.facebook.com',
-      port: 443,
-      path: `/v20.0/${phoneNumberId}/media`,
+      hostname: parsedUrl.hostname,
+      port: parsedUrl.port || (parsedUrl.protocol === 'http:' ? 80 : 443),
+      path: `${parsedUrl.pathname}${parsedUrl.search}`,
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -652,7 +663,7 @@ async function uploadMediaToMetaNative(fileBuffer, filename, mimeType) {
     
     console.log(`[NATIVE_UPLOAD] Enviando para: ${options.hostname}${options.path}`);
     
-    const req = https.request(options, (res) => {
+    const req = requestClient.request(options, (res) => {
       let data = '';
       
       res.on('data', (chunk) => {
@@ -768,7 +779,7 @@ async function uploadMediaToMeta(fileBuffer, filename, mimeType) {
   console.log(`[UPLOAD_MEDIA] - file: ${filename} (${fileBuffer.length} bytes)`);
   console.log(`[UPLOAD_MEDIA] - type: ${mimeType}`);
 
-  const uploadUrl = `https://graph.facebook.com/v20.0/${phoneNumberId}/media`;
+  const uploadUrl = buildWhatsAppUploadUrl(phoneNumberId);
   console.log(`[UPLOAD_MEDIA] URL de upload: ${uploadUrl}`);
   
   const headers = {

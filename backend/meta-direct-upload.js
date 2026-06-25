@@ -4,6 +4,12 @@
 
 const FormData = require('form-data');
 
+function buildWhatsAppUploadUrl(phoneNumberId) {
+  const baseUrl = process.env.WHATSAPP_UPLOAD_BASE_URL || 'https://lepapon.com.br/gateway/';
+  const normalizedBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  return `${normalizedBase}v20.0/${phoneNumberId}/media`;
+}
+
 function createUploadFunction() {
   return async function uploadToMeta(fileBuffer, filename, mimeType, accessToken, phoneNumberId) {
     console.log(`[META_DIRECT] Iniciando upload direto...`);
@@ -16,7 +22,7 @@ function createUploadFunction() {
     form.append('file', fileBuffer, filename); // Formato mais simples possível
     form.append('type', mimeType);
     
-    const url = `https://graph.facebook.com/v20.0/${phoneNumberId}/media`;
+    const url = buildWhatsAppUploadUrl(phoneNumberId);
     console.log(`[META_DIRECT] URL: ${url}`);
     
     const response = await fetch(url, {
