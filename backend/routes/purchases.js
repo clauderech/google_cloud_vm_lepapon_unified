@@ -1,7 +1,7 @@
 
 const express = require('express');
 const PurchaseModel = require('../models/purchase');
-const { requireAuth } = require('../middleware/authUnified');
+const { requireAuth, validateApiKey } = require('../middleware/authUnified');
 const router = express.Router();
 
 // Listar todas as compras
@@ -11,6 +11,86 @@ router.get('/', requireAuth, async (req, res) => {
     res.json(purchases);
   } catch (err) {
     res.status(500).json({ error: 'Erro ao listar compras', details: err.message });
+  }
+});
+
+/**
+ * ============================================
+ * ROTA ANDROID - GET /api/purchases/android
+ * ============================================
+ * Endpoint Android de compras usa POST.
+ * Este GET explícito evita cair em /:id com id="android".
+ */
+router.get('/android', validateApiKey, async (req, res) => {
+  return res.status(405).json({
+    error: 'Method Not Allowed',
+    message: 'Use POST /api/purchases/android para registrar compras'
+  });
+});
+
+/**
+ * ============================================
+ * ROTA ANDROID - POST /api/purchases/android
+ * ============================================
+ * Registrar compra para app Android
+ * Autenticação: X-API-Key obrigatório
+ */
+router.post('/android', validateApiKey, async (req, res) => {
+  try {
+    const { supplierId, items, total, invoiceNumber } = req.body;
+
+    console.log('[PURCHASE][ANDROID][CREATE]', {
+      supplierId,
+      itemCount: items?.length || 0,
+      total
+    });
+
+    // Validações
+    if (!supplierId) {
+      return res.status(400).json({
+        error: 'Campo supplierId é obrigatório'
+      });
+    }
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({
+        error: 'Campo items é obrigatório e deve conter ao menos 1 item'
+      });
+    }
+
+    if (!total || parseFloat(total) <= 0) {
+      return res.status(400).json({
+        error: 'Campo total é obrigatório e deve ser maior que 0'
+      });
+    }
+
+    // Criar compra
+    const result = await PurchaseModel.create({
+      supplierId,
+      items,
+      total: parseFloat(total),
+      invoiceNumber: invoiceNumber || null,
+      userId: 'android_app'
+    });
+
+    console.log('[PURCHASE][ANDROID][CREATE][SUCCESS]', {
+      purchaseId: result[0]
+    });
+
+    res.status(201).json({
+      success: true,
+      purchaseId: result[0],
+      message: 'Compra registrada com sucesso'
+    });
+  } catch (err) {
+    console.error('[PURCHASE][ANDROID][CREATE][ERROR]', {
+      error: err.message,
+      stack: err.stack
+    });
+    res.status(500).json({
+      error: 'Erro ao registrar compra',
+      details: err.message
+    });
   }
 });
 
@@ -52,74 +132,6 @@ router.delete('/:id', requireAuth, async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Erro ao remover compra', details: err.message });
-  }
-});
-
-/**
- * ============================================
- * ROTA ANDROID - POST /api/purchases/android
- * ============================================
- * Registrar compra para app Android
- * Autenticação: X-API-Key obrigatório
- */
-const { validateApiKey } = require('../middleware/authUnified');
-
-router.post('/android', validateApiKey, async (req, res) => {
-  try {
-    const { supplierId, items, total, invoiceNumber } = req.body;
-    
-    console.log('[PURCHASE][ANDROID][CREATE]', {
-      supplierId,
-      itemCount: items?.length || 0,
-      total
-    });
-    
-    // Validações
-    if (!supplierId) {
-      return res.status(400).json({ 
-        error: 'Campo supplierId é obrigatório' 
-      });
-    }
-    
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ 
-        error: 'Campo items é obrigatório e deve conter ao menos 1 item' 
-      });
-    }
-    
-    if (!total || parseFloat(total) <= 0) {
-      return res.status(400).json({ 
-        error: 'Campo total é obrigatório e deve ser maior que 0' 
-      });
-    }
-    
-    // Criar compra
-    const result = await PurchaseModel.create({
-      supplierId,
-      items,
-      total: parseFloat(total),
-      invoiceNumber: invoiceNumber || null,
-      userId: 'android_app'
-    });
-    
-    console.log('[PURCHASE][ANDROID][CREATE][SUCCESS]', { 
-      purchaseId: result[0] 
-    });
-    
-    res.status(201).json({ 
-      success: true, 
-      purchaseId: result[0],
-      message: 'Compra registrada com sucesso'
-    });
-  } catch (err) {
-    console.error('[PURCHASE][ANDROID][CREATE][ERROR]', {
-      error: err.message,
-      stack: err.stack
-    });
-    res.status(500).json({ 
-      error: 'Erro ao registrar compra', 
-      details: err.message 
-    });
   }
 });
 

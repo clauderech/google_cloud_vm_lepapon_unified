@@ -3,6 +3,7 @@ const express = require('express');
 const ProductModel = require('../models/product');
 const StockService = require('../services/stockService');
 const { requireAdmin } = require('../middleware/roleAuth');
+const { validateApiKey } = require('../middleware/authUnified');
 const router = express.Router();
 
 const ALLOWED_PRODUCT_TYPES = ['prato', 'drink', 'insumo', 'insumo_bebida', 'revenda'];
@@ -60,6 +61,44 @@ router.get('/simple', async (req, res) => {
     res.json(products);
   } catch (err) {
     res.status(500).json({ error: 'Erro ao listar produtos', details: err.message });
+  }
+});
+
+/**
+ * ============================================
+ * ROTA ANDROID - GET /api/products/android
+ * ============================================
+ * Catálogo filtrado para app Android
+ * Autenticação: X-API-Key obrigatório
+ * Tipos: insumo, insumo_bebida, revenda
+ */
+router.get('/android', validateApiKey, async (req, res) => {
+  try {
+    const { db } = require('../config/knex');
+
+    console.log('[PRODUCT][ANDROID][LIST]');
+
+    const products = await db('products')
+      .select('id', 'name', 'type', 'price', 'stock')
+      .where('is_active', 1)
+      .whereIn('type', ['insumo', 'insumo_bebida', 'revenda'])
+      .orderBy('name', 'asc');
+
+    console.log('[PRODUCT][ANDROID][LIST][SUCCESS]', { count: products.length });
+
+    res.json({
+      success: true,
+      data: products
+    });
+  } catch (err) {
+    console.error('[PRODUCT][ANDROID][LIST][ERROR]', {
+      error: err.message,
+      stack: err.stack
+    });
+    res.status(500).json({
+      error: 'Erro ao listar produtos',
+      details: err.message
+    });
   }
 });
 
@@ -248,46 +287,6 @@ router.post('/send-to-lepapon', async (req, res) => {
   } catch (err) {
     console.error('[PRODUCT][SEND_TO_LEPAPON][ERROR]', err?.message || err);
     res.status(500).json({ error: 'Falha ao enviar produtos para Lepapon', details: err?.message || String(err) });
-  }
-});
-
-/**
- * ============================================
- * ROTA ANDROID - GET /api/products/android
- * ============================================
- * Catálogo filtrado para app Android
- * Autenticação: X-API-Key obrigatório
- * Tipos: insumo, insumo_bebida, revenda
- */
-const { validateApiKey } = require('../middleware/authUnified');
-
-router.get('/android', validateApiKey, async (req, res) => {
-  try {
-    const { db } = require('../config/knex');
-    
-    console.log('[PRODUCT][ANDROID][LIST]');
-    
-    const products = await db('products')
-      .select('id', 'name', 'type', 'price', 'stock')
-      .where('is_active', 1)
-      .whereIn('type', ['insumo', 'insumo_bebida', 'revenda'])
-      .orderBy('name', 'asc');
-    
-    console.log('[PRODUCT][ANDROID][LIST][SUCCESS]', { count: products.length });
-    
-    res.json({
-      success: true,
-      data: products
-    });
-  } catch (err) {
-    console.error('[PRODUCT][ANDROID][LIST][ERROR]', {
-      error: err.message,
-      stack: err.stack
-    });
-    res.status(500).json({ 
-      error: 'Erro ao listar produtos', 
-      details: err.message 
-    });
   }
 });
 
