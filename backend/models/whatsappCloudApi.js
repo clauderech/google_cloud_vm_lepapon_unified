@@ -53,6 +53,23 @@ function buildWhatsAppUploadUrl(phoneNumberId) {
   return `${normalizedBase}v20.0/${phoneNumberId}/media`;
 }
 
+async function parseResponseSafely(response) {
+  const text = await response.text();
+  try {
+    return {
+      json: text ? JSON.parse(text) : null,
+      rawText: text,
+      isJson: true,
+    };
+  } catch {
+    return {
+      json: null,
+      rawText: text,
+      isJson: false,
+    };
+  }
+}
+
 function buildTemplateComponentsFromEnv() {
   const footerText = process.env.WHATSAPP_TEMPLATE_FOOTER_TEXT;
 
@@ -553,7 +570,8 @@ async function uploadMediaToMetaAlternative(fileBuffer, filename, mimeType) {
       body: form
     });
 
-    const json = await response.json();
+    const parsed = await parseResponseSafely(response);
+    const json = parsed.json || { raw: parsed.rawText };
     console.log(`[UPLOAD_ALT] Status: ${response.status}, Response:`, json);
     
     if (!response.ok) {
@@ -802,7 +820,8 @@ async function uploadMediaToMeta(fileBuffer, filename, mimeType) {
   console.log(`[UPLOAD_MEDIA] Resposta recebida - Status: ${response.status}`);
   console.log(`[UPLOAD_MEDIA] Response Headers:`, Object.fromEntries(response.headers.entries()));
   
-  const json = await response.json();
+  const parsedPrimary = await parseResponseSafely(response);
+  const json = parsedPrimary.json || { raw: parsedPrimary.rawText };
   console.log(`[UPLOAD_MEDIA] Response Body:`, JSON.stringify(json, null, 2));
   
   if (!response.ok) {
@@ -855,7 +874,8 @@ async function uploadMediaToMeta(fileBuffer, filename, mimeType) {
         body: simpleForm
       });
 
-      const simpleResult = await simpleResponse.json();
+      const parsedSimple = await parseResponseSafely(simpleResponse);
+      const simpleResult = parsedSimple.json || { raw: parsedSimple.rawText };
       console.log(`[UPLOAD_MEDIA] Método simples - Status: ${simpleResponse.status}`);
       
       if (simpleResponse.ok) {
@@ -952,7 +972,8 @@ async function sendMediaMessage({ to, mediaId, filename, caption }) {
 
   console.log(`[SEND_MEDIA] Resposta recebida - Status: ${response.status}`);
 
-  const json = await response.json();
+  const parsedSend = await parseResponseSafely(response);
+  const json = parsedSend.json || { raw: parsedSend.rawText };
   
   if (!response.ok) {
     console.error(`[SEND_MEDIA] ❌ ERRO no envio:`);
