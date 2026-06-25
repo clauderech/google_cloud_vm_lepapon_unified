@@ -3,7 +3,7 @@ const express = require('express');
 const ProductModel = require('../models/product');
 const StockService = require('../services/stockService');
 const { requireAdmin } = require('../middleware/roleAuth');
-const { validateApiKey } = require('../middleware/authUnified');
+const { requireAuth, validateApiKey } = require('../middleware/authUnified');
 const router = express.Router();
 
 const ALLOWED_PRODUCT_TYPES = ['prato', 'drink', 'insumo', 'insumo_bebida', 'revenda'];
@@ -13,7 +13,7 @@ const validateProductType = (type) => {
 };
 
 // Listar todos os produtos
-router.get('/', async (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
   try {
     const products = await ProductModel.list();
     res.json(products);
@@ -23,7 +23,7 @@ router.get('/', async (req, res) => {
 });
 
 // Listar apenas produtos do tipo 'prato' com campos id e name
-router.get('/pratos', async (req, res) => {
+router.get('/pratos', requireAuth, async (req, res) => {
   try {
     const products = await ProductModel.list();
     const pratos = products
@@ -36,7 +36,7 @@ router.get('/pratos', async (req, res) => {
 });
 
 // Listar apenas produtos do tipo 'revenda' com campos id e name
-router.get('/revendas', async (req, res) => {
+router.get('/revendas', requireAuth, async (req, res) => {
   try {
     const products = await ProductModel.list();
     const revendas = products
@@ -49,7 +49,7 @@ router.get('/revendas', async (req, res) => {
 });
 
 // Listar produtos ativos de tipos específicos (prato e revenda) com id, name, price e stock
-router.get('/simple', async (req, res) => {
+router.get('/simple', requireAuth, async (req, res) => {
   try {
     const { db } = require('../config/knex');
     const products = await db('products')
@@ -103,7 +103,7 @@ router.get('/android', validateApiKey, async (req, res) => {
 });
 
 // Buscar produto por ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireAuth, async (req, res) => {
   try {
     const product = await ProductModel.getById(req.params.id);
     if (!product) return res.status(404).json({ error: 'Produto não encontrado' });

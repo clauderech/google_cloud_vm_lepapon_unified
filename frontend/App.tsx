@@ -100,19 +100,20 @@ import { unstable_batchedUpdates } from 'react-dom';
 const App = () => {
       // Menu de navegação global para mobile
       const adminMenu = [
-        { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { key: 'pos', label: 'PDV', icon: ShoppingCart },
-        { key: 'inventory', label: 'Estoque', icon: Package },
-        { key: 'production', label: 'Produção', icon: Factory },
-        { key: 'customers', label: 'Clientes', icon: Truck },
-        { key: 'cozinha', label: 'Cozinha', icon: ChefHat },
-        { key: 'financial', label: 'Financeiro', icon: TrendingUp },
-        { key: 'reports', label: 'Relatórios', icon: HelpCircle },
+        { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'view_dashboard' },
+        { key: 'pos', label: 'PDV', icon: ShoppingCart, permission: 'view_pos' },
+        { key: 'inventory', label: 'Estoque', icon: Package, permission: 'view_inventory' },
+        { key: 'production', label: 'Produção', icon: Factory, permission: 'view_inventory' },
+        { key: 'customers', label: 'Clientes', icon: Truck, permission: 'manage_products' },
+        { key: 'cozinha', label: 'Cozinha', icon: ChefHat, permission: 'view_kitchen' },
+        { key: 'financial', label: 'Financeiro', icon: TrendingUp, permission: 'view_financial' },
+        { key: 'reports', label: 'Relatórios', icon: HelpCircle, permission: 'view_reports' },
       ];
     // Estado do menu mobile
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   // --- Authentication ---
   const { user, isAuthenticated, login, logout, hasPermission } = useAuth();
+  const mobileMenuItems = adminMenu.filter(item => hasPermission(item.permission));
   
   // Debug authentication state
   useEffect(() => {
@@ -1130,7 +1131,7 @@ const App = () => {
         )}
         {/* Mobile Menu Button - Global Navigation */}
         <div className="md:hidden flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200">
-          <span className="font-bold text-lg text-blue-900">{adminMenu.find(m => m.key === view)?.label || 'Menu'}</span>
+          <span className="font-bold text-lg text-blue-900">{mobileMenuItems.find(m => m.key === view)?.label || 'Menu'}</span>
           <button onClick={() => setMobileMenuOpen(true)} className="p-2"><MenuIcon className="w-7 h-7 text-blue-700" /></button>
         </div>
         {/* Mobile Drawer - Global Navigation */}
@@ -1142,7 +1143,7 @@ const App = () => {
                 <button onClick={() => setMobileMenuOpen(false)}><CloseIcon className="w-6 h-6 text-blue-700" /></button>
               </div>
               <nav className="flex flex-col gap-2 p-4">
-                {adminMenu.map(item => (
+                {mobileMenuItems.map(item => (
                   <button
                     key={item.key}
                     className={`flex items-center gap-3 text-left px-4 py-3 rounded-lg font-bold text-lg ${view === item.key ? 'bg-blue-100 text-blue-800' : 'text-gray-700 hover:bg-gray-100'}`}
@@ -2558,8 +2559,8 @@ const App = () => {
            <>
             {view === 'dashboard' && <Dashboard />}
             {view === 'pos' && <POS />}
-            {view === 'inventory' && <Inventory />}
-            {view === 'production' && <ProductionManager onError={(message) => alert(message)} />}
+            {view === 'inventory' && hasPermission('view_inventory') && <Inventory />}
+            {view === 'production' && hasPermission('view_inventory') && <ProductionManager onError={(message) => alert(message)} />}
             {view === 'customers' && <CustomersManager customers={state.customers} sales={state.sales} onAddCustomer={addCustomer} onUpdateCustomer={updateCustomer} onDeleteCustomer={deleteCustomer} />}
             {view === 'cozinha' && <KitchenDashboard />}
             {view === 'shopping-list' && <ShoppingListView />}
