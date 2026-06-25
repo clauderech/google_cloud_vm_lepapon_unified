@@ -19,10 +19,8 @@ import type {
 import { getAuthToken } from './authService';
 
 // CONFIGURAÇÃO: Automático baseado no ambiente
-const USE_API = process.env.NODE_ENV === 'production';
-const API_URL = process.env.NODE_ENV === 'production' 
-  ? '/api' 
-  : 'http://localhost:3001/api';
+const USE_API = true;
+const API_URL = 'http://lepapon-unified.local/api';
 
 const LOCAL_STORAGE_KEY = 'lanchonete_app_state_v5';
 

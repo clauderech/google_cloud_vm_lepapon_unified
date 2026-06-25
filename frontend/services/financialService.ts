@@ -6,9 +6,7 @@
 import type { DailyAssets, Expense, CashRegister } from '../types';
 import { getAuthToken } from './authService';
 
-const API_URL = process.env.NODE_ENV === 'production' 
-  ? '/api' 
-  : 'http://localhost:3001/api';
+const API_URL = 'http://lepapon-unified.local/api';
 
 function withAuthHeaders(headers: Record<string, string> = {}): Record<string, string> {
   const token = getAuthToken();

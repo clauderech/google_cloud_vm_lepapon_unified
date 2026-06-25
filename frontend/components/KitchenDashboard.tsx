@@ -36,7 +36,7 @@ const KitchenDashboard: React.FC<KitchenDashboardProps> = () => {
     
     console.log('[KitchenDashboard] Conectando ao Socket.IO...');
     
-    const API_URL = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001';
+    const API_URL = 'http://lepapon-unified.local';
     const socket = io(API_URL);
     socketRef.current = socket;
 

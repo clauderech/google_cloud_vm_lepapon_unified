@@ -223,8 +223,8 @@ const axios = require('axios');
 const fs = require('fs/promises');
 const path = require('path');
 
-const LEPAPON_REMOTE_URL = process.env.LEPAPON_REMOTE_URL || 'https://lepapon.com.br/api/atualiza-prod';
-const LEPAPON_REMOTE_STOCK_URL = process.env.LEPAPON_REMOTE_STOCK_URL || 'https://lepapon.com.br/api/produtos';
+const LEPAPON_REMOTE_URL = process.env.LEPAPON_REMOTE_URL || 'http://lepapon-unified.local/api/atualiza-prod';
+const LEPAPON_REMOTE_STOCK_URL = process.env.LEPAPON_REMOTE_STOCK_URL || 'http://lepapon-unified.local/api/produtos';
 const LEPAPON_REMOTE_TOKEN = process.env.LEPAPON_REMOTE_TOKEN || ''; // opcional, defina no .env se precisar
 
 // Proxy para atualizar stock de produto no Lepapon através do backend, evitando CORS

@@ -15,6 +15,8 @@ interface PDFFile {
 
 interface PDFSelectorProps {}
 
+const APP_BASE_URL = 'http://lepapon-unified.local';
+
 const PDFSelector: FC<PDFSelectorProps> = () => {
   // Estados principais
   const [pdfs, setPdfs] = useState<PDFFile[]>([]);
@@ -27,7 +29,7 @@ const PDFSelector: FC<PDFSelectorProps> = () => {
   const loadPDFs = async () => {
     try {
       setLoading(true);
-      const res = await fetch('https://snackbartio.com.br/api/comandas/crediario/pdfs');
+      const res = await fetch(`${APP_BASE_URL}/api/comandas/crediario/pdfs`);
       if (!res.ok) throw new Error('Erro ao carregar PDFs');
       const data = await res.json();
       setPdfs(data);
@@ -88,12 +90,12 @@ const PDFSelector: FC<PDFSelectorProps> = () => {
 
   // Handler: Download PDF
   const handleDownload = (pdf: PDFFile) => {
-    window.open(`https://snackbartio.com.br${pdf.downloadUrl}`, '_blank');
+    window.open(`${APP_BASE_URL}${pdf.downloadUrl}`, '_blank');
   };
 
   // Handler: Preview PDF (nova aba)
   const handlePreview = (pdf: PDFFile) => {
-    window.open(`https://snackbartio.com.br${pdf.downloadUrl}`, '_blank');
+    window.open(`${APP_BASE_URL}${pdf.downloadUrl}`, '_blank');
   };
 
   // Handler: Enviar via WhatsApp
@@ -106,7 +108,7 @@ const PDFSelector: FC<PDFSelectorProps> = () => {
         return;
       }
       
-      const res = await fetch('https://snackbartio.com.br/api/comandas/crediario/send-pdf-whatsapp-simple', {
+      const res = await fetch(`${APP_BASE_URL}/api/comandas/crediario/send-pdf-whatsapp-simple`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
