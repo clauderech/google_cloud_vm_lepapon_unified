@@ -114,7 +114,7 @@ router.get('/:id', requireAuth, async (req, res) => {
 });
 
 // Criar produto
-router.post('/', requireAdmin, async (req, res) => {
+router.post('/', requireAuth, requireAdmin, async (req, res) => {
   try {
     if (!validateProductType(req.body.type)) {
       return res.status(400).json({ error: 'Tipo de produto inválido', details: `Tipos válidos: ${ALLOWED_PRODUCT_TYPES.join(', ')}` });
@@ -165,7 +165,7 @@ router.post('/', requireAdmin, async (req, res) => {
 });
 
 // Atualizar produto
-router.put('/:id', requireOperador, async (req, res) => {
+router.put('/:id', requireAuth, requireOperador, async (req, res) => {
   try {
     if (req.body.type && !validateProductType(req.body.type)) {
       return res.status(400).json({ error: 'Tipo de produto inválido', details: `Tipos válidos: ${ALLOWED_PRODUCT_TYPES.join(', ')}` });
@@ -210,7 +210,7 @@ router.put('/:id', requireOperador, async (req, res) => {
 });
 
 // Remover produto
-router.delete('/:id', requireAdmin, async (req, res) => {
+router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
     await ProductModel.remove(req.params.id);
     res.json({ success: true });
