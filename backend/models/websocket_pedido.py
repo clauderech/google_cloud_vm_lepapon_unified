@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 # Constantes
 URL_BASE_API = "http://lepapon-unified.local"  # URL base da API local unificada
 URL_BASE_API_REMOTE = "http://lepapon-unified.local"  # URL base da API remota
-WEBSOCKET_URL = os.getenv("WEBSOCKET_URL", "ws://lepapon-unified.local:3001")
+WEBSOCKET_URL = os.getenv("WEBSOCKET_URL", "wss://lepapon.com.br:3001")
 WEBSOCKET_TOKEN = os.getenv(
     "WEBSOCKET_TOKEN",
     "cca4fb7a6e655314b83897adf54f41d24c5a5bd60aab4e0175071b7a49150a51",
