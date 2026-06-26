@@ -10,7 +10,7 @@ const ProductModel = require(path.join(__dirname, '../models/product'));
 const CozinhaItem = require(path.join(__dirname, '../models/cozinha_item'));
 const StockService = require(path.join(__dirname, './stockService'));
 
-const WS_URL = process.env.LEPAPON_WS_URL || 'wss://lepapon.com.br:3001';
+const WS_URL = process.env.LEPAPON_WS_URL || 'https://lepapon.com.br/ws';
 const TOKEN = process.env.LEPAPON_WS_TOKEN || 'SEU_TOKEN_AQUI';
 const RECONNECT_DELAY = 5000; // ms
 
