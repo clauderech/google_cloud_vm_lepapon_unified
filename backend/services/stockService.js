@@ -592,6 +592,7 @@ class StockService {
     }).map(product => ({
       productId: product.id,
       productName: product.name,
+      productType: product.type,
       currentStock: parseFloat(product.stock) || 0,
       minStock: parseFloat(product.min_stock) || 0,
       difference: (parseFloat(product.min_stock) || 0) - (parseFloat(product.stock) || 0),
