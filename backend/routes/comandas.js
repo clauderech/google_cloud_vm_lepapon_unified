@@ -125,10 +125,10 @@ function formatDateForMySQL(date) {
 const ComandaModel = require('../models/comanda');
 const { requireAuth } = require('../middleware/authUnified');
 
-// Listar todas as comandas
+// Listar todas as comandas abertas
 router.get('/', requireAuth, async (req, res) => {
   try {
-    const comandas = await ComandaModel.list();
+    const comandas = await ComandaModel.listOpen();
     res.json(comandas);
   } catch (err) {
     res.status(500).json({ error: 'Erro ao listar comandas', details: err.message });

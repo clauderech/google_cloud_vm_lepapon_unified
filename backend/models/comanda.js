@@ -8,6 +8,10 @@ const ComandaModel = {
     // Retorna todas as comandas
     return db('comandas').select('*');
   },
+  async listOpen() {
+    // Retorna apenas comandas abertas
+    return db('comandas').where({ status: 'open' }).select('*');
+  },
   async getById(id) {
     return db('comandas').where({ id }).first();
   },
