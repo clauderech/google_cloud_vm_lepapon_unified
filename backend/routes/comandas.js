@@ -9,6 +9,16 @@ const CozinhaItem = require('../models/cozinha_item');
 const StockService = require('../services/stockService');
 const pdfService = require('../services/pdfService');
 const path = require('path');
+
+function calculateComandaTotal(items) {
+  if (!Array.isArray(items) || items.length === 0) return 0;
+  return items.reduce((sum, item) => {
+    const quantity = parseFloat(item.quantity) || 0;
+    const unitPrice = parseFloat(item.unit_price ?? item.unitPrice) || 0;
+    return sum + (quantity * unitPrice);
+  }, 0);
+}
+
 // Finalizar comanda (pagamento normal ou crediário)
 router.post('/:id/close', async (req, res) => {
   /*
@@ -187,6 +197,10 @@ router.post('/', async (req, res) => {
     if (Array.isArray(items) && items.length > 0) {
       console.log('[COMANDA][CREATE][ADDING_ITEMS]', { comandaId, itemsCount: items.length });
       await ComandaModel.addItems(comandaId, items);
+
+      // Recalcula e persiste total com base nos itens da comanda
+      const total = calculateComandaTotal(items);
+      await ComandaModel.update(comandaId, { total });
       
       // Descontar estoque imediatamente
       try {
@@ -250,6 +264,10 @@ router.put('/:id', async (req, res) => {
       // Remove itens antigos e insere novos (simples)
       await ComandaModel.clearItems(req.params.id);
       await ComandaModel.addItems(req.params.id, items);
+
+      // Recalcula e persiste total com base nos itens enviados no update
+      const total = calculateComandaTotal(items);
+      await ComandaModel.update(req.params.id, { total });
       
       // Descontar estoque imediatamente
       try {
