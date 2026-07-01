@@ -64,6 +64,21 @@ router.get('/simple', requireAuth, async (req, res) => {
   }
 });
 
+// Listar produtos dos tipos revenda, drink e prato
+router.get('/catalog', requireAuth, async (req, res) => {
+  try {
+    const { db } = require('../config/knex');
+    const products = await db('products')
+      .select('id', 'name', 'price', 'stock', 'type')
+      .whereIn('type', ['revenda', 'drink', 'prato'])
+      .orderBy('name', 'asc');
+
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao listar produtos do catálogo', details: err.message });
+  }
+});
+
 /**
  * ============================================
  * ROTA ANDROID - GET /api/products/android
