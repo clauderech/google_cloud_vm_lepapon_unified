@@ -4,7 +4,7 @@ const { db } = require('../config/knex');
 
 const ProductModel = {
   async list() {
-    const rows = await db('products').select('*');
+    const rows = await db('products').where({ is_active: 1 }).select('*');
     return rows.map(row => ({
       ...row,
       recipe: row.recipe ? (typeof row.recipe === 'string' ? JSON.parse(row.recipe) : row.recipe) : []

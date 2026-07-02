@@ -261,29 +261,71 @@ router.put('/:id', async (req, res) => {
     }
     // Atualiza itens da comanda se enviados
     if (Array.isArray(items)) {
-      // Remove itens antigos e insere novos (simples)
+      // Busca itens atuais ANTES de qualquer alteração para calcular diff de estoque
+      const previousItems = await ComandaModel.getItems(req.params.id);
+
+      // Remove itens antigos e insere novos
       await ComandaModel.clearItems(req.params.id);
       await ComandaModel.addItems(req.params.id, items);
 
       // Recalcula e persiste total com base nos itens enviados no update
       const total = calculateComandaTotal(items);
       await ComandaModel.update(req.params.id, { total });
-      
-      // Descontar estoque imediatamente
+
+      // Calcula diff de estoque: apenas a diferença de quantidade por produto
       try {
-        await StockService.processComanda({
-          items: items,
-          comandaId: req.params.id,
-          userId: req.body.userId || null
-        });
-        console.log('[COMANDA][UPDATE][STOCK][SUCCESS]', { comandaId: req.params.id, itemCount: items.length });
+        const userId = req.body.userId || null;
+        const comandaId = req.params.id;
+
+        // Monta mapa de quantidade anterior por product_id
+        const prevMap = {};
+        for (const item of previousItems) {
+          const pid = item.product_id;
+          prevMap[pid] = (prevMap[pid] || 0) + parseFloat(item.quantity);
+        }
+
+        // Monta mapa de quantidade nova por product_id
+        const newMap = {};
+        for (const item of items) {
+          const pid = item.product_id || item.productId;
+          newMap[pid] = (newMap[pid] || 0) + parseFloat(item.quantity);
+        }
+
+        // Conjunto de todos os product_ids afetados
+        const allProductIds = new Set([...Object.keys(prevMap), ...Object.keys(newMap)]);
+
+        for (const pid of allProductIds) {
+          const prevQty = prevMap[pid] || 0;
+          const newQty = newMap[pid] || 0;
+          const diff = newQty - prevQty; // positivo = adicionou mais; negativo = removeu
+
+          if (diff === 0) continue;
+
+          if (diff > 0) {
+            // Adicionou quantidade: deduzir do estoque
+            await StockService.processComanda({
+              items: [{ product_id: pid, quantity: diff }],
+              comandaId,
+              userId
+            });
+          } else {
+            // Removeu quantidade: devolver ao estoque
+            await StockService.revertComanda({
+              items: [{ product_id: pid, quantity: Math.abs(diff) }],
+              comandaId,
+              userId
+            });
+          }
+        }
+
+        console.log('[COMANDA][UPDATE][STOCK][DIFF][SUCCESS]', { comandaId, productsAffected: allProductIds.size });
       } catch (stockError) {
-        console.error('[COMANDA][UPDATE][STOCK][ERROR]', {
+        console.error('[COMANDA][UPDATE][STOCK][DIFF][ERROR]', {
           comandaId: req.params.id,
           error: stockError.message
         });
       }
-      
+
       // Gerencia itens da cozinha usando função centralizada
       // Faz diff inteligente para evitar duplicações
       await CozinhaItem.manageCozinhaItems(req.params.id, items, null);
