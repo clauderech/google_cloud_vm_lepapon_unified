@@ -117,6 +117,50 @@ router.get('/android', validateApiKey, async (req, res) => {
   }
 });
 
+const axios = require('axios');
+const fs = require('fs/promises');
+const path = require('path');
+
+const LEPAPON_REMOTE_URL = process.env.LEPAPON_REMOTE_URL || 'http://lepapon-unified.local/api/atualiza-prod';
+const LEPAPON_REMOTE_STOCK_URL = process.env.LEPAPON_REMOTE_STOCK_URL || 'http://lepapon-unified.local/api/produtos';
+const LEPAPON_REMOTE_TOKEN = process.env.LEPAPON_REMOTE_TOKEN || ''; // opcional, defina no .env se precisar
+
+// Envia produtos tipo prato/drink/revenda para lepapon remoto (campos mínimos)
+const sendProductsToLepapon = async (req, res) => {
+  try {
+    const products = await ProductModel.list();
+    const filtered = products
+      .filter(p => ['prato', 'revenda'].includes(p.type))
+      .map(p => ({
+        id: p.id,
+        name: p.name,
+        price: p.price,
+        stock: p.stock,
+        updated_at: p.updated_at
+      }));
+
+    const payload = filtered;
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (LEPAPON_REMOTE_TOKEN) headers.Authorization = `Bearer ${LEPAPON_REMOTE_TOKEN}`;
+
+    const resp = await axios.post(LEPAPON_REMOTE_URL, payload, { headers, timeout: 15000 });
+
+    res.json({
+      success: true,
+      remoteStatus: resp.status,
+      remoteData: resp.data,
+      sentCount: filtered.length
+    });
+  } catch (err) {
+    console.error('[PRODUCT][SEND_TO_LEPAPON][ERROR]', err?.message || err);
+    res.status(500).json({ error: 'Falha ao enviar produtos para Lepapon', details: err?.message || String(err) });
+  }
+};
+
+router.get('/send-to-lepapon', sendProductsToLepapon);
+router.post('/send-to-lepapon', sendProductsToLepapon);
+
 // Buscar produto por ID
 router.get('/:id', requireAuth, async (req, res) => {
   try {
@@ -234,14 +278,6 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
-const axios = require('axios');
-const fs = require('fs/promises');
-const path = require('path');
-
-const LEPAPON_REMOTE_URL = process.env.LEPAPON_REMOTE_URL || 'http://lepapon-unified.local/api/atualiza-prod';
-const LEPAPON_REMOTE_STOCK_URL = process.env.LEPAPON_REMOTE_STOCK_URL || 'http://lepapon-unified.local/api/produtos';
-const LEPAPON_REMOTE_TOKEN = process.env.LEPAPON_REMOTE_TOKEN || ''; // opcional, defina no .env se precisar
-
 // Proxy para atualizar stock de produto no Lepapon através do backend, evitando CORS
 router.patch('/:id/lepapon-stock', async (req, res) => {
   try {
@@ -271,41 +307,5 @@ router.patch('/:id/lepapon-stock', async (req, res) => {
     res.status(status).json({ error: 'Falha ao atualizar estoque no Lepapon', details: data });
   }
 });
-
-// Envia produtos tipo prato/drink/revenda para lepapon remoto (campos mínimos)
-const sendProductsToLepapon = async (req, res) => {
-  try {
-    const products = await ProductModel.list();
-    const filtered = products
-      .filter(p => ['prato', 'revenda'].includes(p.type))
-      .map(p => ({
-        id: p.id,
-        name: p.name,
-        price: p.price,
-        stock: p.stock,
-        updated_at: p.updated_at
-      }));
-
-    const payload = filtered;
-
-    const headers = { 'Content-Type': 'application/json' };
-    if (LEPAPON_REMOTE_TOKEN) headers.Authorization = `Bearer ${LEPAPON_REMOTE_TOKEN}`;
-
-    const resp = await axios.post(LEPAPON_REMOTE_URL, payload, { headers, timeout: 15000 });
-
-    res.json({
-      success: true,
-      remoteStatus: resp.status,
-      remoteData: resp.data,
-      sentCount: filtered.length
-    });
-  } catch (err) {
-    console.error('[PRODUCT][SEND_TO_LEPAPON][ERROR]', err?.message || err);
-    res.status(500).json({ error: 'Falha ao enviar produtos para Lepapon', details: err?.message || String(err) });
-  }
-};
-
-router.get('/send-to-lepapon', sendProductsToLepapon);
-router.post('/send-to-lepapon', sendProductsToLepapon);
 
 module.exports = router;
