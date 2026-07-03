@@ -273,7 +273,7 @@ router.patch('/:id/lepapon-stock', async (req, res) => {
 });
 
 // Envia produtos tipo prato/drink/revenda para lepapon remoto (campos mínimos)
-router.post('/send-to-lepapon', async (req, res) => {
+const sendProductsToLepapon = async (req, res) => {
   try {
     const products = await ProductModel.list();
     const filtered = products
@@ -303,6 +303,9 @@ router.post('/send-to-lepapon', async (req, res) => {
     console.error('[PRODUCT][SEND_TO_LEPAPON][ERROR]', err?.message || err);
     res.status(500).json({ error: 'Falha ao enviar produtos para Lepapon', details: err?.message || String(err) });
   }
-});
+};
+
+router.get('/send-to-lepapon', sendProductsToLepapon);
+router.post('/send-to-lepapon', sendProductsToLepapon);
 
 module.exports = router;
