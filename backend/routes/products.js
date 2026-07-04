@@ -158,8 +158,7 @@ const sendProductsToLepapon = async (req, res) => {
   }
 };
 
-router.get('/send-to-lepapon', sendProductsToLepapon);
-router.post('/send-to-lepapon', sendProductsToLepapon);
+router.post('/send-to-lepapon', requireAuth, sendProductsToLepapon);
 
 // Buscar produto por ID
 router.get('/:id', requireAuth, async (req, res) => {

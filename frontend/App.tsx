@@ -57,6 +57,7 @@ import {
   Wallet,
   LogOut,
   HelpCircle,
+  RefreshCw,
   Menu as MenuIcon,
   X as CloseIcon,
   Factory
@@ -131,6 +132,8 @@ const App = () => {
   const [showHelp, setShowHelp] = useState(false);
   const [customersDropdown, setCustomersDropdown] = useState<CustomerDropdownItem[]>([]);
   const [showFileUploadModal, setShowFileUploadModal] = useState(false);
+  const [sendingProductsToLepapon, setSendingProductsToLepapon] = useState(false);
+  const [syncToast, setSyncToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   
   // Estados para funcionalidades de comanda
   const [selectedComandaCustomerId, setSelectedComandaCustomerId] = useState<string>('');
@@ -154,6 +157,33 @@ const App = () => {
 
     return response.json().catch(() => null);
   };
+
+  const handleSendProductsToLepapon = async () => {
+    if (sendingProductsToLepapon) return;
+
+    setSendingProductsToLepapon(true);
+    try {
+      const result = await storageService.sendProductsToLepapon();
+      const sentCount = typeof result?.sentCount === 'number' ? result.sentCount : undefined;
+      setSyncToast({
+        type: 'success',
+        message: sentCount !== undefined
+          ? `Sincronizacao concluida. ${sentCount} produtos enviados para o Lepapon.`
+          : 'Sincronizacao concluida com sucesso.'
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Falha ao sincronizar produtos com Lepapon';
+      setSyncToast({ type: 'error', message: `Erro ao sincronizar: ${message}` });
+    } finally {
+      setSendingProductsToLepapon(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!syncToast) return;
+    const timer = window.setTimeout(() => setSyncToast(null), 3500);
+    return () => window.clearTimeout(timer);
+  }, [syncToast]);
 
   const [state, setState] = useState<AppState>({
     products: [],
@@ -1154,6 +1184,19 @@ const App = () => {
                     {item.label}
                   </button>
                 ))}
+                {hasPermission('view_inventory') && (
+                  <button
+                    onClick={async () => {
+                      await handleSendProductsToLepapon();
+                      setMobileMenuOpen(false);
+                    }}
+                    disabled={sendingProductsToLepapon}
+                    className="mt-2 flex items-center gap-3 text-left px-4 py-3 rounded-lg font-bold text-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-70 disabled:cursor-not-allowed"
+                  >
+                    <RefreshCw className={`w-5 h-5 ${sendingProductsToLepapon ? 'animate-spin' : ''}`} />
+                    {sendingProductsToLepapon ? 'Sincronizando...' : 'Enviar Produtos Lepapon'}
+                  </button>
+                )}
               </nav>
             </div>
             <div className="flex-1" onClick={() => setMobileMenuOpen(false)} />
@@ -2514,6 +2557,16 @@ const App = () => {
             <Plus className="w-4 h-4" />
             Upload de arquivo
           </button>
+          {hasPermission('view_inventory') && (
+            <button
+              onClick={handleSendProductsToLepapon}
+              disabled={sendingProductsToLepapon}
+              className="mt-2 w-full bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              <RefreshCw className={`w-4 h-4 ${sendingProductsToLepapon ? 'animate-spin' : ''}`} />
+              {sendingProductsToLepapon ? 'Sincronizando...' : 'Enviar p/ Lepapon'}
+            </button>
+          )}
         </div>
         <nav className="flex-1 p-4">
           {hasPermission('view_dashboard') && <SidebarItem icon={LayoutDashboard} label="Dashboard" active={view === 'dashboard'} onClick={() => setView('dashboard')} />}
@@ -2609,6 +2662,27 @@ const App = () => {
                 Sim, Cancelar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {syncToast && (
+        <div className="fixed top-4 right-4 z-[60] max-w-sm w-[92vw] sm:w-auto">
+          <div
+            className={`rounded-lg border px-4 py-3 shadow-lg flex items-start gap-3 ${
+              syncToast.type === 'success'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                : 'bg-red-50 border-red-200 text-red-900'
+            }`}
+            role="status"
+            aria-live="polite"
+          >
+            {syncToast.type === 'success' ? (
+              <CheckSquare className="w-5 h-5 mt-0.5" />
+            ) : (
+              <AlertTriangle className="w-5 h-5 mt-0.5" />
+            )}
+            <span className="text-sm font-bold leading-5">{syncToast.message}</span>
           </div>
         </div>
       )}

@@ -413,6 +413,23 @@ export const storageService = {
     }
   },
 
+  async sendProductsToLepapon(): Promise<{ success: boolean; sentCount?: number; remoteStatus?: number; remoteData?: unknown }> {
+    const response = await fetch(`${API_URL}/products/send-to-lepapon`, {
+      method: 'POST',
+      headers: withAuthHeaders({ 'Content-Type': 'application/json' })
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const errorMessage = (data && typeof data === 'object' && 'details' in data)
+        ? String((data as { details?: unknown }).details || 'Erro ao sincronizar produtos com Lepapon')
+        : `Erro HTTP ${response.status}`;
+      throw new Error(errorMessage);
+    }
+
+    return data;
+  },
+
   // =========================================
   // FORNECEDORES
   // =========================================
