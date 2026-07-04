@@ -125,19 +125,35 @@ const LEPAPON_REMOTE_URL = process.env.LEPAPON_REMOTE_URL || 'https://lepapon.co
 const LEPAPON_REMOTE_STOCK_URL = process.env.LEPAPON_REMOTE_STOCK_URL || 'https://lepapon.com.br/api/produtos';
 const LEPAPON_REMOTE_TOKEN = process.env.LEPAPON_REMOTE_TOKEN || ''; // opcional, defina no .env se precisar
 
-// Envia produtos tipo prato/drink/revenda para lepapon remoto (campos mínimos)
+// Envia produtos tipo prato/revenda para lepapon remoto (campos mínimos)
 const sendProductsToLepapon = async (req, res) => {
   try {
     const products = await ProductModel.list();
-    const filtered = products
-      .filter(p => ['prato', 'revenda'].includes(p.type))
-      .map(p => ({
-        id: p.id,
-        name: p.name,
-        price: p.price,
-        stock: p.stock,
-        updated_at: p.updated_at
-      }));
+    const relevantProducts = products.filter(p => ['prato', 'revenda'].includes(p.type));
+
+    const filtered = await Promise.all(
+      relevantProducts.map(async (p) => {
+        const computedStock = await StockService.calculateLepaponStock(p);
+        return {
+          id: p.id,
+          name: p.name,
+          price: p.price,
+          stock: computedStock,
+          updated_at: p.updated_at
+        };
+      })
+    );
+
+    const pratosCount = relevantProducts.filter(p => p.type === 'prato').length;
+    const revendasCount = relevantProducts.filter(p => p.type === 'revenda').length;
+    const zeroStockCount = filtered.filter(p => Number(p.stock) <= 0).length;
+
+    console.log('[PRODUCT][SEND_TO_LEPAPON][PREPARED]', {
+      totalProducts: filtered.length,
+      pratosRecalculated: pratosCount,
+      revendasRecalculated: revendasCount,
+      zeroStockCount
+    });
 
     const payload = filtered;
 
@@ -145,6 +161,12 @@ const sendProductsToLepapon = async (req, res) => {
     if (LEPAPON_REMOTE_TOKEN) headers.Authorization = `Bearer ${LEPAPON_REMOTE_TOKEN}`;
 
     const resp = await axios.post(LEPAPON_REMOTE_URL, payload, { headers, timeout: 15000 });
+
+    console.log('[PRODUCT][SEND_TO_LEPAPON][SUCCESS]', {
+      totalProducts: filtered.length,
+      remoteStatus: resp.status,
+      zeroStockCount
+    });
 
     res.json({
       success: true,
