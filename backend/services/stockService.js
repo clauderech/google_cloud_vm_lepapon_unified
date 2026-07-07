@@ -2,6 +2,7 @@ const axios = require('axios');
 const ProductModel = require('../models/product');
 const StockMovementModel = require('../models/stockMovement');
 
+const LEPAPON_REMOTE_URL = process.env.LEPAPON_REMOTE_URL || 'https://lepapon.com.br/atualiza-prod';
 const LEPAPON_REMOTE_STOCK_URL = process.env.LEPAPON_REMOTE_STOCK_URL || 'http://lepapon-unified.local/produtos';
 const LEPAPON_REMOTE_TOKEN = process.env.LEPAPON_REMOTE_TOKEN || '';
 
@@ -134,6 +135,64 @@ class StockService {
       });
       throw err;
     }
+  }
+
+  async sendProductsToLepapon(payload, options = {}) {
+    const { referenceId, source } = options;
+    const headers = { 'Content-Type': 'application/json' };
+    if (LEPAPON_REMOTE_TOKEN) headers.Authorization = `Bearer ${LEPAPON_REMOTE_TOKEN}`;
+    if (referenceId) {
+      headers['X-Reference-Id'] = referenceId;
+      headers['X-Purchase-Id'] = referenceId;
+    }
+    if (source) {
+      headers['X-Source'] = source;
+    }
+
+    try {
+      const response = await axios.post(
+        LEPAPON_REMOTE_URL,
+        payload,
+        { headers, timeout: 15000 }
+      );
+
+      console.log('[STOCK_SERVICE][LEPAPON_PRODUCTS_SYNC][SUCCESS]', {
+        count: payload.length,
+        referenceId: referenceId || null,
+        source: source || null,
+        status: response.status
+      });
+    } catch (err) {
+      console.error('[STOCK_SERVICE][LEPAPON_PRODUCTS_SYNC][HTTP_ERROR]', {
+        count: payload.length,
+        referenceId: referenceId || null,
+        source: source || null,
+        error: err.message,
+        status: err.response?.status,
+        data: err.response?.data
+      });
+      throw err;
+    }
+  }
+
+  async syncAllRelevantProductsToLepapon(options = {}) {
+    const products = await ProductModel.list();
+    const relevantProducts = products.filter(p => ['prato', 'revenda'].includes(p.type));
+
+    const payload = await Promise.all(
+      relevantProducts.map(async (p) => {
+        const computedStock = await this.calculateLepaponStock(p);
+        return {
+          id: p.id,
+          name: p.name,
+          price: p.price,
+          stock: computedStock,
+          updated_at: p.updated_at
+        };
+      })
+    );
+
+    await this.sendProductsToLepapon(payload, options);
   }
 
   async calculateLepaponStock(product) {
@@ -409,6 +468,20 @@ class StockService {
       });
       
       movements.push(movement);
+    }
+
+    // Após registrar compra e atualizar estoques, publica snapshot em /atualiza-prod
+    try {
+      await this.syncAllRelevantProductsToLepapon({
+        referenceId: purchaseId,
+        source: 'purchase'
+      });
+    } catch (syncError) {
+      console.error('[STOCK_SERVICE][PURCHASE][LEPAPON_PRODUCTS_SYNC][ERROR]', {
+        purchaseId,
+        error: syncError.message,
+        stack: syncError.stack
+      });
     }
 
     return movements;
