@@ -68,9 +68,15 @@ class StockService {
         quantity: quantityNum
       });
 
-      // Sincroniza estoque com Lepapon para produtos relevantes
+      // Sincroniza com Lepapon.
+      // Compras precisam refletir o estoque bruto do item comprado.
       try {
         const productType = product.type;
+
+        if (movementType === 'purchase' && ['insumo', 'insumo_bebida', 'revenda'].includes(productType)) {
+          await this.sendStockToLepapon(productId, newStock);
+        }
+
         if (productType === 'revenda' || productType === 'prato') {
           await this.syncProductStockToLepapon(productId);
         } else if (productType === 'insumo' || productType === 'insumo_bebida') {
