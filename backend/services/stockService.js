@@ -381,9 +381,20 @@ class StockService {
     const movements = [];
     
     for (const item of items) {
+      const rawQuantity = parseFloat(item.quantity);
+      const quantity = Math.abs(rawQuantity);
+
+      if (isNaN(rawQuantity) || quantity <= 0) {
+        console.warn('[STOCK_SERVICE][PURCHASE][SKIP]', {
+          productId: item.productId || item.product_id,
+          quantity: item.quantity
+        });
+        continue;
+      }
+
       const movement = await this.updateStock({
         productId: item.productId || item.product_id,
-        quantity: parseFloat(item.quantity), // Positivo para adicionar
+        quantity, // Sempre positivo para adicionar ao estoque
         movementType: 'purchase',
         referenceType: 'purchase',
         referenceId: purchaseId,
