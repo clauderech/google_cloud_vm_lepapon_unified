@@ -2,7 +2,7 @@ const axios = require('axios');
 const ProductModel = require('../models/product');
 const StockMovementModel = require('../models/stockMovement');
 
-const LEPAPON_REMOTE_STOCK_URL = process.env.LEPAPON_REMOTE_STOCK_URL || 'http://lepapon-unified.local/api/produtos';
+const LEPAPON_REMOTE_STOCK_URL = process.env.LEPAPON_REMOTE_STOCK_URL || 'http://lepapon-unified.local/produtos';
 const LEPAPON_REMOTE_TOKEN = process.env.LEPAPON_REMOTE_TOKEN || '';
 
 /**

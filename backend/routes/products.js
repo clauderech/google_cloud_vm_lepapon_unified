@@ -122,7 +122,7 @@ const fs = require('fs/promises');
 const path = require('path');
 
 const LEPAPON_REMOTE_URL = process.env.LEPAPON_REMOTE_URL || 'https://lepapon.com.br/api/atualiza-prod';
-const LEPAPON_REMOTE_STOCK_URL = process.env.LEPAPON_REMOTE_STOCK_URL || 'https://lepapon.com.br/api/produtos';
+const LEPAPON_REMOTE_STOCK_URL = process.env.LEPAPON_REMOTE_STOCK_URL || 'https://lepapon.com.br/produtos';
 const LEPAPON_REMOTE_TOKEN = process.env.LEPAPON_REMOTE_TOKEN || ''; // opcional, defina no .env se precisar
 
 // Envia produtos tipo prato/revenda para lepapon remoto (campos mínimos)
