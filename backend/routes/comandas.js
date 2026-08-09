@@ -809,7 +809,7 @@ router.post('/crediario/send-pdf-whatsapp-simple', async (req, res) => {
 
     const components = [
       {
-        type: 'body',
+        type: 'header',
         parameters: [
           {
             type: 'document',
