@@ -778,9 +778,9 @@ router.post('/crediario/send-pdf-whatsapp-simple', async (req, res) => {
     
     const fs = require('fs');
     const path = require('path');
-    const { uploadMediaToMeta, sendMediaMessage } = require('../models/whatsappCloudApi');
+    const { uploadMediaToMeta, sendTemplateMessage } = require('../models/whatsappCloudApi');
     
-    // Verificar se arquivo existe
+    // Verificar se arquivo existe para manter o fluxo vinculado ao PDF gerado
     const filePath = path.join(__dirname, '..', 'uploads', 'reports', 'crediario', filename);
     console.log(`[PDF_WHATSAPP] Caminho do arquivo: ${filePath}`);
     
@@ -788,12 +788,6 @@ router.post('/crediario/send-pdf-whatsapp-simple', async (req, res) => {
       console.error(`[PDF_WHATSAPP] ❌ Arquivo não encontrado: ${filePath}`);
       return res.status(404).json({ error: 'Arquivo PDF não encontrado' });
     }
-    
-    console.log('[PDF_WHATSAPP] ✅ Arquivo encontrado, lendo conteúdo...');
-    
-    // Ler arquivo PDF
-    const pdfBuffer = fs.readFileSync(filePath);
-    console.log(`[PDF_WHATSAPP] Arquivo lido: ${pdfBuffer.length} bytes`);
     
     // Extrair informações do nome do arquivo
     const matches = filename.match(/^conta_(.+)_(\d{4}-\d{2})_(.+)\.pdf$/);
@@ -804,28 +798,35 @@ router.post('/crediario/send-pdf-whatsapp-simple', async (req, res) => {
     console.log(`[PDF_WHATSAPP] - Cliente: ${customerName}`);
     console.log(`[PDF_WHATSAPP] - Período: ${monthYear}`);
     
-    console.log('[PDF_WHATSAPP] Chamando upload para Meta...');
-    
-    // Upload para Meta Cloud API
+    console.log('[PDF_WHATSAPP] Fazendo upload do PDF para anexar ao template...');
     const uploadResult = await uploadMediaToMeta(
-      pdfBuffer,
+      fs.readFileSync(filePath),
       `Extrato_${customerName}_${monthYear}.pdf`,
       'application/pdf'
     );
+
+    const components = [
+      {
+        type: 'body',
+        parameters: [
+          {
+            type: 'document',
+            document: {
+              id: uploadResult.id,
+              filename: `Extrato_${customerName}_${monthYear}.pdf`,
+            },
+          },
+        ],
+      },
+    ];
+
+    console.log('[PDF_WHATSAPP] Enviando template WhatsApp "sua_conta" em pt_BR com documento anexado...');
     
-    console.log('[PDF_WHATSAPP] Upload concluído, preparando mensagem...');
-    
-    // Enviar via WhatsApp
-    const caption = `📊 *Extrato de Crediário*\n\n` +
-      `Cliente: *${customerName}*\n` +
-      `Período: *${monthYear}*\n\n` +
-      `_Enviado pelo sistema_`;
-    
-    const sendResult = await sendMediaMessage({
+    const sendResult = await sendTemplateMessage({
       to: phoneNumber,
-      mediaId: uploadResult.id,
-      filename: `Extrato_${customerName}_${monthYear}.pdf`,
-      caption: caption
+      templateName: 'sua_conta',
+      languageCode: 'pt_BR',
+      components,
     });
     
     console.log('[PDF_WHATSAPP] ✅ SUCESSO TOTAL!');
@@ -837,6 +838,8 @@ router.post('/crediario/send-pdf-whatsapp-simple', async (req, res) => {
       details: {
         filename,
         phoneNumber,
+        templateName: 'sua_conta',
+        languageCode: 'pt_BR',
         mediaId: uploadResult.id,
         whatsappMessageId: sendResult.messages?.[0]?.id,
         timestamp
