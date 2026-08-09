@@ -793,6 +793,8 @@ router.post('/crediario/send-pdf-whatsapp-simple', async (req, res) => {
     const matches = filename.match(/^conta_(.+)_(\d{4}-\d{2})_(.+)\.pdf$/);
     const customerName = matches ? matches[1].replace(/_/g, ' ') : 'Cliente';
     const monthYear = matches ? matches[2] : '';
+    const normalizedPhoneNumber = String(phoneNumber).replace(/[^\d+]/g, '').replace(/^00/, '+');
+    const normalizedTo = normalizedPhoneNumber.startsWith('+') ? normalizedPhoneNumber : `+${normalizedPhoneNumber}`;
     
     console.log(`[PDF_WHATSAPP] Dados extraídos do filename:`);
     console.log(`[PDF_WHATSAPP] - Cliente: ${customerName}`);
@@ -823,7 +825,7 @@ router.post('/crediario/send-pdf-whatsapp-simple', async (req, res) => {
     console.log('[PDF_WHATSAPP] Enviando template WhatsApp "sua_conta" em pt_BR com documento anexado...');
     
     const sendResult = await sendTemplateMessage({
-      to: phoneNumber,
+      to: normalizedTo,
       templateName: 'sua_conta',
       languageCode: 'pt_BR',
       components,
@@ -837,7 +839,7 @@ router.post('/crediario/send-pdf-whatsapp-simple', async (req, res) => {
       message: `PDF enviado via WhatsApp para ${phoneNumber}`,
       details: {
         filename,
-        phoneNumber,
+        phoneNumber: normalizedTo,
         templateName: 'sua_conta',
         languageCode: 'pt_BR',
         mediaId: uploadResult.id,
