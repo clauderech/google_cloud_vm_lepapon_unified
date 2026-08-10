@@ -214,12 +214,11 @@ class PDFService {
             const rowColor = index % 2 === 0 ? '#ffffff' : '#f9fafb';
             
             // Calcula altura da linha baseada no conteúdo
-            const hasItems = purchase.items_detail && purchase.items_detail.length > 0;
+            const hasItems = Array.isArray(purchase.items_detail) && purchase.items_detail.length > 0;
             let rowHeight = 20; // Altura base
             
             if (hasItems) {
-              // Calcula altura necessária para os itens detalhados
-              const itemsText = `→ ${purchase.items_detail}`;
+              const itemsText = purchase.items_detail.map(item => `• ${item.label}`).join('\n');
               const textHeight = doc.heightOfString(itemsText, {
                 width: 300, // Largura disponível para o texto
                 fontSize: 8,
@@ -244,13 +243,14 @@ class PDFService {
                .text(`R$ ${purchase.amount}`, 450, currentY + 6);
             
             // Exibe descrição principal
-            const baseDescription = purchase.description.split('(')[0].trim(); // Remove itens detalhados se já incluídos
+            const baseDescription = purchase.description.trim();
             doc.text(baseDescription, 150, currentY + 6);
             
-            // Exibe itens detalhados em linha separada se existirem
+            // Exibe itens detalhados como lista em linhas separadas
             if (hasItems) {
+              const itemsText = purchase.items_detail.map(item => `• ${item.label}`).join('\n');
               doc.fillColor('#666666').fontSize(8)
-                 .text(`→ ${purchase.items_detail}`, 155, currentY + 20, {
+                 .text(itemsText, 155, currentY + 20, {
                    width: 300,
                    lineGap: 2
                  });
@@ -571,19 +571,23 @@ class PDFService {
         let description = purchase.description;
         let itemsDetail = '';
         
-        // Processa items_json para exibir itens detalhados
+        // Processa items_json para exibir itens detalhados como lista
         if (purchase.items_json) {
           try {
             const items = JSON.parse(purchase.items_json);
             if (Array.isArray(items) && items.length > 0) {
-              const itemsList = items.map(item => {
+              itemsDetail = items.map(item => {
                 const qty = item.quantity || 1;
                 const name = item.product_name || item.name || 'Item';
                 const price = item.price || item.unit_price || 0;
-                return `${qty} ${name} (R$ ${parseFloat(price).toFixed(2)})`;
-              }).join(', ');
-              itemsDetail = itemsList;
-              description = `${purchase.description} (${itemsList})`;
+                return {
+                  label: `${qty} ${name} (R$ ${parseFloat(price).toFixed(2)})`,
+                  quantity: qty,
+                  name,
+                  price: parseFloat(price).toFixed(2)
+                };
+              });
+              description = purchase.description;
             }
           } catch (error) {
             console.warn('Erro ao processar items_json:', error);
@@ -594,6 +598,7 @@ class PDFService {
           date_formatted: new Date(purchase.purchase_date).toLocaleDateString('pt-BR'),
           description: description,
           items_detail: itemsDetail,
+          has_items_detail: itemsDetail.length > 0,
           amount: parseFloat(purchase.amount).toFixed(2)
         };
       }),
