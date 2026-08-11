@@ -64,6 +64,26 @@ router.get('/simple', requireAuth, async (req, res) => {
   }
 });
 
+// Listar refrigerantes com id, name, price e stock (apenas stock > 0)
+router.get('/refrigerantes', requireAuth, async (req, res) => {
+  try {
+    const products = await ProductModel.listRefrigerantesWithStock();
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao listar refrigerantes', details: err.message });
+  }
+});
+
+// Listar cervejas com id, name, price e stock (apenas stock > 0)
+router.get('/cervejas', requireAuth, async (req, res) => {
+  try {
+    const products = await ProductModel.listCervejasWithStock();
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao listar cervejas', details: err.message });
+  }
+});
+
 // Listar produtos dos tipos revenda, drink e prato
 router.get('/catalog', requireAuth, async (req, res) => {
   try {

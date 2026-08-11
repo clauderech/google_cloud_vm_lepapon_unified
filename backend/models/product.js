@@ -83,6 +83,29 @@ const ProductModel = {
   },
   async remove(id) {
     return db('products').where({ id }).del();
+  },
+
+  async listByCategoryWithStock(category) {
+    const rows = await db('products')
+      .where({ is_active: 1, category })
+      .where('stock', '>', 0)
+      .select('id', 'name', 'price', 'stock')
+      .orderBy('name', 'asc');
+
+    return rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      price: parseFloat(row.price || 0),
+      stock: parseFloat(row.stock || 0)
+    }));
+  },
+
+  async listRefrigerantesWithStock() {
+    return this.listByCategoryWithStock('refrigerantes');
+  },
+
+  async listCervejasWithStock() {
+    return this.listByCategoryWithStock('cervejas');
   }
 };
 
