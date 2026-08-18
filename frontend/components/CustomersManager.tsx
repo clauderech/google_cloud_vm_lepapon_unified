@@ -11,14 +11,6 @@ interface CustomersManagerProps {
   onDeleteCustomer?: (id: string) => void;
 }
 
-const formatPhone = (value: string): string => {
-  const numbers = value.replace(/\D/g, '');
-  if (numbers.length <= 10) {
-    return numbers.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3').replace(/-$/, '');
-  }
-  return numbers.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3').replace(/-$/, '');
-};
-
 const CustomersManager: React.FC<CustomersManagerProps> = ({ 
   customers,
   sales = [],
@@ -135,11 +127,12 @@ const CustomersManager: React.FC<CustomersManagerProps> = ({
               </label>
               <input
                 type="tel"
+                inputMode="numeric"
                 value={formData.fone}
-                onChange={e => setFormData({ ...formData, fone: formatPhone(e.target.value) })}
+                onChange={e => setFormData({ ...formData, fone: e.target.value.replace(/\D/g, '').slice(0, 20) })}
                 className="w-full border border-gray-400 p-2 rounded-lg text-black bg-white placeholder-gray-600"
-                placeholder="(00) 00000-0000"
-                maxLength={15}
+                placeholder="555491253180"
+                maxLength={20}
               />
             </div>
             <div className="md:col-span-3 flex gap-3">
