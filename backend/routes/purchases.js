@@ -95,7 +95,7 @@ router.post('/android', validateApiKey, async (req, res) => {
 });
 
 // Buscar compra por ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireAuth, async (req, res) => {
   try {
     const purchase = await PurchaseModel.getById(req.params.id);
     if (!purchase) return res.status(404).json({ error: 'Compra não encontrada' });
@@ -108,15 +108,33 @@ router.get('/:id', async (req, res) => {
 // Criar compra
 router.post('/', requireAuth, async (req, res) => {
   try {
+    const { supplierId, items, total } = req.body;
+
+    if (!supplierId) {
+      return res.status(400).json({ error: 'Campo supplierId é obrigatório' });
+    }
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({
+        error: 'Campo items é obrigatório e deve conter ao menos 1 item'
+      });
+    }
+
+    if (!Number.isFinite(Number(total)) || Number(total) <= 0) {
+      return res.status(400).json({
+        error: 'Campo total é obrigatório e deve ser maior que 0'
+      });
+    }
+
     const result = await PurchaseModel.create(req.body);
-    res.status(201).json({ success: true, id: result[0] });
+    res.status(201).json({ success: true, id: result[0], purchaseId: result[0] });
   } catch (err) {
     res.status(500).json({ error: 'Erro ao criar compra', details: err.message });
   }
 });
 
 // Atualizar compra
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireAuth, async (req, res) => {
   try {
     await PurchaseModel.update(req.params.id, req.body);
     res.json({ success: true });
@@ -128,7 +146,8 @@ router.put('/:id', async (req, res) => {
 // Remover compra
 router.delete('/:id', requireAuth, async (req, res) => {
   try {
-    await PurchaseModel.remove(req.params.id);
+    const deleted = await PurchaseModel.remove(req.params.id);
+    if (!deleted) return res.status(404).json({ error: 'Compra não encontrada' });
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Erro ao remover compra', details: err.message });

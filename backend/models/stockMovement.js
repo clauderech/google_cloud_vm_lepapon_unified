@@ -16,7 +16,7 @@ const StockMovementModel = {
    * @param {string} data.user_id - ID do usuário que fez a movimentação
    * @returns {Promise<number>} ID da movimentação criada
    */
-  async create(data) {
+  async create(data, client = db) {
     console.log('[STOCK_MOVEMENT][CREATE]', {
       product_id: data.product_id,
       movement_type: data.movement_type,
@@ -25,7 +25,7 @@ const StockMovementModel = {
       reference_id: data.reference_id
     });
     
-    const [id] = await db('stock_movements').insert({
+    const [id] = await client('stock_movements').insert({
       product_id: data.product_id,
       movement_type: data.movement_type,
       quantity: parseFloat(data.quantity),
@@ -73,8 +73,8 @@ const StockMovementModel = {
    * @param {string} referenceId - ID da referência
    * @returns {Promise<Array>} Lista de movimentações
    */
-  async getByReference(referenceType, referenceId) {
-    return db('stock_movements')
+  async getByReference(referenceType, referenceId, client = db) {
+    return client('stock_movements')
       .where('reference_type', referenceType)
       .where('reference_id', referenceId)
       .orderBy('created_at', 'desc');

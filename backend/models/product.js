@@ -10,8 +10,8 @@ const ProductModel = {
       recipe: row.recipe ? (typeof row.recipe === 'string' ? JSON.parse(row.recipe) : row.recipe) : []
     }));
   },
-  async getById(id) {
-    const row = await db('products').where({ id }).first();
+  async getById(id, client = db) {
+    const row = await client('products').where({ id }).first();
     if (!row) return null;
     return {
       ...row,
@@ -52,7 +52,7 @@ const ProductModel = {
       throw err;
     }
   },
-  async update(id, data) {
+  async update(id, data, client = db) {
     console.log('[PRODUCT][MODEL][UPDATE][REQ]', { 
       id, 
       fields: Object.keys(data),
@@ -63,7 +63,7 @@ const ProductModel = {
       const toSave = { ...data };
       if (toSave.recipe) toSave.recipe = JSON.stringify(toSave.recipe);
       
-      const result = await db('products').where({ id }).update(toSave);
+      const result = await client('products').where({ id }).update(toSave);
       
       console.log('[PRODUCT][MODEL][UPDATE][SUCCESS]', { 
         id,

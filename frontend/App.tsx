@@ -374,19 +374,25 @@ const App = () => {
 
     try {
       // Salvar compra no backend (que atualiza o estoque automaticamente)
-      await storageService.savePurchase(newPurchase);
+      const result = await storageService.savePurchase(newPurchase);
+      const savedPurchase = {
+        ...newPurchase,
+        id: result.purchaseId || newPurchase.id
+      };
       
       // Recarregar produtos do backend após compra (estoque já foi atualizado)
       const updatedProducts = await storageService.getProducts();
       
       setState(prev => ({
         ...prev,
-        purchases: [...prev.purchases, newPurchase],
+        purchases: [...prev.purchases, savedPurchase],
         products: updatedProducts // Usar produtos atualizados do backend
       }));
+      return savedPurchase;
     } catch (err) {
       console.error('Erro ao salvar compra:', err);
       alert('Erro ao salvar compra no banco de dados!');
+      return null;
     }
   };
 
@@ -2340,11 +2346,13 @@ const App = () => {
     const [quantity, setQuantity] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleAddPurchase = () => {
+    const handleAddPurchase = async () => {
       if (!selectedSupplier || purchaseCart.length === 0) return;
-      addPurchase(selectedSupplier, purchaseCart);
-      setPurchaseCart([]);
-      alert("Estoque atualizado!");
+      const savedPurchase = await addPurchase(selectedSupplier, purchaseCart);
+      if (savedPurchase) {
+        setPurchaseCart([]);
+        alert("Estoque atualizado!");
+      }
     };
 
     const getAiSuggestion = async () => {

@@ -1,6 +1,7 @@
 
 const { db } = require('../config/knex');
 const StockService = require('../services/stockService');
+const StockMovementModel = require('./stockMovement');
 
 const PurchaseModel = {
   async list() {
@@ -21,40 +22,39 @@ const PurchaseModel = {
       // Gerar ID único para a compra
       const purchaseId = `purchase_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
       
-      // Inserir compra na tabela
-      await db('purchases').insert({
-        id: purchaseId,
-        date: new Date(), // Usando o campo 'date' que existe no DB
-        supplier_id: data.supplierId,
-        total: parseFloat(data.total) || 0,
-        invoice_number: data.invoiceNumber || null,
-        status: 'received',
-        created_at: new Date()
+      await db.transaction(async (trx) => {
+        await trx('purchases').insert({
+          id: purchaseId,
+          date: new Date(),
+          supplier_id: data.supplierId,
+          total: parseFloat(data.total),
+          invoice_number: data.invoiceNumber || null,
+          status: 'received',
+          created_at: new Date()
+        });
+
+        await StockService.processPurchase({
+          items: data.items,
+          purchaseId,
+          userId: data.userId || null,
+          trx,
+          sync: false
+        });
       });
 
-      console.log('[PURCHASE][CREATE][SUCCESS]', { purchaseId });
-
-      // Atualizar estoque dos produtos comprados usando StockService
-      if (data.items && data.items.length > 0) {
-        try {
-          await StockService.processPurchase({
-            items: data.items,
-            purchaseId: purchaseId,
-            userId: data.userId || null
-          });
-          
-          console.log('[PURCHASE][STOCK][SUCCESS]', { 
-            purchaseId, 
-            itemCount: data.items.length 
-          });
-        } catch (stockError) {
-          console.error('[PURCHASE][STOCK][ERROR]', {
-            purchaseId,
-            error: stockError.message
-          });
-          // Não falha a compra por erro de estoque, apenas loga
-        }
+      try {
+        await StockService.syncAllRelevantProductsToLepapon({
+          referenceId: purchaseId,
+          source: 'purchase'
+        });
+      } catch (syncError) {
+        console.error('[PURCHASE][LEPAPON_SYNC][ERROR]', {
+          purchaseId,
+          error: syncError.message
+        });
       }
+
+      console.log('[PURCHASE][CREATE][SUCCESS]', { purchaseId });
 
       return [purchaseId];
     } catch (error) {
@@ -77,8 +77,42 @@ const PurchaseModel = {
   
   async remove(id) {
     console.log('[PURCHASE][DELETE]', { id });
-    // TODO: Implementar reversão de estoque quando deletar compra
-    return db('purchases').where({ id }).del();
+    const purchase = await db('purchases').where({ id }).first();
+    if (!purchase) return 0;
+
+    await db.transaction(async (trx) => {
+      const movements = await StockMovementModel.getByReference('purchase', id, trx);
+
+      for (const movement of movements) {
+        await StockService.updateStock({
+          productId: movement.product_id,
+          quantity: -Math.abs(parseFloat(movement.quantity) || 0),
+          movementType: 'purchase_reversal',
+          referenceType: 'purchase_reversal',
+          referenceId: id,
+          notes: `Reversão da compra ${id}`,
+          userId: null,
+          trx,
+          sync: false
+        });
+      }
+
+      await trx('purchases').where({ id }).del();
+    });
+
+    try {
+      await StockService.syncAllRelevantProductsToLepapon({
+        referenceId: id,
+        source: 'purchase_reversal'
+      });
+    } catch (syncError) {
+      console.error('[PURCHASE][DELETE][LEPAPON_SYNC][ERROR]', {
+        purchaseId: id,
+        error: syncError.message
+      });
+    }
+
+    return 1;
   }
 };
 

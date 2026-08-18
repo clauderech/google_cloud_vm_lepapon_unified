@@ -322,7 +322,10 @@ export const storageService = {
       });
       
       if (!response.ok) throw new Error('Erro ao salvar compra');
-      return response.json();
+      const result = await response.json();
+      return {
+        purchaseId: result.purchaseId || result.id || purchase.id
+      };
     }
     return { purchaseId: purchase.id };
   },

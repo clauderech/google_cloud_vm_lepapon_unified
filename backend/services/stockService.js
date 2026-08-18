@@ -25,7 +25,7 @@ class StockService {
    * @returns {Promise<Object>} Resultado da operação
    */
   async updateStock(params) {
-    const { productId, quantity, movementType, referenceType, referenceId, notes, userId } = params;
+    const { productId, quantity, movementType, referenceType, referenceId, notes, userId, trx, sync = true } = params;
     
     console.log('[STOCK_SERVICE][UPDATE]', {
       productId,
@@ -37,7 +37,7 @@ class StockService {
 
     try {
       // Busca produto atual
-      const product = await ProductModel.getById(productId);
+      const product = await ProductModel.getById(productId, trx);
       if (!product) {
         throw new Error(`Produto não encontrado: ${productId}`);
       }
@@ -47,7 +47,7 @@ class StockService {
       const newStock = Math.max(0, previousStock + quantityNum); // Não permite estoque negativo
 
       // Atualiza estoque do produto
-      await ProductModel.update(productId, { stock: newStock });
+      await ProductModel.update(productId, { stock: newStock }, trx);
 
       // Registra movimentação
       await StockMovementModel.create({
@@ -60,7 +60,7 @@ class StockService {
         reference_id: referenceId,
         notes: notes,
         user_id: userId
-      });
+      }, trx);
 
       console.log('[STOCK_SERVICE][UPDATE][SUCCESS]', {
         productId,
@@ -72,6 +72,14 @@ class StockService {
       // Sincroniza com Lepapon.
       // Compras precisam refletir o estoque bruto do item comprado.
       try {
+        if (!sync) return {
+          success: true,
+          productId,
+          previousStock,
+          newStock,
+          quantity: quantityNum
+        };
+
         const productType = product.type;
 
         if (movementType === 'purchase' && ['insumo', 'insumo_bebida', 'revenda'].includes(productType)) {
@@ -439,7 +447,7 @@ class StockService {
    * @returns {Promise<Array>} Lista de movimentações realizadas
    */
   async processPurchase(params) {
-    const { items, purchaseId, userId } = params;
+    const { items, purchaseId, userId, trx, sync = true } = params;
     
     console.log('[STOCK_SERVICE][PURCHASE]', { itemsCount: items.length, purchaseId });
     
@@ -464,13 +472,17 @@ class StockService {
         referenceType: 'purchase',
         referenceId: purchaseId,
         notes: `Compra - ${item.productName || item.product_name || ''}`,
-        userId
+        userId,
+        trx,
+        sync
       });
       
       movements.push(movement);
     }
 
     // Após registrar compra e atualizar estoques, publica snapshot em /atualiza-prod
+    if (!sync) return movements;
+
     try {
       await this.syncAllRelevantProductsToLepapon({
         referenceId: purchaseId,
