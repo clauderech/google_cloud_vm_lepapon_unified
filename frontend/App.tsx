@@ -361,7 +361,7 @@ const App = () => {
     }
   };
 
-  const addPurchase = async (supplierId: string, items: CartItem[]) => {
+  const addPurchase = async (supplierId: string, items: CartItem[], shoppingListItemIds: string[] = []) => {
     const total = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
     const newPurchase: Purchase = {
       id: generateId(),
@@ -374,7 +374,7 @@ const App = () => {
 
     try {
       // Salvar compra no backend (que atualiza o estoque automaticamente)
-      const result = await storageService.savePurchase(newPurchase);
+      const result = await storageService.savePurchase(newPurchase, shoppingListItemIds);
       const savedPurchase = {
         ...newPurchase,
         id: result.purchaseId || newPurchase.id
@@ -594,55 +594,53 @@ const App = () => {
   }, []);
 
   // --- Shopping List Actions ---
-  const addToShoppingList = (productId: string, quantity: number) => {
-    setState(prev => {
-      const existing = prev.shoppingList.find(i => i.productId === productId);
-      if (existing) {
-        return {
-          ...prev,
-          shoppingList: prev.shoppingList.map(i => 
-            i.productId === productId ? { ...i, quantity: i.quantity + quantity } : i
-          )
-        };
-      }
-      return {
+  const addToShoppingList = async (productId: string, quantity: number) => {
+    const product = state.products.find(p => p.id === productId);
+    const existing = state.shoppingList.find(i => i.productId === productId);
+    if (existing) {
+      const updatedItem = { ...existing, quantity: existing.quantity + quantity };
+      await storageService.updateShoppingListItem(existing.id, updatedItem);
+      setState(prev => ({
         ...prev,
-        shoppingList: [...prev.shoppingList, { id: generateId(), productId, quantity }]
-      };
-    });
+        shoppingList: prev.shoppingList.map(i => i.id === existing.id ? updatedItem : i)
+      }));
+      return;
+    }
+
+    const item: ShoppingListItem = {
+      id: generateId(),
+      productId,
+      supplierId: product?.supplierId,
+      quantity
+    };
+    await storageService.addToShoppingList(item);
+    setState(prev => ({ ...prev, shoppingList: [...prev.shoppingList, item] }));
   };
 
-  const removeFromShoppingList = (ids: string[]) => {
+  const removeFromShoppingList = async (ids: string[]) => {
+    await Promise.all(ids.map(id => storageService.removeFromShoppingList(id)));
     setState(prev => ({
       ...prev,
       shoppingList: prev.shoppingList.filter(item => !ids.includes(item.id))
     }));
   };
 
-  const fillShoppingListWithLowStock = () => {
-    const lowStockItems = state.products.filter(p => p.type === 'insumo' && p.stock <= p.minStock);
-    let count = 0;
-    
-    setState(prev => {
-      const newList = [...prev.shoppingList];
-      lowStockItems.forEach(p => {
-        const existing = newList.find(i => i.productId === p.id);
-        const suggestQty = (p.minStock * 2) - p.stock; 
-        if (suggestQty > 0) {
-          if (!existing) {
-            newList.push({ id: `${generateId()}_${p.id}`, productId: p.id, quantity: suggestQty });
-            count++;
-          }
-        }
-      });
-      return { ...prev, shoppingList: newList };
-    });
-    
-    if(count > 0) alert(`${count} insumos com estoque baixo adicionados à lista!`);
+  const fillShoppingListWithLowStock = async () => {
+    const lowStockItems = state.products.filter(p =>
+      ['insumo', 'insumo_bebida', 'revenda'].includes(p.type) && p.stock <= p.minStock
+    );
+    const itemsToAdd = lowStockItems
+      .filter(p => !state.shoppingList.some(i => i.productId === p.id))
+      .map(p => ({ productId: p.id, quantity: (p.minStock * 2) - p.stock }))
+      .filter(item => item.quantity > 0);
+
+    await Promise.all(itemsToAdd.map(item => addToShoppingList(item.productId, item.quantity)));
+
+    if(itemsToAdd.length > 0) alert(`${itemsToAdd.length} produtos com estoque baixo adicionados à lista!`);
     else alert("Nenhum insumo novo com estoque baixo encontrado.");
   };
 
-  const processShoppingListToPurchase = (itemsToBuy: ShoppingListItem[], supplierId: string) => {
+  const processShoppingListToPurchase = async (itemsToBuy: ShoppingListItem[], supplierId: string) => {
     const purchaseItems: CartItem[] = itemsToBuy.map(item => {
       const product = state.products.find(p => p.id === item.productId);
       return {
@@ -653,8 +651,18 @@ const App = () => {
         observation: item.notes || ''
       };
     });
-    addPurchase(supplierId, purchaseItems);
-    removeFromShoppingList(itemsToBuy.map(i => i.id));
+    const savedPurchase = await addPurchase(
+      supplierId,
+      purchaseItems,
+      itemsToBuy.map(item => item.id)
+    );
+    if (!savedPurchase) return false;
+
+    setState(prev => ({
+      ...prev,
+      shoppingList: prev.shoppingList.filter(item => !itemsToBuy.some(completed => completed.id === item.id))
+    }));
+    return true;
   };
 
   // --- Logout Handler ---
@@ -2247,13 +2255,23 @@ const App = () => {
     const [newItemId, setNewItemId] = useState('');
     const [newItemQty, setNewItemQty] = useState(1);
 
-    const handleProcessPurchase = () => {
+    const handleProcessPurchase = async () => {
       if (!targetSupplier) return alert("Selecione um fornecedor!");
       if (selectedItems.length === 0) return alert("Selecione itens!");
-      processShoppingListToPurchase(state.shoppingList.filter(i => selectedItems.includes(i.id)), targetSupplier);
-      setSelectedItems([]);
-      setTargetSupplier('');
-      alert("Estoque atualizado!");
+      try {
+        const completed = await processShoppingListToPurchase(
+          state.shoppingList.filter(i => selectedItems.includes(i.id)),
+          targetSupplier
+        );
+        if (completed) {
+          setSelectedItems([]);
+          setTargetSupplier('');
+          alert("Compra registrada e itens concluídos!");
+        }
+      } catch (err) {
+        console.error('Erro ao processar lista de compras:', err);
+        alert('Erro ao registrar compra. Os itens permaneceram na lista.');
+      }
     };
 
     const toggleSelect = (id: string) => {
@@ -2275,7 +2293,12 @@ const App = () => {
             <ClipboardList className="text-purple-700" /> Lista de Compras
           </h2>
           <button 
-            onClick={fillShoppingListWithLowStock}
+            onClick={() => {
+              fillShoppingListWithLowStock().catch(err => {
+                console.error('Erro ao preencher lista:', err);
+                alert('Erro ao salvar itens da lista.');
+              });
+            }}
             className="bg-amber-100 text-amber-900 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-bold hover:bg-amber-200 border border-amber-200"
           >
             <AlertTriangle className="w-4 h-4" /> Auto Preencher (Estoque Baixo)
@@ -2294,7 +2317,15 @@ const App = () => {
              <label className="block text-xs font-bold text-gray-700 mb-1">Qtd</label>
              <input type="number" className="w-full border border-gray-400 p-2 rounded-lg text-black bg-white font-medium" min="1" value={newItemQty} onChange={e => setNewItemQty(Number(e.target.value))} />
            </div>
-           <button onClick={() => { if(newItemId) { addToShoppingList(newItemId, newItemQty); setNewItemId(''); setNewItemQty(1); } }} className="bg-purple-600 text-white px-6 py-2 rounded-lg h-[42px] font-bold">Adicionar</button>
+           <button onClick={() => {
+             if (!newItemId) return;
+             addToShoppingList(newItemId, newItemQty)
+               .then(() => { setNewItemId(''); setNewItemQty(1); })
+               .catch(err => {
+                 console.error('Erro ao adicionar item à lista:', err);
+                 alert('Erro ao salvar item da lista.');
+               });
+           }} className="bg-purple-600 text-white px-6 py-2 rounded-lg h-[42px] font-bold">Adicionar</button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -2314,7 +2345,12 @@ const App = () => {
                        <p className="font-black text-gray-900 text-lg">{item.quantity} {product?.unit}</p>
                        <p className="text-sm text-gray-700 font-medium">R$ {((product?.cost || 0) * item.quantity).toFixed(2)}</p>
                      </div>
-                     <button onClick={() => removeFromShoppingList([item.id])} className="text-red-500 hover:text-red-700 p-2"><Trash2 className="w-5 h-5" /></button>
+                     <button onClick={() => {
+                       removeFromShoppingList([item.id]).catch(err => {
+                         console.error('Erro ao remover item da lista:', err);
+                         alert('Erro ao remover item da lista.');
+                       });
+                     }} className="text-red-500 hover:text-red-700 p-2"><Trash2 className="w-5 h-5" /></button>
                    </div>
                  );
                })}

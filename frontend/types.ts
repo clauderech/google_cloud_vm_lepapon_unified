@@ -76,6 +76,7 @@ export type ShoppingListPriority = 'low' | 'medium' | 'high' | 'urgent';
 export interface ShoppingListItem {
   id: string;
   productId: string;
+  supplierId?: string;
   quantity: number;
   priority?: ShoppingListPriority;
   isPurchased?: boolean;

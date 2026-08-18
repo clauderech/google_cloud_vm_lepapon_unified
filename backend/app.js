@@ -77,6 +77,8 @@ app.use('/api/sales', salesRouter);
 // Rotas de compras
 const purchasesRouter = require('./routes/purchases');
 app.use('/api/purchases', purchasesRouter);
+const shoppingListRouter = require('./routes/shoppingList');
+app.use('/api/shopping-list', shoppingListRouter);
 
 // Rotas de caixa
 const cashRegisterRouter = require('./routes/cashRegister');

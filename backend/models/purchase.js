@@ -2,6 +2,7 @@
 const { db } = require('../config/knex');
 const StockService = require('../services/stockService');
 const StockMovementModel = require('./stockMovement');
+const ShoppingListModel = require('./shoppingList');
 
 const PurchaseModel = {
   async list() {
@@ -40,6 +41,13 @@ const PurchaseModel = {
           trx,
           sync: false
         });
+
+        if (data.shoppingListItemIds?.length) {
+          const completed = await ShoppingListModel.markPurchasedMany(data.shoppingListItemIds, trx);
+          if (completed !== data.shoppingListItemIds.length) {
+            throw new Error('Um ou mais itens da lista de compras não estão pendentes');
+          }
+        }
       });
 
       try {
@@ -87,8 +95,8 @@ const PurchaseModel = {
         await StockService.updateStock({
           productId: movement.product_id,
           quantity: -Math.abs(parseFloat(movement.quantity) || 0),
-          movementType: 'purchase_reversal',
-          referenceType: 'purchase_reversal',
+          movementType: 'adjustment',
+          referenceType: 'purchase',
           referenceId: id,
           notes: `Reversão da compra ${id}`,
           userId: null,

@@ -308,7 +308,7 @@ export const storageService = {
   // COMPRAS
   // =========================================
   
-  async savePurchase(purchase: Purchase): Promise<{ purchaseId: string }> {
+  async savePurchase(purchase: Purchase, shoppingListItemIds: string[] = []): Promise<{ purchaseId: string }> {
     if (USE_API) {
       const response = await fetch(`${API_URL}/purchases`, {
         method: 'POST',
@@ -317,7 +317,8 @@ export const storageService = {
           supplierId: purchase.supplierId,
           items: purchase.items,
           total: purchase.total,
-          invoiceNumber: purchase.invoiceNumber
+          invoiceNumber: purchase.invoiceNumber,
+          shoppingListItemIds
         })
       });
       
@@ -459,9 +460,11 @@ export const storageService = {
     if (USE_API) {
       const response = await fetch(`${API_URL}/shopping-list`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: withAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
+          id: item.id,
           productId: item.productId,
+          supplierId: item.supplierId,
           quantity: item.quantity,
           priority: item.priority,
           notes: item.notes
@@ -474,10 +477,37 @@ export const storageService = {
     return { itemId: item.id };
   },
 
+  async updateShoppingListItem(itemId: string, data: Partial<ShoppingListItem>): Promise<void> {
+    if (USE_API) {
+      const response = await fetch(`${API_URL}/shopping-list/${itemId}`, {
+        method: 'PUT',
+        headers: withAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({
+          quantity: data.quantity,
+          supplierId: data.supplierId,
+          priority: data.priority,
+          notes: data.notes
+        })
+      });
+      if (!response.ok) throw new Error('Erro ao atualizar item da lista');
+    }
+  },
+
+  async completeShoppingListItem(itemId: string): Promise<void> {
+    if (USE_API) {
+      const response = await fetch(`${API_URL}/shopping-list/${itemId}/complete`, {
+        method: 'POST',
+        headers: withAuthHeaders({ 'Content-Type': 'application/json' })
+      });
+      if (!response.ok) throw new Error('Erro ao concluir item da lista');
+    }
+  },
+
   async removeFromShoppingList(itemId: string): Promise<void> {
     if (USE_API) {
       const response = await fetch(`${API_URL}/shopping-list/${itemId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: withAuthHeaders()
       });
       
       if (!response.ok) throw new Error('Erro ao remover da lista');
@@ -568,6 +598,7 @@ function mapShoppingListFromDB(i: any): ShoppingListItem {
   return {
     id: i.id,
     productId: i.product_id,
+    supplierId: i.supplier_id || undefined,
     quantity: parseFloat(i.quantity),
     priority: i.priority,
     isPurchased: i.is_purchased,

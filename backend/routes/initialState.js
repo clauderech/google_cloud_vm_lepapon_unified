@@ -6,19 +6,21 @@ const CustomerModel = require('../models/customer');
 const SaleModel = require('../models/sale');
 const PurchaseModel = require('../models/purchase');
 const ComandaModel = require('../models/comanda');
+const ShoppingListModel = require('../models/shoppingList');
 const { requireAuth } = require('../middleware/authUnified');
 const router = express.Router();
 
 router.get('/', requireAuth, async (req, res) => {
   console.log('[DEBUG] /api/initial-state chamada em', new Date().toISOString(), 'IP:', req.ip);
   try {
-    const [products, suppliers, customers, sales, purchases, comandas] = await Promise.all([
+    const [products, suppliers, customers, sales, purchases, comandas, shoppingList] = await Promise.all([
       ProductModel.list(),
       SupplierModel.list(),
       CustomerModel.list(),
       SaleModel.list(),
       PurchaseModel.list(),
-      ComandaModel.list()
+      ComandaModel.list(),
+      ShoppingListModel.listPending()
     ]);
 
     // Buscar itens das comandas abertas
@@ -34,7 +36,7 @@ router.get('/', requireAuth, async (req, res) => {
       customers,
       sales,
       purchases,
-      shoppingList: [],
+      shoppingList,
       activeComandas
     });
   } catch (err) {
