@@ -36,15 +36,17 @@
 | updated_at | timestamp    |       |                      |
 
 ## customers
-| Campo          | Tipo         | Chave | Observações           |
-|----------------|--------------|-------|----------------------|
-| id             | varchar(50)  | PRI   |                      |
-| nome           | varchar(255) |       |                      |
-| sobrenome      | varchar(255) |       |                      |
-| fone           | varchar(20)  |       |                      |
-| loyalty_points | int          |       |                      |
-| created_at     | timestamp    |       |                      |
-| updated_at     | timestamp    |       |                      |
+| Campo           | Tipo         | Nulo | Chave | Padrão              | Observações                       |
+|-----------------|--------------|------|-------|---------------------|-----------------------------------|
+| id              | int          | Não  | PRI   | NULL                | auto_increment                    |
+| nome            | varchar(255) | Não  | MUL   | NULL                |                                   |
+| sobrenome       | varchar(255) | Sim  |       | NULL                |                                   |
+| fone            | varchar(20)  | Sim  | MUL   | NULL                | Somente dígitos, ex.: 555491253180 |
+| loyalty_points  | int          | Sim  |       | 0                   |                                   |
+| created_at      | timestamp    | Sim  |       | CURRENT_TIMESTAMP   |                                   |
+| updated_at      | timestamp    | Sim  |       | CURRENT_TIMESTAMP   | Atualizado automaticamente        |
+| address         | varchar(255) | Sim  |       | NULL                |                                   |
+| whatsapp_user_id | varchar(191) | Sim  | UNI   | NULL                |                                   |
 
 ## sales
 | Campo          | Tipo                               | Chave | Observações           |
