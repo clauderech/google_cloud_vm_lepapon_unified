@@ -1775,6 +1775,7 @@ const App = () => {
     const [newProd, setNewProd] = useState<Partial<Product>>({ 
       category: 'Geral', 
       minStock: 10,
+      packageQuantity: 1,
       unit: 'un',
       recipe: [] 
     });
@@ -1795,6 +1796,7 @@ const App = () => {
             type: editMode,
             price: Number(editProd.price || 0),
             cost: Number(editProd.cost || 0),
+            packageQuantity: Number(editProd.packageQuantity ?? 1),
             minStock: Number(editProd.minStock || 0),
             stock: Number(editProd.stock || 0),
             supplierId: editProd.supplierId || '',
@@ -1852,6 +1854,7 @@ const App = () => {
         stock: (mode === 'prato' || mode === 'drink') ? 0 : (newProd.stock || 0),
         price: Number(newProd.price || 0),
         cost: Number(newProd.cost || 0),
+        packageQuantity: Number(newProd.packageQuantity ?? 1),
         supplierId: newProd.supplierId || '',
         is_active: newProd.is_active === true,
       } as Product;
@@ -1958,6 +1961,7 @@ const App = () => {
                   </select>
                   <input type="number" placeholder="Custo de Compra" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" onChange={e => setNewProd({...newProd, cost: Number(e.target.value)})} />
                   <input type="number" placeholder="Estoque Inicial" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" onChange={e => setNewProd({...newProd, stock: Number(e.target.value)})} />
+                  <input type="number" placeholder="Quantidade por Embalagem" min="1" step="1" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.packageQuantity ?? 1} onChange={e => setNewProd({...newProd, packageQuantity: Number(e.target.value) || 1})} />
                   <input type="number" placeholder="Estoque Mínimo" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.minStock} onChange={e => setNewProd({...newProd, minStock: Number(e.target.value)})} />
                   <select className="border border-gray-400 p-2 rounded text-black bg-white" value={newProd.supplierId || ''} onChange={e => setNewProd({...newProd, supplierId: e.target.value})}>
                     <option value="">Fornecedor</option>
@@ -2186,6 +2190,7 @@ const App = () => {
                                   <input placeholder="Unidade" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={editProd.unit || ''} onChange={e => setEditProd({...editProd, unit: e.target.value as any})} />
                                   <input type="number" placeholder="Preço de Venda" className="border border-gray-400 p-2 rounded font-bold text-black bg-white placeholder-gray-600" value={editProd.price || ''} onChange={e => setEditProd({...editProd, price: Number(e.target.value)})} />
                                   <input type="number" placeholder="Custo de Compra" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={editProd.cost || ''} onChange={e => setEditProd({...editProd, cost: Number(e.target.value)})} />
+                                  <input type="number" placeholder="Quantidade por Embalagem" min="1" step="1" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={editProd.packageQuantity ?? 1} onChange={e => setEditProd({...editProd, packageQuantity: Number(e.target.value) || 1})} />
                                   <input type="number" placeholder="Estoque" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={editProd.stock || ''} onChange={e => setEditProd({...editProd, stock: Number(e.target.value)})} />
                                   <input type="number" placeholder="Estoque Mínimo" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={editProd.minStock || ''} onChange={e => setEditProd({...editProd, minStock: Number(e.target.value)})} />
                                   <select className="border border-gray-400 p-2 rounded text-black bg-white" value={editProd.supplierId || ''} onChange={e => setEditProd({...editProd, supplierId: e.target.value})}>

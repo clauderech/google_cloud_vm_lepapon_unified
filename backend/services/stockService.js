@@ -25,7 +25,7 @@ class StockService {
    * @returns {Promise<Object>} Resultado da operação
    */
   async updateStock(params) {
-    const { productId, quantity, movementType, referenceType, referenceId, notes, userId, trx, sync = true } = params;
+    const { productId, quantity, movementType, referenceType, referenceId, notes, userId, trx, sync = true, unitPrice } = params;
     
     console.log('[STOCK_SERVICE][UPDATE]', {
       productId,
@@ -46,8 +46,21 @@ class StockService {
       const quantityNum = parseFloat(quantity) || 0;
       const newStock = Math.max(0, previousStock + quantityNum); // Não permite estoque negativo
 
+      const previousCost = Number(product.cost) || 0;
+
       // Atualiza estoque do produto
       await ProductModel.update(productId, { stock: newStock }, trx);
+
+      if (movementType === 'purchase') {
+        await this.updateProductCostFromPurchase({
+          productId,
+          previousStock,
+          previousCost,
+          unitPrice,
+          quantity: quantityNum,
+          trx
+        });
+      }
 
       // Registra movimentação
       await StockMovementModel.create({
@@ -115,6 +128,33 @@ class StockService {
       });
       throw error;
     }
+  }
+
+  async updateProductCostFromPurchase({ productId, previousStock, previousCost, unitPrice, quantity, trx }) {
+    const parsedPrice = Number(unitPrice);
+    const parsedQuantity = Math.abs(Number(quantity) || 0);
+
+    if (!Number.isFinite(parsedPrice) || parsedPrice <= 0 || parsedQuantity <= 0) {
+      return;
+    }
+
+    const currentStock = Number(previousStock) || 0;
+    const currentCost = Number(previousCost) || 0;
+    const stockAfterPurchase = currentStock + parsedQuantity;
+
+    const nextCost = stockAfterPurchase > 0 && currentStock > 0 && currentCost > 0
+      ? ((currentCost * currentStock) + (parsedPrice * parsedQuantity)) / stockAfterPurchase
+      : parsedPrice;
+
+    await ProductModel.update(productId, { cost: nextCost }, trx);
+
+    console.log('[STOCK_SERVICE][PURCHASE_COST_UPDATE]', {
+      productId,
+      previousStock: currentStock,
+      addedQuantity: parsedQuantity,
+      unitPrice: parsedPrice,
+      newCost: nextCost
+    });
   }
 
   async sendStockToLepapon(productId, stock) {
@@ -456,6 +496,7 @@ class StockService {
     for (const item of items) {
       const rawQuantity = parseFloat(item.quantity);
       const quantity = Math.abs(rawQuantity);
+      const unitPrice = Number(item.unitPrice ?? item.unit_price ?? item.unitCost ?? item.cost ?? 0);
 
       if (isNaN(rawQuantity) || quantity <= 0) {
         console.warn('[STOCK_SERVICE][PURCHASE][SKIP]', {
@@ -468,6 +509,7 @@ class StockService {
       const movement = await this.updateStock({
         productId: item.productId || item.product_id,
         quantity, // Sempre positivo para adicionar ao estoque
+        unitPrice,
         movementType: 'purchase',
         referenceType: 'purchase',
         referenceId: purchaseId,

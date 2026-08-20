@@ -7,6 +7,7 @@ const ProductModel = {
     const rows = await db('products').where({ is_active: 1 }).select('*');
     return rows.map(row => ({
       ...row,
+      packageQuantity: Number(row.package_quantity ?? 1),
       recipe: row.recipe ? (typeof row.recipe === 'string' ? JSON.parse(row.recipe) : row.recipe) : []
     }));
   },
@@ -15,6 +16,7 @@ const ProductModel = {
     if (!row) return null;
     return {
       ...row,
+      packageQuantity: Number(row.package_quantity ?? 1),
       recipe: row.recipe ? (typeof row.recipe === 'string' ? JSON.parse(row.recipe) : row.recipe) : []
     };
   },
@@ -30,6 +32,10 @@ const ProductModel = {
     
     try {
       const toSave = { ...data };
+      if (Object.prototype.hasOwnProperty.call(toSave, 'packageQuantity')) {
+        toSave.package_quantity = Number(toSave.packageQuantity ?? 1);
+        delete toSave.packageQuantity;
+      }
       if (toSave.recipe) toSave.recipe = JSON.stringify(toSave.recipe);
       
       const result = await db('products').insert(toSave);
@@ -61,6 +67,10 @@ const ProductModel = {
     
     try {
       const toSave = { ...data };
+      if (Object.prototype.hasOwnProperty.call(toSave, 'packageQuantity')) {
+        toSave.package_quantity = Number(toSave.packageQuantity ?? 1);
+        delete toSave.packageQuantity;
+      }
       if (toSave.recipe) toSave.recipe = JSON.stringify(toSave.recipe);
       
       const result = await client('products').where({ id }).update(toSave);

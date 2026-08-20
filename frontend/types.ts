@@ -50,6 +50,7 @@ export interface Product {
   price: number;
   cost: number;
   stock: number;
+  packageQuantity: number;
   minStock: number;
   maxStock?: number;
   unit: MeasurementUnit;
