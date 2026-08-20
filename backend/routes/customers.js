@@ -60,7 +60,7 @@ router.put('/:id', requireAuth, async (req, res) => {
 });
 
 // Remover cliente
-router.delete('/:id', requireAdmin, async (req, res) => {
+router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
     await CustomerModel.remove(req.params.id);
     res.json({ success: true });
