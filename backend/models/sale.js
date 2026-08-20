@@ -123,6 +123,21 @@ const SaleModel = {
         console.log('[SALE][STOCK][SUCCESS]', 'Estoque atualizado via StockService');
       }
 
+      if (data.customerId) {
+        const pointsUsed = Math.max(0, Number(data.loyaltyPointsUsed) || 0);
+        const pointsEarned = Math.floor((Number(data.total) || 0) / 10);
+        const updatedCustomers = await db('customers')
+          .where({ id: data.customerId })
+          .whereRaw('COALESCE(loyalty_points, 0) >= ?', [pointsUsed])
+          .update({
+            loyalty_points: db.raw('COALESCE(loyalty_points, 0) - ? + ?', [pointsUsed, pointsEarned])
+          });
+
+        if (updatedCustomers === 0) {
+          throw new Error('Cliente não encontrado ou saldo de pontos insuficiente');
+        }
+      }
+
       return [saleId];
     } catch (error) {
       console.error('[SALE][CREATE][ERROR]', { 

@@ -9,9 +9,6 @@ interface LoyaltyProgramProps {
 
 const REWARDS = [
   { points: 50, discount: 5, label: '5% de desconto', icon: '🎁' },
-  { points: 100, discount: 10, label: '10% de desconto', icon: '🎉' },
-  { points: 200, discount: 15, label: '15% de desconto', icon: '🌟' },
-  { points: 300, discount: 20, label: '20% de desconto', icon: '💎' },
 ];
 
 const LoyaltyProgram: React.FC<LoyaltyProgramProps> = ({ 

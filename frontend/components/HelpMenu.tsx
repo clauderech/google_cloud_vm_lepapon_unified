@@ -123,8 +123,6 @@ const HelpMenu: React.FC<HelpMenuProps> = ({ isOpen, onClose }) => {
         '- Cliente ganha 1 ponto a cada R$ 10',
         '- Pode trocar pontos por desconto:',
         '  • 50 pontos = 5% desconto',
-        '  • 100 pontos = 10% desconto',
-        '  • 200 pontos = 20% desconto',
         '',
         '**Histórico:**',
         '- Veja todas as compras do cliente',

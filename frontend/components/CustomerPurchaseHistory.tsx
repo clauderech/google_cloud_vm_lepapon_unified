@@ -45,8 +45,7 @@ const CustomerPurchaseHistory: React.FC<CustomerPurchaseHistoryProps> = ({
       .sort((a, b) => b.count - a.count)
       .slice(0, 3);
     
-    // Pontos de fidelidade: 1 ponto a cada R$ 10 gastos
-    const loyaltyPoints = Math.floor(totalSpent / 10);
+    const loyaltyPoints = customer.loyaltyPoints || 0;
     
     return {
       totalSpent,
@@ -55,7 +54,7 @@ const CustomerPurchaseHistory: React.FC<CustomerPurchaseHistoryProps> = ({
       favoriteProducts,
       loyaltyPoints
     };
-  }, [customerSales]);
+  }, [customer, customerSales]);
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
