@@ -291,12 +291,13 @@ const ProductionManager: React.FC<ProductionManagerProps> = ({ onError }) => {
                               </label>
                               <input
                                 type="number"
-                                min="1"
+                                min="0.001"
                                 max={item.maxProduction}
+                                step="any"
                                 value={quantity}
                                 onChange={(e) => setProductionQuantities(prev => ({
                                   ...prev,
-                                  [item.id]: Math.max(1, Math.min(item.maxProduction, parseInt(e.target.value) || 1))
+                                  [item.id]: Math.max(0.001, Math.min(item.maxProduction, parseFloat(e.target.value) || 0.001))
                                 }))}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 disabled={isProducing}
