@@ -457,18 +457,30 @@ const App = () => {
     }
   };
 
-  const updateCustomer = (id: string, data: Partial<Customer>) => {
-    setState(prev => ({
-      ...prev,
-      customers: prev.customers.map(c => 
-        c.id === id ? { ...c, ...data, updated_at: new Date().toISOString() } : c
-      )
-    }));
+  const updateCustomer = async (id: string, data: Partial<Customer>) => {
+    try {
+      await storageService.updateCustomer(id, data);
+      setState(prev => ({
+        ...prev,
+        customers: prev.customers.map(c => 
+          c.id === id ? { ...c, ...data, updated_at: new Date().toISOString() } : c
+        )
+      }));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro desconhecido';
+      alert(`Erro ao atualizar cliente:\n${message}`);
+    }
   };
 
-  const deleteCustomer = (id: string) => {
-    if (confirm('Deseja realmente excluir este cliente?')) {
+  const deleteCustomer = async (id: string) => {
+    if (!confirm('Deseja realmente excluir este cliente?')) return;
+
+    try {
+      await storageService.deleteCustomer(id);
       setState(prev => ({ ...prev, customers: prev.customers.filter(c => c.id !== id) }));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro desconhecido';
+      alert(`Erro ao excluir cliente:\n${message}`);
     }
   };
 

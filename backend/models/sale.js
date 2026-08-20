@@ -14,7 +14,31 @@ function formatDateForMySQL(date) {
 
 const SaleModel = {
   async list() {
-    return db('sales').select('*');
+    const sales = await db('sales').select('*');
+    if (sales.length === 0) return [];
+
+    const saleIds = sales.map(sale => sale.id);
+    const items = await db('sale_items')
+      .whereIn('sale_id', saleIds)
+      .select('sale_id', 'product_id', 'product_name', 'quantity', 'unit_price', 'notes');
+    const itemsBySaleId = new Map();
+
+    for (const item of items) {
+      const saleItems = itemsBySaleId.get(item.sale_id) || [];
+      saleItems.push({
+        productId: item.product_id,
+        productName: item.product_name,
+        quantity: Number(item.quantity),
+        unitPrice: Number(item.unit_price),
+        observation: item.notes || ''
+      });
+      itemsBySaleId.set(item.sale_id, saleItems);
+    }
+
+    return sales.map(sale => ({
+      ...sale,
+      items: itemsBySaleId.get(sale.id) || []
+    }));
   },
   async getById(id) {
     return db('sales').where({ id }).first();

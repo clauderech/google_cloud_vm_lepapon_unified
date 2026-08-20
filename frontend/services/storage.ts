@@ -196,6 +196,33 @@ export const storageService = {
     return { id: `customer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` };
   },
 
+  async updateCustomer(id: string, customer: Partial<Customer>): Promise<void> {
+    if (USE_API) {
+      const response = await fetch(`${API_URL}/customers/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        headers: withAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(customer)
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.details || errorData.error || 'Erro ao atualizar cliente');
+      }
+    }
+  },
+
+  async deleteCustomer(id: string): Promise<void> {
+    if (USE_API) {
+      const response = await fetch(`${API_URL}/customers/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: withAuthHeaders()
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.details || errorData.error || 'Erro ao excluir cliente');
+      }
+    }
+  },
+
   // =========================================
   // COMANDAS
   // =========================================
@@ -574,6 +601,7 @@ function mapSaleFromDB(s: any): Sale {
     subtotal: parseFloat(s.subtotal),
     discount: s.discount ? parseFloat(s.discount) : 0,
     paymentMethod: s.payment_method,
+    customerId: s.customer_id,
     customerName: s.customer_name,
     customerPhone: s.customer_phone,
     comandaId: s.comanda_id,
