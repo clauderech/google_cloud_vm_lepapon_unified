@@ -46,13 +46,15 @@ class StockSyncService {
       // Calcular disponibilidade real do produto
       let realAvailability = 0;
       
-      if (product.type === 'prato' || product.type === 'drink') {
-        // Para pratos e drinks, calcular quantos podem ser feitos com base nos ingredientes
+      if (product.type === 'prato' || product.type === 'drink' || product.type === 'sorvete') {
+        // Para pratos, drinks e sorvetes com receita, calcular pelo consumo dos ingredientes
         if (product.recipe && product.recipe.length > 0) {
           const recipe = typeof product.recipe === 'string' ? JSON.parse(product.recipe) : product.recipe;
           realAvailability = await this.calculateRecipeAvailability(recipe);
+        } else if (product.type === 'sorvete') {
+          realAvailability = Math.max(0, Math.floor(parseFloat(product.stock) || 0));
         }
-      } else if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda' || product.type === 'sorvete') {
+      } else if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda') {
         // Para produtos simples, usar estoque direto
         realAvailability = Math.max(0, Math.floor(parseFloat(product.stock) || 0));
       }
@@ -109,12 +111,14 @@ class StockSyncService {
       // Calcular disponibilidade
       let availability = 0;
       
-      if (product.type === 'prato' || product.type === 'drink') {
+      if (product.type === 'prato' || product.type === 'drink' || product.type === 'sorvete') {
         if (product.recipe && product.recipe.length > 0) {
           const recipe = typeof product.recipe === 'string' ? JSON.parse(product.recipe) : product.recipe;
           availability = await this.calculateRecipeAvailability(recipe);
+        } else if (product.type === 'sorvete') {
+          availability = Math.max(0, Math.floor(parseFloat(product.stock) || 0));
         }
-      } else if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda' || product.type === 'sorvete') {
+      } else if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda') {
         availability = Math.max(0, Math.floor(parseFloat(product.stock) || 0));
       }
 

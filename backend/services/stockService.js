@@ -246,11 +246,11 @@ class StockService {
   async calculateLepaponStock(product) {
     if (!product) return 0;
 
-    if (product.type === 'revenda' || product.type === 'sorvete') {
+    if (product.type === 'revenda') {
       return Math.max(0, Math.floor(parseFloat(product.stock) || 0));
     }
 
-    if ((product.type === 'prato' || product.type === 'drink') && product.recipe && product.recipe.length > 0) {
+    if ((product.type === 'prato' || product.type === 'drink' || product.type === 'sorvete') && product.recipe && product.recipe.length > 0) {
       let maxCount = Infinity;
       for (const recipeItem of product.recipe) {
         const ingredient = await ProductModel.getById(recipeItem.ingredientId);
@@ -261,6 +261,10 @@ class StockService {
         maxCount = Math.min(maxCount, possible);
       }
       return maxCount === Infinity ? 0 : Math.max(0, maxCount);
+    }
+
+    if (product.type === 'sorvete') {
+      return Math.max(0, Math.floor(parseFloat(product.stock) || 0));
     }
 
     return 0;
@@ -284,7 +288,7 @@ class StockService {
   async syncRecipeProductsAffectedByIngredient(ingredientId) {
     const products = await ProductModel.list();
     const affected = products.filter(product =>
-      (product.type === 'prato' || product.type === 'drink') &&
+      (product.type === 'prato' || product.type === 'drink' || product.type === 'sorvete') &&
       Array.isArray(product.recipe) &&
       product.recipe.some(item => item.ingredientId === ingredientId)
     );
@@ -315,8 +319,10 @@ class StockService {
       throw new Error(`Produto não encontrado: ${productId}`);
     }
 
-    if (((product.type === 'prato' || product.type === 'drink') && product.recipe) || 
-        ((product.type === 'insumo' || product.type === 'insumo_bebida') && product.recipe)) {
+    const hasRecipe = Array.isArray(product.recipe) && product.recipe.length > 0;
+
+    if (((product.type === 'prato' || product.type === 'drink' || product.type === 'sorvete') && hasRecipe) || 
+      ((product.type === 'insumo' || product.type === 'insumo_bebida') && hasRecipe)) {
       // Produto com receita - deduz ingredientes (pratos, drinks e insumos caseiros)
       const recipe = typeof product.recipe === 'string' ? JSON.parse(product.recipe) : product.recipe;
       
@@ -573,8 +579,10 @@ class StockService {
         continue;
       }
 
-      if (((product.type === 'prato' || product.type === 'drink') && product.recipe) || 
-          ((product.type === 'insumo' || product.type === 'insumo_bebida') && product.recipe)) {
+        const hasRecipe = Array.isArray(product.recipe) && product.recipe.length > 0;
+
+        if (((product.type === 'prato' || product.type === 'drink' || product.type === 'sorvete') && hasRecipe) || 
+          ((product.type === 'insumo' || product.type === 'insumo_bebida') && hasRecipe)) {
         // Produto com receita - deduz ingredientes (pratos, drinks e insumos caseiros)
         const recipe = typeof product.recipe === 'string' ? JSON.parse(product.recipe) : product.recipe;
         
@@ -648,8 +656,10 @@ class StockService {
         continue;
       }
 
-      if (((product.type === 'prato' || product.type === 'drink') && product.recipe) || 
-          ((product.type === 'insumo' || product.type === 'insumo_bebida') && product.recipe)) {
+        const hasRecipe = Array.isArray(product.recipe) && product.recipe.length > 0;
+
+        if (((product.type === 'prato' || product.type === 'drink' || product.type === 'sorvete') && hasRecipe) || 
+          ((product.type === 'insumo' || product.type === 'insumo_bebida') && hasRecipe)) {
         // Produto com receita - reverte ingredientes (pratos, drinks e insumos caseiros)
         const recipe = typeof product.recipe === 'string' ? JSON.parse(product.recipe) : product.recipe;
         

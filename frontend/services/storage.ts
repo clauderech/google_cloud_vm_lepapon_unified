@@ -36,7 +36,10 @@ function withAuthHeaders(headers: Record<string, string> = {}): Record<string, s
 export function calculateMaxProduciableFor(productId: string, allProducts: Product[]): number {
   const product = allProducts.find(p => p.id === productId);
   if (!product) return 0;
-  if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda' || product.type === 'sorvete') {
+  if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda') {
+    return Number(product.stock) || 0;
+  }
+  if (product.type === 'sorvete' && (!product.recipe || product.recipe.length === 0)) {
     return Number(product.stock) || 0;
   }
   if (!product.recipe || product.recipe.length === 0) return 0;

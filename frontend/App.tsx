@@ -277,7 +277,8 @@ const App = () => {
 
   // --- Helper: Calculate Max Possible Stock for a Recipe Product ---
   const calculateMaxProduciable = (product: Product, allProducts: Product[]): number => {
-    if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda' || product.type === 'sorvete') return product.stock;
+    if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda') return product.stock;
+    if (product.type === 'sorvete' && (!product.recipe || product.recipe.length === 0)) return product.stock;
     if (!product.recipe || product.recipe.length === 0) return 0;
 
     let maxCount = Infinity;
@@ -1814,7 +1815,9 @@ const App = () => {
             await storageService.updateProduct(updated);
             if (updated.type === 'prato' || updated.type === 'revenda' || updated.type === 'sorvete') {
               try {
-                const maxProduciable = updated.type === 'prato' ? calculateMaxProduciableFor(updated.id, state.products) : updated.stock;
+                const hasRecipe = Array.isArray(updated.recipe) && updated.recipe.length > 0;
+                const usesCalculatedStock = updated.type === 'prato' || (updated.type === 'sorvete' && hasRecipe);
+                const maxProduciable = usesCalculatedStock ? calculateMaxProduciableFor(updated.id, state.products) : updated.stock;
                 await storageService.patchProductStockToLepapon(updated.id, Number(maxProduciable || 0));
                 console.log('[LEPAPON][STOCK][SENT]', { id: updated.id, stock: maxProduciable });
               } catch (err) {
@@ -1851,7 +1854,7 @@ const App = () => {
         ...newProd,
         id: generateId(),
         type: mode,
-        stock: (mode === 'prato' || mode === 'drink') ? 0 : (newProd.stock || 0),
+        stock: (mode === 'prato' || mode === 'drink' || (mode === 'sorvete' && !!newProd.recipe?.length)) ? 0 : (newProd.stock || 0),
         price: Number(newProd.price || 0),
         cost: Number(newProd.cost || 0),
         packageQuantity: Number(newProd.packageQuantity ?? 1),
@@ -1984,8 +1987,8 @@ const App = () => {
               )}
             </div>
 
-            {/* Receita para Pratos, Drinks e Insumos categoria "casa" */}
-            {(mode === 'prato' || mode === 'drink' || (mode === 'insumo' && newProd.category === 'casa')) && (
+            {/* Receita para Pratos, Drinks, Sorvetes e Insumos categoria "casa" */}
+            {(mode === 'prato' || mode === 'drink' || mode === 'sorvete' || (mode === 'insumo' && newProd.category === 'casa')) && (
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4">
                 <h4 className="font-bold text-gray-800 mb-2">
                   {mode === 'insumo' ? 'Receita de Produção (Insumo Caseiro)' : 'Ficha Técnica (Receita)'}
@@ -2092,7 +2095,9 @@ const App = () => {
                               try {
                                 await storageService.updateProduct({ ...p, stock: newStock });
                                 if (p.type === 'prato' || p.type === 'revenda' || p.type === 'sorvete') {
-                                  const maxProduciable = p.type === 'prato' ?  calculateMaxProduciableFor(p.id, state.products) : newStock;
+                                  const hasRecipe = Array.isArray(p.recipe) && p.recipe.length > 0;
+                                  const usesCalculatedStock = p.type === 'prato' || (p.type === 'sorvete' && hasRecipe);
+                                  const maxProduciable = usesCalculatedStock ? calculateMaxProduciableFor(p.id, state.products) : newStock;
                                   await storageService.patchProductStockToLepapon(p.id, maxProduciable);
                                 }
                               } catch (err) {
@@ -2139,7 +2144,7 @@ const App = () => {
           </section>
 
           <section>
-             <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2"><ChefHat className="w-5 h-5" /> Pratos / Drink (Estoque Calculado)</h3>
+             <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2"><ChefHat className="w-5 h-5" /> Pratos / Drink / Sorvete (Estoque Calculado)</h3>
              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden overflow-x-auto landscape:max-h-[400px] landscape:overflow-y-auto max-w-full">
                 <table className="w-full text-left min-w-[900px] landscape:min-w-[1000px]">
                   <thead className="bg-gray-100 text-gray-900 font-bold text-sm">
@@ -2152,7 +2157,7 @@ const App = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {state.products.filter(p => p.type === 'prato' || p.type === 'drink').map(p => {
+                    {state.products.filter(p => p.type === 'prato' || p.type === 'drink' || (p.type === 'sorvete' && !!p.recipe?.length)).map(p => {
                       const maxProd = calculateMaxProduciable(p, state.products);
                       return (
                         <tr key={p.id} className="hover:bg-gray-50 text-gray-900">
@@ -2206,8 +2211,8 @@ const App = () => {
                                     {state.suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                   </select>
                                   </div>
-                                  {/* Receita para Pratos, Drinks e Insumos categoria "casa" */}
-                                  {(editMode === 'prato' || editMode === 'drink' || (editMode === 'insumo' && editProd.category === 'casa')) && (
+                                  {/* Receita para Pratos, Drinks, Sorvetes e Insumos categoria "casa" */}
+                                  {(editMode === 'prato' || editMode === 'drink' || editMode === 'sorvete' || (editMode === 'insumo' && editProd.category === 'casa')) && (
                                     <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4">
                                     <h4 className="font-bold text-gray-800 mb-2">
                                       {editMode === 'insumo' ? 'Receita de Produção (Insumo Caseiro)' : 'Ficha Técnica (Receita)'}
