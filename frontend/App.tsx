@@ -985,16 +985,20 @@ const App = () => {
     }, [activeTab, selectedComandaId, state.activeComandas]);
 
     // Exibir produtos ativos por tipo com abas no cardápio
-    const [pdvTab, setPdvTab] = useState<'prato' | 'drink' | 'revenda'>('prato');
+    const [pdvTab, setPdvTab] = useState<'prato' | 'drink' | 'revenda' | 'sorvete'>('prato');
     const tabLabels = [
       { key: 'prato', label: 'Pratos' },
       { key: 'drink', label: 'Drink' },
       { key: 'revenda', label: 'Revenda' },
+      { key: 'sorvete', label: 'Sorvete' },
     ];
     const cardapioProdutos = state.products.filter(p => {
       if (!p.is_active) return false;
       if (pdvTab === 'revenda') {
-        return p.type === 'revenda' || p.type === 'sorvete' || p.type === 'insumo_bebida';
+        return p.type === 'revenda' || p.type === 'insumo_bebida';
+      }
+      if (pdvTab === 'sorvete') {
+        return p.type === 'sorvete';
       }
       return p.type === pdvTab;
     });
@@ -1239,7 +1243,7 @@ const App = () => {
                 <button
                   key={tab.key}
                   className={`px-3 py-1 rounded-t border-b-2 ${pdvTab === tab.key ? 'border-blue-600 bg-blue-100 font-bold' : 'border-transparent bg-gray-100'}`}
-                  onClick={() => setPdvTab(tab.key as 'prato' | 'drink' | 'revenda')}
+                  onClick={() => setPdvTab(tab.key as 'prato' | 'drink' | 'revenda' | 'sorvete')}
                 >
                   {tab.label}
                 </button>
