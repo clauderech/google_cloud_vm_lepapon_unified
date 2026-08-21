@@ -5,7 +5,7 @@
 |-------------|-----------------------------------------------|-------|----------------------|
 | id          | varchar(50)                                   | PRI   |                      |
 | name        | varchar(255)                                  |       |                      |
-| type        | enum('insumo','prato','revenda')              |       |                      |
+| type        | enum('insumo','insumo_bebida','prato','drink','revenda','sorvete') |       |                      |
 | price       | decimal(10,2)                                 |       |                      |
 | cost        | decimal(10,2)                                 |       |                      |
 | stock       | decimal(10,3)                                 |       |                      |

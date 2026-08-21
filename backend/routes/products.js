@@ -6,7 +6,7 @@ const { requireAdmin, requireOperador } = require('../middleware/roleAuth');
 const { requireAuth, validateApiKey } = require('../middleware/authUnified');
 const router = express.Router();
 
-const ALLOWED_PRODUCT_TYPES = ['prato', 'drink', 'insumo', 'insumo_bebida', 'revenda'];
+const ALLOWED_PRODUCT_TYPES = ['prato', 'drink', 'insumo', 'insumo_bebida', 'revenda', 'sorvete'];
 
 const validateProductType = (type) => {
   return ALLOWED_PRODUCT_TYPES.includes(type);
@@ -48,14 +48,14 @@ router.get('/revendas', requireAuth, async (req, res) => {
   }
 });
 
-// Listar produtos ativos de tipos específicos (prato e revenda) com id, name, price e stock
+// Listar produtos ativos de tipos específicos (prato, revenda e sorvete) com id, name, price e stock
 router.get('/simple', requireAuth, async (req, res) => {
   try {
     const { db } = require('../config/knex');
     const products = await db('products')
       .select('id', 'name', 'price', 'stock')
       .where('is_active', 1)
-      .whereIn('type', ['prato', 'revenda'])
+      .whereIn('type', ['prato', 'revenda', 'sorvete'])
       .orderBy('name', 'asc');
     
     res.json(products);
@@ -84,13 +84,13 @@ router.get('/cervejas', requireAuth, async (req, res) => {
   }
 });
 
-// Listar produtos dos tipos revenda, drink e prato
+// Listar produtos dos tipos revenda, sorvete, drink e prato
 router.get('/catalog', requireAuth, async (req, res) => {
   try {
     const { db } = require('../config/knex');
     const products = await db('products')
       .select('id', 'name', 'price', 'stock', 'type')
-      .whereIn('type', ['revenda', 'drink', 'prato'])
+      .whereIn('type', ['revenda', 'sorvete', 'drink', 'prato'])
       .orderBy('name', 'asc');
 
     res.json(products);
@@ -105,7 +105,7 @@ router.get('/catalog', requireAuth, async (req, res) => {
  * ============================================
  * Catálogo filtrado para app Android
  * Autenticação: X-API-Key obrigatório
- * Tipos: insumo, insumo_bebida, revenda
+ * Tipos: insumo, insumo_bebida, revenda, sorvete
  */
 router.get('/android', validateApiKey, async (req, res) => {
   try {
@@ -116,7 +116,7 @@ router.get('/android', validateApiKey, async (req, res) => {
     const products = await db('products')
       .select('id', 'name', 'type', 'price', 'cost', 'stock')
       .where('is_active', 1)
-      .whereIn('type', ['insumo', 'insumo_bebida', 'revenda'])
+      .whereIn('type', ['insumo', 'insumo_bebida', 'revenda', 'sorvete'])
       .orderBy('name', 'asc');
 
     console.log('[PRODUCT][ANDROID][LIST][SUCCESS]', { count: products.length });
@@ -145,11 +145,11 @@ const LEPAPON_REMOTE_URL = process.env.LEPAPON_REMOTE_URL || 'https://lepapon.co
 const LEPAPON_REMOTE_STOCK_URL = process.env.LEPAPON_REMOTE_STOCK_URL || 'https://lepapon.com.br/produtos';
 const LEPAPON_REMOTE_TOKEN = process.env.LEPAPON_REMOTE_TOKEN || ''; // opcional, defina no .env se precisar
 
-// Envia produtos tipo prato/revenda para lepapon remoto (campos mínimos)
+// Envia produtos tipo prato/revenda/sorvete para lepapon remoto (campos mínimos)
 const sendProductsToLepapon = async (req, res) => {
   try {
     const products = await ProductModel.list();
-    const relevantProducts = products.filter(p => ['prato', 'revenda'].includes(p.type));
+    const relevantProducts = products.filter(p => ['prato', 'revenda', 'sorvete'].includes(p.type));
 
     const filtered = await Promise.all(
       relevantProducts.map(async (p) => {
@@ -166,12 +166,14 @@ const sendProductsToLepapon = async (req, res) => {
 
     const pratosCount = relevantProducts.filter(p => p.type === 'prato').length;
     const revendasCount = relevantProducts.filter(p => p.type === 'revenda').length;
+    const sorvetesCount = relevantProducts.filter(p => p.type === 'sorvete').length;
     const zeroStockCount = filtered.filter(p => Number(p.stock) <= 0).length;
 
     console.log('[PRODUCT][SEND_TO_LEPAPON][PREPARED]', {
       totalProducts: filtered.length,
       pratosRecalculated: pratosCount,
       revendasRecalculated: revendasCount,
+      sorvetesRecalculated: sorvetesCount,
       zeroStockCount
     });
 
@@ -230,7 +232,7 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
     const result = await ProductModel.create(req.body);
     const createdProductId = req.body.id || result[0];
     
-    if (req.body.stock !== undefined && ['prato', 'revenda'].includes(req.body.type)) {
+    if (req.body.stock !== undefined && ['prato', 'revenda', 'sorvete'].includes(req.body.type)) {
       try {
         await StockService.syncProductStockToLepapon(createdProductId);
       } catch (syncErr) {
@@ -288,7 +290,7 @@ router.put('/:id', requireAuth, requireOperador, async (req, res) => {
         reason: 'Atualização de produto',
         userId: req.body.userId || null
       });
-    } else if (req.body.type && req.body.type !== existingProduct.type && ['prato', 'revenda'].includes(req.body.type)) {
+    } else if (req.body.type && req.body.type !== existingProduct.type && ['prato', 'revenda', 'sorvete'].includes(req.body.type)) {
       await StockService.syncProductStockToLepapon(req.params.id);
     }
 

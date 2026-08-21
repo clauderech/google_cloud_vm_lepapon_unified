@@ -95,11 +95,11 @@ class StockService {
 
         const productType = product.type;
 
-        if (movementType === 'purchase' && ['insumo', 'insumo_bebida', 'revenda'].includes(productType)) {
+        if (movementType === 'purchase' && ['insumo', 'insumo_bebida', 'revenda', 'sorvete'].includes(productType)) {
           await this.sendStockToLepapon(productId, newStock);
         }
 
-        if (productType === 'revenda' || productType === 'prato') {
+        if (productType === 'revenda' || productType === 'prato' || productType === 'sorvete') {
           await this.syncProductStockToLepapon(productId);
         } else if (productType === 'insumo' || productType === 'insumo_bebida') {
           await this.syncRecipeProductsAffectedByIngredient(productId);
@@ -246,7 +246,7 @@ class StockService {
   async calculateLepaponStock(product) {
     if (!product) return 0;
 
-    if (product.type === 'revenda') {
+    if (product.type === 'revenda' || product.type === 'sorvete') {
       return Math.max(0, Math.floor(parseFloat(product.stock) || 0));
     }
 
@@ -273,7 +273,7 @@ class StockService {
       return;
     }
 
-    if (!['prato', 'revenda'].includes(product.type)) {
+    if (!['prato', 'revenda', 'sorvete'].includes(product.type)) {
       return;
     }
 
@@ -336,7 +336,8 @@ class StockService {
         movements.push(movement);
       }
     } else if (((product.type === 'insumo' || product.type === 'insumo_bebida') && !product.recipe) || 
-               product.type === 'revenda' || 
+           product.type === 'revenda' || 
+           product.type === 'sorvete' || 
                (product.type === 'drink' && !product.recipe)) {
       // Produto simples - deduz diretamente (insumos básicos, revenda, drinks simples)
       const movement = await this.updateStock({
@@ -593,7 +594,8 @@ class StockService {
           movements.push(movement);
         }
       } else if (((product.type === 'insumo' || product.type === 'insumo_bebida') && !product.recipe) || 
-                 product.type === 'revenda' || 
+             product.type === 'revenda' || 
+             product.type === 'sorvete' || 
                  (product.type === 'drink' && !product.recipe)) {
         // Produto simples - deduz diretamente (insumos básicos, revenda, drinks simples)
         const movement = await this.updateStock({
@@ -667,7 +669,8 @@ class StockService {
           movements.push(movement);
         }
       } else if (((product.type === 'insumo' || product.type === 'insumo_bebida') && !product.recipe) || 
-                 product.type === 'revenda' || 
+             product.type === 'revenda' || 
+             product.type === 'sorvete' || 
                  (product.type === 'drink' && !product.recipe)) {
         // Produto simples - reverte diretamente
         const movement = await this.updateStock({
@@ -731,8 +734,13 @@ class StockService {
     return products.filter(product => {
       const stock = parseFloat(product.stock) || 0;
       const minStock = parseFloat(product.min_stock) || 0;
-      return stock <= minStock && (product.type === 'insumo' ||
-      product.type === 'insumo-bebida' || product.type === 'revenda') && product.is_active === 1;
+      return stock <= minStock && (
+        product.type === 'insumo' ||
+        product.type === 'insumo_bebida' ||
+        product.type === 'insumo-bebida' ||
+        product.type === 'revenda' ||
+        product.type === 'sorvete'
+      ) && product.is_active === 1;
     }).map(product => ({
       productId: product.id,
       productName: product.name,
@@ -771,7 +779,8 @@ class StockService {
         insumo_bebida: 0,
         prato: 0,
         drink: 0,
-        revenda: 0
+        revenda: 0,
+        sorvete: 0
       }
     };
 

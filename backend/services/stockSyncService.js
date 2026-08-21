@@ -52,7 +52,7 @@ class StockSyncService {
           const recipe = typeof product.recipe === 'string' ? JSON.parse(product.recipe) : product.recipe;
           realAvailability = await this.calculateRecipeAvailability(recipe);
         }
-      } else if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda') {
+      } else if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda' || product.type === 'sorvete') {
         // Para produtos simples, usar estoque direto
         realAvailability = Math.max(0, Math.floor(parseFloat(product.stock) || 0));
       }
@@ -114,7 +114,7 @@ class StockSyncService {
           const recipe = typeof product.recipe === 'string' ? JSON.parse(product.recipe) : product.recipe;
           availability = await this.calculateRecipeAvailability(recipe);
         }
-      } else if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda') {
+      } else if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda' || product.type === 'sorvete') {
         availability = Math.max(0, Math.floor(parseFloat(product.stock) || 0));
       }
 

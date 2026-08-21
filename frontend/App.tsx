@@ -277,7 +277,7 @@ const App = () => {
 
   // --- Helper: Calculate Max Possible Stock for a Recipe Product ---
   const calculateMaxProduciable = (product: Product, allProducts: Product[]): number => {
-    if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda') return product.stock;
+    if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda' || product.type === 'sorvete') return product.stock;
     if (!product.recipe || product.recipe.length === 0) return 0;
 
     let maxCount = Infinity;
@@ -639,7 +639,7 @@ const App = () => {
 
   const fillShoppingListWithLowStock = async () => {
     const lowStockItems = state.products.filter(p =>
-      ['insumo', 'insumo_bebida', 'revenda'].includes(p.type) && p.stock <= p.minStock
+      ['insumo', 'insumo_bebida', 'revenda', 'sorvete'].includes(p.type) && p.stock <= p.minStock
     );
     const itemsToAdd = lowStockItems
       .filter(p => !state.shoppingList.some(i => i.productId === p.id))
@@ -712,7 +712,7 @@ const App = () => {
 
     const totalSales = state.sales.reduce((acc, s) => acc + s.total, 0);
     const totalPurchases = state.purchases.reduce((acc, p) => acc + p.total, 0);
-    const lowStockCount = state.products.filter(p => p.type === 'insumo' && p.stock <= p.minStock).length;
+    const lowStockCount = state.products.filter(p => ['insumo', 'insumo_bebida', 'revenda', 'sorvete'].includes(p.type) && p.stock <= p.minStock).length;
     const avgTicket = state.sales.length > 0 ? totalSales / state.sales.length : 0;
     
     const salesData = useMemo(() => {
@@ -993,7 +993,7 @@ const App = () => {
     const cardapioProdutos = state.products.filter(p => {
       if (!p.is_active) return false;
       if (pdvTab === 'revenda') {
-        return p.type === 'revenda' || p.type === 'insumo_bebida';
+        return p.type === 'revenda' || p.type === 'sorvete' || p.type === 'insumo_bebida';
       }
       return p.type === pdvTab;
     });
@@ -1769,8 +1769,8 @@ const App = () => {
   };
 
   const Inventory = () => {
-    const [mode, setMode] = useState<'insumo' | 'insumo_bebida' | 'prato' | 'drink' | 'revenda'>('insumo');
-    const [tab, setTab] = useState<'insumo' | 'insumo_bebida' | 'prato' | 'drink' | 'revenda'>('insumo');
+    const [mode, setMode] = useState<'insumo' | 'insumo_bebida' | 'prato' | 'drink' | 'revenda' | 'sorvete'>('insumo');
+    const [tab, setTab] = useState<'insumo' | 'insumo_bebida' | 'prato' | 'drink' | 'revenda' | 'sorvete'>('insumo');
     const [searchTerm, setSearchTerm] = useState('');
     const [newProd, setNewProd] = useState<Partial<Product>>({ 
       category: 'Geral', 
@@ -1782,7 +1782,7 @@ const App = () => {
     const [showForm, setShowForm] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [editProd, setEditProd] = useState<Partial<Product> | null>(null);
-    const [editMode, setEditMode] = useState<'insumo' | 'insumo_bebida' | 'prato' | 'drink' | 'revenda'>('insumo');
+    const [editMode, setEditMode] = useState<'insumo' | 'insumo_bebida' | 'prato' | 'drink' | 'revenda' | 'sorvete'>('insumo');
         const handleEditProduct = (product: Product) => {
           setEditProd({ ...product });
           setEditMode(product.type);
@@ -1812,7 +1812,7 @@ const App = () => {
           }));
           try {
             await storageService.updateProduct(updated);
-            if (updated.type === 'prato' || updated.type === 'revenda') {
+            if (updated.type === 'prato' || updated.type === 'revenda' || updated.type === 'sorvete') {
               try {
                 const maxProduciable = updated.type === 'prato' ? calculateMaxProduciableFor(updated.id, state.products) : updated.stock;
                 await storageService.patchProductStockToLepapon(updated.id, Number(maxProduciable || 0));
@@ -1863,7 +1863,7 @@ const App = () => {
         await addProduct(productToSave);
         setShowForm(false);
         setNewProd({ category: 'Geral', minStock: 10, unit: 'un', recipe: [] });
-        alert(`${mode === 'insumo' ? 'Insumo' : mode === 'insumo_bebida' ? 'Insumo Bebida' : mode === 'prato' ? 'Prato' : mode === 'drink' ? 'Drink' : mode === 'revenda' ? 'Revenda' : 'Item'} cadastrado com sucesso!`);
+        alert(`${mode === 'insumo' ? 'Insumo' : mode === 'insumo_bebida' ? 'Insumo Bebida' : mode === 'prato' ? 'Prato' : mode === 'drink' ? 'Drink' : mode === 'revenda' ? 'Revenda' : mode === 'sorvete' ? 'Sorvete' : 'Item'} cadastrado com sucesso!`);
       } catch (err) {
         // Erro já foi tratado em addProduct
         console.error('[HANDLERSAVE][ERROR]', err);
@@ -1888,7 +1888,8 @@ const App = () => {
             { key: 'insumo_bebida', label: 'insumo bebida', comment: 'Insumos de bebida: ingredientes líquidos e insumos específicos para bebidas.' },
             { key: 'prato', label: 'prato', comment: 'Pratos: produtos finais preparados com receita, estoque calculado a partir dos ingredientes.' },
             { key: 'drink', label: 'drink', comment: 'Drinks: bebidas com receita, estoque calculado a partir dos insumos de bebida.' },
-            { key: 'revenda', label: 'revenda', comment: 'Revenda: itens comprados para revenda sem produção, controlados por estoque direto.' }
+            { key: 'revenda', label: 'revenda', comment: 'Revenda: itens comprados para revenda sem produção, controlados por estoque direto.' },
+            { key: 'sorvete', label: 'sorvete', comment: 'Sorvetes: itens de venda com controle de estoque direto.' }
           ].map(tabOption => (
             <button
               key={tabOption.key}
@@ -1944,13 +1945,19 @@ const App = () => {
               >
                 Revenda
               </button>
+              <button 
+                onClick={() => setMode('sorvete')} 
+                className={`px-4 py-2 rounded-lg font-bold whitespace-nowrap landscape:px-2 landscape:py-1 landscape:text-xs ${mode === 'sorvete' ? 'bg-blue-100 text-blue-800' : 'text-gray-600'}`}
+              >
+                Sorvete
+              </button>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4 landscape:grid-cols-2 landscape:gap-2">
               <input placeholder="Nome" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.name || ''} onChange={e => setNewProd({...newProd, name: e.target.value})} />
               <input placeholder="Categoria" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.category || ''} onChange={e => setNewProd({...newProd, category: e.target.value})} />
               
-              {(mode === 'insumo' || mode === 'insumo_bebida' || mode === 'revenda') && (
+              {(mode === 'insumo' || mode === 'insumo_bebida' || mode === 'revenda' || mode === 'sorvete') && (
                 <>
                   <select className="border border-gray-400 p-2 rounded text-black bg-white" value={newProd.unit} onChange={e => setNewProd({...newProd, unit: e.target.value as any})}>
                     <option value="un">Unidade</option>
@@ -1970,7 +1977,7 @@ const App = () => {
                 </>
               )}
 
-              {(mode === 'prato' || mode === 'drink' || mode === 'revenda') && (
+              {(mode === 'prato' || mode === 'drink' || mode === 'revenda' || mode === 'sorvete') && (
                 <>
                   <input type="number" placeholder="Preço de Venda" className="border border-gray-400 p-2 rounded font-bold text-black bg-white placeholder-gray-600" onChange={e => setNewProd({...newProd, price: Number(e.target.value)})} />
                 </>
@@ -2028,7 +2035,7 @@ const App = () => {
             )}
 
             <button onClick={handleSave} className="w-full bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700">
-              Salvar {mode === 'insumo' ? 'Insumo' : mode === 'prato' ? 'Prato' : 'Drink'}
+              Salvar {mode === 'insumo' ? 'Insumo' : mode === 'insumo_bebida' ? 'Insumo Bebida' : mode === 'prato' ? 'Prato' : mode === 'drink' ? 'Drink' : mode === 'revenda' ? 'Revenda' : 'Sorvete'}
             </button>
           </div>
         )}
@@ -2084,7 +2091,7 @@ const App = () => {
                               }));
                               try {
                                 await storageService.updateProduct({ ...p, stock: newStock });
-                                if (p.type === 'prato' || p.type === 'revenda') {
+                                if (p.type === 'prato' || p.type === 'revenda' || p.type === 'sorvete') {
                                   const maxProduciable = p.type === 'prato' ?  calculateMaxProduciableFor(p.id, state.products) : newStock;
                                   await storageService.patchProductStockToLepapon(p.id, maxProduciable);
                                 }
@@ -2184,6 +2191,7 @@ const App = () => {
                                     <option value="insumo">Insumo</option>
                                     <option value="insumo_bebida">Insumo Bebida</option>
                                     <option value="revenda">Revenda</option>
+                                    <option value="sorvete">Sorvete</option>
                                     <option value="prato">Prato</option>
                                     <option value="drink">Drink</option>
                                   </select>
@@ -2327,7 +2335,7 @@ const App = () => {
              <label className="block text-xs font-bold text-gray-700 mb-1">Insumo</label>
              <select className="w-full border border-gray-400 p-2 rounded-lg text-black bg-white font-medium" value={newItemId} onChange={e => setNewItemId(e.target.value)}>
                <option value="">Selecione...</option>
-               {state.products.filter(p => p.type === 'insumo' || p.type === 'revenda').map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+               {state.products.filter(p => p.type === 'insumo' || p.type === 'revenda' || p.type === 'sorvete').map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
              </select>
            </div>
            <div className="w-24">
@@ -2412,7 +2420,7 @@ const App = () => {
       if (!selectedSupplier) return;
       setIsLoading(true);
       try {
-        const text = await suggestRestockOrder(state.products.filter(p => p.type === 'insumo' || p.type === 'insumo_bebida' || p.type === 'revenda'), selectedSupplier);
+        const text = await suggestRestockOrder(state.products.filter(p => p.type === 'insumo' || p.type === 'insumo_bebida' || p.type === 'revenda' || p.type === 'sorvete'), selectedSupplier);
         setAiSuggestion(text);
       } catch (error) {
         console.error('Erro ao gerar sugestão:', error);
@@ -2422,9 +2430,9 @@ const App = () => {
       }
     };
 
-    // Filter 'insumo', 'insumo_bebida' and 'revenda' for purchasing - optimized with useMemo
+    // Filter 'insumo', 'insumo_bebida', 'revenda' and 'sorvete' for purchasing - optimized with useMemo
     const availableProducts = useMemo(() => 
-      state.products.filter(p => p.supplierId === selectedSupplier && (p.type === 'insumo' || p.type === 'insumo_bebida' || p.type === 'revenda')),
+      state.products.filter(p => p.supplierId === selectedSupplier && (p.type === 'insumo' || p.type === 'insumo_bebida' || p.type === 'revenda' || p.type === 'sorvete')),
       [state.products, selectedSupplier]
     );
 
