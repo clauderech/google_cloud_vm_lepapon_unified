@@ -1234,15 +1234,15 @@ const App = () => {
           </div>
         )}
         {/* Left Side: Products */}
-        <div className="flex-1 p-6 overflow-y-auto bg-gray-50 border-r border-gray-200">
-          {/* Desktop Tabs & Search */}
-          <div className="hidden md:flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Cardápio</h2>
-            <div className="flex gap-2">
+        <div className="flex-1 min-w-0 p-4 lg:p-6 overflow-y-auto bg-gray-50 border-r border-gray-200">
+          {/* Tabs & Search */}
+          <div className="flex flex-col gap-3 mb-4 lg:mb-6 xl:flex-row xl:justify-between xl:items-center">
+            <h2 className="text-xl lg:text-2xl font-bold text-gray-900">Cardápio</h2>
+            <div className="flex gap-1.5 overflow-x-auto pb-1 xl:gap-2 xl:pb-0">
               {tabLabels.map(tab => (
                 <button
                   key={tab.key}
-                  className={`px-3 py-1 rounded-t border-b-2 ${pdvTab === tab.key ? 'border-blue-600 bg-blue-100 font-bold' : 'border-transparent bg-gray-100'}`}
+                  className={`shrink-0 px-2.5 py-1 text-sm rounded-t border-b-2 xl:px-3 ${pdvTab === tab.key ? 'border-blue-600 bg-blue-100 font-bold' : 'border-transparent bg-gray-100'}`}
                   onClick={() => setPdvTab(tab.key as 'prato' | 'drink' | 'revenda' | 'sorvete')}
                 >
                   {tab.label}
@@ -1254,7 +1254,7 @@ const App = () => {
               <input 
                 type="text"
                 placeholder={`Buscar ${tabLabels.find(t => t.key === pdvTab)?.label.toLowerCase()}...`}
-                className="pl-10 pr-4 py-2 rounded-lg border border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black bg-white placeholder-gray-600 w-64"
+                className="w-full xl:w-64 pl-10 pr-4 py-2 rounded-lg border border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black bg-white placeholder-gray-600"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
@@ -1262,15 +1262,7 @@ const App = () => {
           </div>
           {/* Product Grid */}
           <div
-            className="grid gap-4"
-            style={{
-              gridTemplateColumns:
-                window.innerWidth === 1280 && window.innerHeight === 1024
-                  ? '1fr'
-                  : window.innerWidth > 1280
-                    ? '1fr 1fr'
-                    : '1fr'
-            }}
+            className="grid grid-cols-1 2xl:grid-cols-2 gap-3 lg:gap-4"
           >
             {filteredProducts.map(product => {
               const maxStock = calculateMaxProduciable(product, state.products);
@@ -1281,12 +1273,11 @@ const App = () => {
                   key={product.id}
                   onClick={() => product.type === 'prato' ? handlePratoClick(product, maxStock) : addToCart(product, maxStock)}
                   disabled={available <= 0 || (activeTab === 'comandas' && !selectedComandaId)}
-                  className={`p-4 rounded-xl border text-left transition-all ${
+                  className={`p-3 lg:p-4 rounded-xl border text-left transition-all ${
                     available <= 0 || (activeTab === 'comandas' && !selectedComandaId)
                       ? 'bg-gray-100 border-gray-200 opacity-60 cursor-not-allowed'
                       : 'bg-white border-gray-200 hover:shadow-md hover:border-blue-300'
                   }`}
-                  style={{ minWidth: '250px' }}
                 >
                   <div className="flex justify-between items-start mb-2">
                     <span className="font-bold text-gray-900 line-clamp-1">{product.name}</span>
@@ -1305,7 +1296,7 @@ const App = () => {
         </div>
 
         {/* Right Side: Order Management */}
-        <div className="w-full md:w-[400px] bg-white flex flex-col h-full shadow-xl z-10">
+        <div className="w-full lg:w-[360px] xl:w-[400px] shrink-0 bg-white flex flex-col h-full shadow-xl z-10">
           
           {/* Tabs */}
           <div className="flex border-b border-gray-200">
