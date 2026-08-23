@@ -101,8 +101,8 @@ import { unstable_batchedUpdates } from 'react-dom';
 const App = () => {
       // Menu de navegação global para mobile
       const adminMenu = [
-        { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'view_dashboard' },
         { key: 'pos', label: 'PDV', icon: ShoppingCart, permission: 'view_pos' },
+        { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'view_dashboard' },
         { key: 'inventory', label: 'Estoque', icon: Package, permission: 'view_inventory' },
         { key: 'production', label: 'Produção', icon: Factory, permission: 'view_inventory' },
         { key: 'customers', label: 'Clientes', icon: Truck, permission: 'manage_products' },
@@ -2704,8 +2704,8 @@ const App = () => {
           )}
         </div>
         <nav className="flex-1 p-4">
-          {hasPermission('view_dashboard') && <SidebarItem icon={LayoutDashboard} label="Dashboard" active={view === 'dashboard'} onClick={() => setView('dashboard')} />}
           {hasPermission('view_pos') && <SidebarItem icon={ShoppingCart} label="PDV (Vendas)" active={view === 'pos'} onClick={() => setView('pos')} />}
+          {hasPermission('view_dashboard') && <SidebarItem icon={LayoutDashboard} label="Dashboard" active={view === 'dashboard'} onClick={() => setView('dashboard')} />}
           {hasPermission('view_inventory') && <SidebarItem icon={Package} label="Estoque / Receitas" active={view === 'inventory'} onClick={() => setView('inventory')} />}
           {hasPermission('view_inventory') && <SidebarItem icon={Factory} label="Produção (Casa)" active={view === 'production'} onClick={() => setView('production')} />}
           {hasPermission('manage_products') && <SidebarItem icon={Users} label="Clientes" active={view === 'customers'} onClick={() => setView('customers')} />}
