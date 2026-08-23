@@ -6,7 +6,7 @@ const { requireAdmin, requireOperador } = require('../middleware/roleAuth');
 const { requireAuth, validateApiKey } = require('../middleware/authUnified');
 const router = express.Router();
 
-const ALLOWED_PRODUCT_TYPES = ['prato', 'drink', 'insumo', 'insumo_bebida', 'revenda', 'sorvete'];
+const ALLOWED_PRODUCT_TYPES = ['prato', 'drink', 'insumo', 'insumo_bebida', 'revenda', 'sorvete', 'destilado'];
 
 const validateProductType = (type) => {
   return ALLOWED_PRODUCT_TYPES.includes(type);
@@ -55,7 +55,7 @@ router.get('/simple', requireAuth, async (req, res) => {
     const products = await db('products')
       .select('id', 'name', 'price', 'stock')
       .where('is_active', 1)
-      .whereIn('type', ['prato', 'revenda', 'sorvete'])
+      .whereIn('type', ['prato', 'revenda', 'sorvete', 'destilado'])
       .orderBy('name', 'asc');
     
     res.json(products);
@@ -90,7 +90,7 @@ router.get('/catalog', requireAuth, async (req, res) => {
     const { db } = require('../config/knex');
     const products = await db('products')
       .select('id', 'name', 'price', 'stock', 'type')
-      .whereIn('type', ['revenda', 'sorvete', 'drink', 'prato'])
+      .whereIn('type', ['revenda', 'sorvete', 'drink', 'prato', 'destilado'])
       .orderBy('name', 'asc');
 
     res.json(products);

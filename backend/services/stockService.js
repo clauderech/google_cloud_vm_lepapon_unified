@@ -101,7 +101,7 @@ class StockService {
 
         if (productType === 'revenda' || productType === 'prato' || productType === 'sorvete') {
           await this.syncProductStockToLepapon(productId);
-        } else if (productType === 'insumo' || productType === 'insumo_bebida') {
+          } else if (productType === 'insumo' || productType === 'insumo_bebida' || productType === 'destilado') {
           await this.syncRecipeProductsAffectedByIngredient(productId);
         }
       } catch (syncError) {
@@ -322,7 +322,7 @@ class StockService {
     const hasRecipe = Array.isArray(product.recipe) && product.recipe.length > 0;
 
     if (((product.type === 'prato' || product.type === 'drink' || product.type === 'sorvete') && hasRecipe) || 
-      ((product.type === 'insumo' || product.type === 'insumo_bebida') && hasRecipe)) {
+      ((product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'destilado') && hasRecipe)) {
       // Produto com receita - deduz ingredientes (pratos, drinks e insumos caseiros)
       const recipe = typeof product.recipe === 'string' ? JSON.parse(product.recipe) : product.recipe;
       
@@ -341,7 +341,7 @@ class StockService {
         
         movements.push(movement);
       }
-    } else if (((product.type === 'insumo' || product.type === 'insumo_bebida') && !product.recipe) || 
+    } else if (((product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'destilado') && !product.recipe) ||
            product.type === 'revenda' || 
            product.type === 'sorvete' || 
                (product.type === 'drink' && !product.recipe)) {
@@ -582,7 +582,7 @@ class StockService {
         const hasRecipe = Array.isArray(product.recipe) && product.recipe.length > 0;
 
         if (((product.type === 'prato' || product.type === 'drink' || product.type === 'sorvete') && hasRecipe) || 
-          ((product.type === 'insumo' || product.type === 'insumo_bebida') && hasRecipe)) {
+          ((product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'destilado') && hasRecipe)) {
         // Produto com receita - deduz ingredientes (pratos, drinks e insumos caseiros)
         const recipe = typeof product.recipe === 'string' ? JSON.parse(product.recipe) : product.recipe;
         
@@ -601,7 +601,7 @@ class StockService {
           
           movements.push(movement);
         }
-      } else if (((product.type === 'insumo' || product.type === 'insumo_bebida') && !product.recipe) || 
+      } else if (((product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'destilado') && !product.recipe) ||
              product.type === 'revenda' || 
              product.type === 'sorvete' || 
                  (product.type === 'drink' && !product.recipe)) {
@@ -659,7 +659,7 @@ class StockService {
         const hasRecipe = Array.isArray(product.recipe) && product.recipe.length > 0;
 
         if (((product.type === 'prato' || product.type === 'drink' || product.type === 'sorvete') && hasRecipe) || 
-          ((product.type === 'insumo' || product.type === 'insumo_bebida') && hasRecipe)) {
+          ((product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'destilado') && hasRecipe)) {
         // Produto com receita - reverte ingredientes (pratos, drinks e insumos caseiros)
         const recipe = typeof product.recipe === 'string' ? JSON.parse(product.recipe) : product.recipe;
         
@@ -678,7 +678,7 @@ class StockService {
           
           movements.push(movement);
         }
-      } else if (((product.type === 'insumo' || product.type === 'insumo_bebida') && !product.recipe) || 
+      } else if (((product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'destilado') && !product.recipe) ||
              product.type === 'revenda' || 
              product.type === 'sorvete' || 
                  (product.type === 'drink' && !product.recipe)) {

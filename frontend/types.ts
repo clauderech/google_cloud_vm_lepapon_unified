@@ -46,7 +46,7 @@ export interface RecipeItem {
 export interface Product {
   id: string;
   name: string;
-  type: 'insumo' | 'insumo_bebida' | 'prato' | 'drink' | 'revenda' | 'sorvete';
+  type: 'insumo' | 'insumo_bebida' | 'prato' | 'drink' | 'revenda' | 'sorvete' | 'destilado';
   price: number;
   cost: number;
   stock: number;

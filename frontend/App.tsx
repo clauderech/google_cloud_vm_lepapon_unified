@@ -277,7 +277,7 @@ const App = () => {
 
   // --- Helper: Calculate Max Possible Stock for a Recipe Product ---
   const calculateMaxProduciable = (product: Product, allProducts: Product[]): number => {
-    if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda') return product.stock;
+    if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda' || product.type === 'destilado') return product.stock;
     if (product.type === 'sorvete' && (!product.recipe || product.recipe.length === 0)) return product.stock;
     if (!product.recipe || product.recipe.length === 0) return 0;
 
@@ -921,6 +921,9 @@ const App = () => {
     const [pratoSelecionado, setPratoSelecionado] = useState<Product | null>(null);
     const [pratoQtd, setPratoQtd] = useState(1);
     const [pratoObs, setPratoObs] = useState('');
+    const [showDestiladoModal, setShowDestiladoModal] = useState(false);
+    const [destiladoSelecionado, setDestiladoSelecionado] = useState<Product | null>(null);
+    const [destiladoQtd, setDestiladoQtd] = useState(0);
 
     const handlePratoClick = (product: Product, maxStock: number) => {
       setPratoSelecionado(product);
@@ -952,6 +955,35 @@ const App = () => {
         ];
       });
       setShowPratoModal(false);
+    };
+
+    const handleDestiladoClick = (product: Product) => {
+      setDestiladoSelecionado(product);
+      setDestiladoQtd(product.unit === 'l' ? 0.05 : 50);
+      setShowDestiladoModal(true);
+    };
+
+    const handleAddDestiladoToCart = () => {
+      const currentQuantity = cart.find(item => item.productId === destiladoSelecionado?.id)?.quantity || 0;
+      if (!destiladoSelecionado || destiladoQtd <= 0 || currentQuantity + destiladoQtd > destiladoSelecionado.stock) return;
+      setCart(prev => {
+        const existing = prev.find(item => item.productId === destiladoSelecionado.id);
+        if (existing) {
+          return prev.map(item => item.productId === destiladoSelecionado.id
+            ? { ...item, quantity: item.quantity + destiladoQtd }
+            : item
+          );
+        }
+        return [...prev, {
+          productId: destiladoSelecionado.id,
+          productName: destiladoSelecionado.name,
+          quantity: destiladoQtd,
+          unitPrice: destiladoSelecionado.price,
+          observation: ''
+        }];
+      });
+      setShowDestiladoModal(false);
+      setDestiladoSelecionado(null);
     };
     const [searchTerm, setSearchTerm] = useState('');
     const [activeTab, setActiveTab] = useState<'quick' | 'comandas'>('comandas');
@@ -985,12 +1017,13 @@ const App = () => {
     }, [activeTab, selectedComandaId, state.activeComandas]);
 
     // Exibir produtos ativos por tipo com abas no cardápio
-    const [pdvTab, setPdvTab] = useState<'prato' | 'drink' | 'revenda' | 'sorvete'>('prato');
+    const [pdvTab, setPdvTab] = useState<'prato' | 'drink' | 'revenda' | 'sorvete' | 'destilado'>('prato');
     const tabLabels = [
       { key: 'prato', label: 'Pratos' },
       { key: 'drink', label: 'Drink' },
       { key: 'revenda', label: 'Revenda' },
       { key: 'sorvete', label: 'Sorvete' },
+      { key: 'destilado', label: 'Destilados' },
     ];
     const cardapioProdutos = state.products.filter(p => {
       if (!p.is_active) return false;
@@ -1191,6 +1224,27 @@ const App = () => {
             </div>
           </div>
         )}
+        {showDestiladoModal && destiladoSelecionado && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-xs w-full p-6">
+              <h3 className="text-lg font-bold mb-2 text-gray-900">Venda fracionada</h3>
+              <p className="font-bold text-blue-700 text-lg mb-4">{destiladoSelecionado.name}</p>
+              <label className="block text-sm font-bold text-gray-700 mb-1">
+                Quantidade ({destiladoSelecionado.unit})
+              </label>
+              <input type="number" min="0.01" max={destiladoSelecionado.stock} step="any" value={destiladoQtd}
+                onChange={e => setDestiladoQtd(Number(e.target.value))}
+                className="w-full border border-gray-400 p-2 rounded-lg text-black bg-white mb-2" autoFocus />
+              <p className="text-xs text-gray-500 mb-4">
+                Disponível: {destiladoSelecionado.stock} {destiladoSelecionado.unit} | Preço por {destiladoSelecionado.unit}: R$ {destiladoSelecionado.price.toFixed(2)}
+              </p>
+              <div className="flex justify-end gap-2">
+                <button onClick={() => setShowDestiladoModal(false)} className="px-4 py-2 rounded bg-gray-200 text-gray-700 font-bold">Cancelar</button>
+                <button onClick={handleAddDestiladoToCart} disabled={destiladoQtd <= 0 || (cart.find(item => item.productId === destiladoSelecionado.id)?.quantity || 0) + destiladoQtd > destiladoSelecionado.stock} className="px-4 py-2 rounded bg-blue-600 text-white font-bold disabled:opacity-50">Adicionar</button>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Mobile Menu Button - Global Navigation */}
         <div className="md:hidden flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200">
           <span className="font-bold text-lg text-blue-900">{mobileMenuItems.find(m => m.key === view)?.label || 'Menu'}</span>
@@ -1243,7 +1297,7 @@ const App = () => {
                 <button
                   key={tab.key}
                   className={`shrink-0 px-2.5 py-1 text-sm rounded-t border-b-2 xl:px-3 ${pdvTab === tab.key ? 'border-blue-600 bg-blue-100 font-bold' : 'border-transparent bg-gray-100'}`}
-                  onClick={() => setPdvTab(tab.key as 'prato' | 'drink' | 'revenda' | 'sorvete')}
+                  onClick={() => setPdvTab(tab.key as 'prato' | 'drink' | 'revenda' | 'sorvete' | 'destilado')}
                 >
                   {tab.label}
                 </button>
@@ -1271,7 +1325,11 @@ const App = () => {
               return (
                 <button
                   key={product.id}
-                  onClick={() => product.type === 'prato' ? handlePratoClick(product, maxStock) : addToCart(product, maxStock)}
+                  onClick={() => product.type === 'prato'
+                    ? handlePratoClick(product, maxStock)
+                    : product.type === 'destilado'
+                      ? handleDestiladoClick(product)
+                      : addToCart(product, maxStock)}
                   disabled={available <= 0 || (activeTab === 'comandas' && !selectedComandaId)}
                   className={`p-3 lg:p-4 rounded-xl border text-left transition-all ${
                     available <= 0 || (activeTab === 'comandas' && !selectedComandaId)
@@ -1284,7 +1342,7 @@ const App = () => {
                     <span className={`text-xs font-bold px-2 py-1 rounded-full ${
                       available <= 5 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
                     }`}>
-                      {available} un
+                      {available} {product.unit}
                     </span>
                   </div>
                   <p className="text-lg font-black text-blue-700">R$ {product.price.toFixed(2)}</p>
@@ -1765,8 +1823,8 @@ const App = () => {
   };
 
   const Inventory = () => {
-    const [mode, setMode] = useState<'insumo' | 'insumo_bebida' | 'prato' | 'drink' | 'revenda' | 'sorvete'>('insumo');
-    const [tab, setTab] = useState<'insumo' | 'insumo_bebida' | 'prato' | 'drink' | 'revenda' | 'sorvete'>('insumo');
+    const [mode, setMode] = useState<'insumo' | 'insumo_bebida' | 'prato' | 'drink' | 'revenda' | 'sorvete' | 'destilado'>('insumo');
+    const [tab, setTab] = useState<'insumo' | 'insumo_bebida' | 'prato' | 'drink' | 'revenda' | 'sorvete' | 'destilado'>('insumo');
     const [searchTerm, setSearchTerm] = useState('');
     const [newProd, setNewProd] = useState<Partial<Product>>({ 
       category: 'Geral', 
@@ -1778,7 +1836,7 @@ const App = () => {
     const [showForm, setShowForm] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [editProd, setEditProd] = useState<Partial<Product> | null>(null);
-    const [editMode, setEditMode] = useState<'insumo' | 'insumo_bebida' | 'prato' | 'drink' | 'revenda' | 'sorvete'>('insumo');
+    const [editMode, setEditMode] = useState<'insumo' | 'insumo_bebida' | 'prato' | 'drink' | 'revenda' | 'sorvete' | 'destilado'>('insumo');
         const handleEditProduct = (product: Product) => {
           setEditProd({ ...product });
           setEditMode(product.type);
@@ -1861,7 +1919,7 @@ const App = () => {
         await addProduct(productToSave);
         setShowForm(false);
         setNewProd({ category: 'Geral', minStock: 10, unit: 'un', recipe: [] });
-        alert(`${mode === 'insumo' ? 'Insumo' : mode === 'insumo_bebida' ? 'Insumo Bebida' : mode === 'prato' ? 'Prato' : mode === 'drink' ? 'Drink' : mode === 'revenda' ? 'Revenda' : mode === 'sorvete' ? 'Sorvete' : 'Item'} cadastrado com sucesso!`);
+            alert(`${mode === 'insumo' ? 'Insumo' : mode === 'insumo_bebida' ? 'Insumo Bebida' : mode === 'prato' ? 'Prato' : mode === 'drink' ? 'Drink' : mode === 'revenda' ? 'Revenda' : mode === 'sorvete' ? 'Sorvete' : mode === 'destilado' ? 'Destilado' : 'Item'} cadastrado com sucesso!`);
       } catch (err) {
         // Erro já foi tratado em addProduct
         console.error('[HANDLERSAVE][ERROR]', err);
@@ -1887,7 +1945,8 @@ const App = () => {
             { key: 'prato', label: 'prato', comment: 'Pratos: produtos finais preparados com receita, estoque calculado a partir dos ingredientes.' },
             { key: 'drink', label: 'drink', comment: 'Drinks: bebidas com receita, estoque calculado a partir dos insumos de bebida.' },
             { key: 'revenda', label: 'revenda', comment: 'Revenda: itens comprados para revenda sem produção, controlados por estoque direto.' },
-            { key: 'sorvete', label: 'sorvete', comment: 'Sorvetes: itens de venda com controle de estoque direto.' }
+            { key: 'sorvete', label: 'sorvete', comment: 'Sorvetes: itens de venda com controle de estoque direto.' },
+            { key: 'destilado', label: 'destilado', comment: 'Destilados: bebidas vendidas em quantidades fracionadas, como ml ou litros.' }
           ].map(tabOption => (
             <button
               key={tabOption.key}
@@ -1949,13 +2008,19 @@ const App = () => {
               >
                 Sorvete
               </button>
+              <button 
+                onClick={() => setMode('destilado')} 
+                className={`px-4 py-2 rounded-lg font-bold whitespace-nowrap landscape:px-2 landscape:py-1 landscape:text-xs ${mode === 'destilado' ? 'bg-blue-100 text-blue-800' : 'text-gray-600'}`}
+              >
+                Destilado (Fracionado)
+              </button>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4 landscape:grid-cols-2 landscape:gap-2">
               <input placeholder="Nome" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.name || ''} onChange={e => setNewProd({...newProd, name: e.target.value})} />
               <input placeholder="Categoria" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.category || ''} onChange={e => setNewProd({...newProd, category: e.target.value})} />
               
-              {(mode === 'insumo' || mode === 'insumo_bebida' || mode === 'revenda' || mode === 'sorvete') && (
+              {(mode === 'insumo' || mode === 'insumo_bebida' || mode === 'revenda' || mode === 'sorvete' || mode === 'destilado') && (
                 <>
                   <select className="border border-gray-400 p-2 rounded text-black bg-white" value={newProd.unit} onChange={e => setNewProd({...newProd, unit: e.target.value as any})}>
                     <option value="un">Unidade</option>
@@ -1975,7 +2040,7 @@ const App = () => {
                 </>
               )}
 
-              {(mode === 'prato' || mode === 'drink' || mode === 'revenda' || mode === 'sorvete') && (
+              {(mode === 'prato' || mode === 'drink' || mode === 'revenda' || mode === 'sorvete' || mode === 'destilado') && (
                 <>
                   <input type="number" placeholder="Preço de Venda" className="border border-gray-400 p-2 rounded font-bold text-black bg-white placeholder-gray-600" onChange={e => setNewProd({...newProd, price: Number(e.target.value)})} />
                 </>
@@ -2003,7 +2068,7 @@ const App = () => {
                     }}
                   >
                     <option value="">Adicionar Insumo...</option>
-                    {state.products.filter(p => p.type === 'insumo' || p.type === 'insumo_bebida').map(p => (
+                    {state.products.filter(p => p.type === 'insumo' || p.type === 'insumo_bebida' || p.type === 'destilado').map(p => (
                       <option key={p.id} value={p.id}>{p.name} ({p.unit})</option>
                     ))}
                   </select>
@@ -2192,6 +2257,7 @@ const App = () => {
                                     <option value="insumo_bebida">Insumo Bebida</option>
                                     <option value="revenda">Revenda</option>
                                     <option value="sorvete">Sorvete</option>
+                                    <option value="destilado">Destilado (Fracionado)</option>
                                     <option value="prato">Prato</option>
                                     <option value="drink">Drink</option>
                                   </select>
@@ -2227,7 +2293,7 @@ const App = () => {
                                         }}
                                       >
                                         <option value="">Adicionar Insumo...</option>
-                                        {state.products.filter(p => p.type === 'insumo' || p.type === 'insumo_bebida').map(p => (
+                                        {state.products.filter(p => p.type === 'insumo' || p.type === 'insumo_bebida' || p.type === 'destilado').map(p => (
                                           <option key={p.id} value={p.id}>{p.name} ({p.unit})</option>
                                         ))}
                                       </select>
