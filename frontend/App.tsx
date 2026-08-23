@@ -127,7 +127,7 @@ const App = () => {
   }, [isAuthenticated, user]);
   
   // --- State Management ---
-  const [view, setView] = useState<PageView>('dashboard');
+  const [view, setView] = useState<PageView>('pos');
   const [loading, setLoading] = useState(true);
   const [showHelp, setShowHelp] = useState(false);
   const [customersDropdown, setCustomersDropdown] = useState<CustomerDropdownItem[]>([]);
