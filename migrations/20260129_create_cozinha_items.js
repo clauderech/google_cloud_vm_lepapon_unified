@@ -6,7 +6,7 @@ export async function up(knex) {
 
   return knex.schema.createTable('cozinha_items', function(table) {
     table.increments('id').primary();
-    table.integer('comanda_id').notNullable().references('id').inTable('comandas');
+    table.string('comanda_id', 50).notNullable().references('id').inTable('comandas');
     table.integer('product_id').notNullable().references('id').inTable('products');
     table.integer('quantidade').notNullable();
     table.string('status').notNullable().defaultTo('pending');

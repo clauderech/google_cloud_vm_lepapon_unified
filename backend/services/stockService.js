@@ -557,7 +557,7 @@ class StockService {
    * @returns {Promise<Array>} Lista de movimentações realizadas
    */
   async processComanda(params) {
-    const { items, comandaId, userId } = params;
+    const { items, comandaId, userId, trx } = params;
     
     console.log('[STOCK_SERVICE][COMANDA]', { itemsCount: items.length, comandaId });
     
@@ -596,7 +596,9 @@ class StockService {
             referenceType: 'comanda',
             referenceId: comandaId,
             notes: `Uso em receita: ${product.name} (${quantity}x) - Comanda`,
-            userId
+              userId,
+              trx,
+              sync: false
           });
           
           movements.push(movement);
@@ -613,7 +615,9 @@ class StockService {
           referenceType: 'comanda',
           referenceId: comandaId,
           notes: `Adicionado à comanda`,
-          userId
+          userId,
+          trx,
+          sync: false
         });
         
         movements.push(movement);
@@ -634,7 +638,7 @@ class StockService {
    * @returns {Promise<Array>} Lista de movimentações realizadas
    */
   async revertComanda(params) {
-    const { items, comandaId, userId } = params;
+    const { items, comandaId, userId, trx } = params;
     
     console.log('[STOCK_SERVICE][COMANDA_REVERT]', { itemsCount: items.length, comandaId });
     
@@ -673,7 +677,9 @@ class StockService {
             referenceType: 'comanda',
             referenceId: comandaId,
             notes: `Reversão receita: ${product.name} (${quantity}x) - Comanda cancelada`,
-            userId
+            userId,
+            trx,
+            sync: false
           });
           
           movements.push(movement);
@@ -690,7 +696,9 @@ class StockService {
           referenceType: 'comanda',
           referenceId: comandaId,
           notes: `Comanda cancelada - estoque revertido`,
-          userId
+          userId,
+          trx,
+          sync: false
         });
         
         movements.push(movement);

@@ -785,7 +785,19 @@ async function processWhatsAppOrderToCozinha(orderId) {
       total: order.total || 0
     };
     
-    await ComandaModel.create(comandaPayload);
+    const { db: transactionDb } = require('../config/knex');
+    let results;
+    await transactionDb.transaction(async (trx) => {
+      await ComandaModel.create(comandaPayload, trx);
+      const cozinhaItems = orderItems.map(item => ({
+        product_id: item.product_retailer_id,
+        quantity: item.quantity,
+        notes: null
+      }));
+
+      const CozinhaItem = require('./cozinha_item');
+      results = await CozinhaItem.manageCozinhaItems(comandaId, cozinhaItems, order.customer_notes, trx, { notify: false });
+    });
     console.log(`[WhatsApp→Cozinha] Comanda automática criada: ${comandaId}`);
 
     // 4. Converter items para formato esperado pela cozinha
@@ -795,13 +807,8 @@ async function processWhatsAppOrderToCozinha(orderId) {
       notes: null // observações virão do globalNotes
     }));
 
-    // 5. Enviar para cozinha com observações globais
     const CozinhaItem = require('./cozinha_item');
-    const results = await CozinhaItem.manageCozinhaItems(
-      comandaId, 
-      cozinhaItems, 
-      order.customer_notes // observações globais do pedido
-    );
+    CozinhaItem.notifyRefresh();
     
     console.log(`[WhatsApp→Cozinha] Order ${orderId} processada:`, results);
     return { comandaId, results };

@@ -15,23 +15,23 @@ const ComandaModel = {
   async getById(id) {
     return db('comandas').where({ id }).first();
   },
-  async create(data) {
-    return db('comandas').insert(data);
+  async create(data, client = db) {
+    return client('comandas').insert(data);
   },
-  async update(id, data) {
-    return db('comandas').where({ id }).update(data);
+  async update(id, data, client = db) {
+    return client('comandas').where({ id }).update(data);
   },
   async remove(id) {
     return db('comandas').where({ id }).del();
   },
-  async getItems(comandaId) {
-    return db('comanda_items').where({ comanda_id: comandaId }).select('*');
+  async getItems(comandaId, client = db) {
+    return client('comanda_items').where({ comanda_id: comandaId }).select('*');
   }
   ,
-  async clearItems(comandaId) {
-    return db('comanda_items').where({ comanda_id: comandaId }).del();
+  async clearItems(comandaId, client = db) {
+    return client('comanda_items').where({ comanda_id: comandaId }).del();
   },
-  async addItems(comandaId, items) {
+  async addItems(comandaId, items, client = db) {
     if (!Array.isArray(items) || items.length === 0) return;
     // Mapeia os itens para o formato correto
     const mapped = items.map(item => ({
@@ -43,7 +43,7 @@ const ComandaModel = {
       status: item.status || 'pending',
       notes: item.notes || null
     }));
-    return db('comanda_items').insert(mapped);
+    return client('comanda_items').insert(mapped);
   },
 
   async findRecentByFone(customer_fone, maxHours = 10) {

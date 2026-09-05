@@ -9,6 +9,7 @@ const CozinhaItem = require('../models/cozinha_item');
 const StockService = require('../services/stockService');
 const pdfService = require('../services/pdfService');
 const path = require('path');
+const { db } = require('../config/knex');
 
 function calculateComandaTotal(items) {
   if (!Array.isArray(items) || items.length === 0) return 0;
@@ -188,38 +189,27 @@ router.post('/', async (req, res) => {
       customer_fone: comandaPayload.customer_fone || (comandaPayload.customer ? comandaPayload.customer.phone : undefined)
     };
     
-    const result = await ComandaModel.create(finalComandaPayload);
-    const comandaId = result[0];
-    
-    console.log('[COMANDA][CREATE][RESULT]', { result, comandaId });
-    
-    // Adiciona itens se fornecidos
-    if (Array.isArray(items) && items.length > 0) {
-      console.log('[COMANDA][CREATE][ADDING_ITEMS]', { comandaId, itemsCount: items.length });
-      await ComandaModel.addItems(comandaId, items);
+    const { comandaId, hasKitchenItems } = await db.transaction(async (trx) => {
+      const result = await ComandaModel.create(finalComandaPayload, trx);
+      const comandaId = result[0];
+      const hasKitchenItems = Array.isArray(items) && items.length > 0;
 
-      // Recalcula e persiste total com base nos itens da comanda
-      const total = calculateComandaTotal(items);
-      await ComandaModel.update(comandaId, { total });
-      
-      // Descontar estoque imediatamente
-      try {
+      if (hasKitchenItems) {
+        await ComandaModel.addItems(comandaId, items, trx);
+        await ComandaModel.update(comandaId, { total: calculateComandaTotal(items) }, trx);
         await StockService.processComanda({
-          items: items,
-          comandaId: comandaId,
-          userId: req.body.userId || null
-        });
-        console.log('[COMANDA][CREATE][STOCK][SUCCESS]', { comandaId, itemCount: items.length });
-      } catch (stockError) {
-        console.error('[COMANDA][CREATE][STOCK][ERROR]', {
+          items,
           comandaId,
-          error: stockError.message
+          userId: req.body.userId || null,
+          trx
         });
+        await CozinhaItem.manageCozinhaItems(comandaId, items, null, trx, { notify: false });
       }
-      
-      // Envia itens do tipo 'prato' para a cozinha imediatamente
-      await CozinhaItem.manageCozinhaItems(comandaId, items, null);
-    }
+
+      return { comandaId, hasKitchenItems };
+    });
+
+    if (hasKitchenItems) CozinhaItem.notifyRefresh();
     
     res.status(201).json({ success: true, id: comandaId });
   } catch (err) {
@@ -256,24 +246,25 @@ router.put('/:id', async (req, res) => {
       }
     }
     
-    if (Object.keys(comandaData).length > 0) {
-      await ComandaModel.update(req.params.id, comandaData);
-    }
     // Atualiza itens da comanda se enviados
     if (Array.isArray(items)) {
-      // Busca itens atuais ANTES de qualquer alteração para calcular diff de estoque
-      const previousItems = await ComandaModel.getItems(req.params.id);
+      await db.transaction(async (trx) => {
+        if (Object.keys(comandaData).length > 0) {
+          await ComandaModel.update(req.params.id, comandaData, trx);
+        }
 
-      // Remove itens antigos e insere novos
-      await ComandaModel.clearItems(req.params.id);
-      await ComandaModel.addItems(req.params.id, items);
+        // Busca itens atuais ANTES de qualquer alteração para calcular diff de estoque
+        const previousItems = await ComandaModel.getItems(req.params.id, trx);
 
-      // Recalcula e persiste total com base nos itens enviados no update
-      const total = calculateComandaTotal(items);
-      await ComandaModel.update(req.params.id, { total });
+        // Remove itens antigos e insere novos
+        await ComandaModel.clearItems(req.params.id, trx);
+        await ComandaModel.addItems(req.params.id, items, trx);
 
-      // Calcula diff de estoque: apenas a diferença de quantidade por produto
-      try {
+        // Recalcula e persiste total com base nos itens enviados no update
+        const total = calculateComandaTotal(items);
+        await ComandaModel.update(req.params.id, { total }, trx);
+
+        // Calcula diff de estoque: apenas a diferença de quantidade por produto
         const userId = req.body.userId || null;
         const comandaId = req.params.id;
 
@@ -306,29 +297,27 @@ router.put('/:id', async (req, res) => {
             await StockService.processComanda({
               items: [{ product_id: pid, quantity: diff }],
               comandaId,
-              userId
+              userId,
+              trx
             });
           } else {
             // Removeu quantidade: devolver ao estoque
             await StockService.revertComanda({
               items: [{ product_id: pid, quantity: Math.abs(diff) }],
               comandaId,
-              userId
+              userId,
+              trx
             });
           }
         }
 
         console.log('[COMANDA][UPDATE][STOCK][DIFF][SUCCESS]', { comandaId, productsAffected: allProductIds.size });
-      } catch (stockError) {
-        console.error('[COMANDA][UPDATE][STOCK][DIFF][ERROR]', {
-          comandaId: req.params.id,
-          error: stockError.message
-        });
-      }
 
-      // Gerencia itens da cozinha usando função centralizada
-      // Faz diff inteligente para evitar duplicações
-      await CozinhaItem.manageCozinhaItems(req.params.id, items, null);
+        await CozinhaItem.manageCozinhaItems(req.params.id, items, null, trx, { notify: false });
+      });
+      CozinhaItem.notifyRefresh();
+    } else if (Object.keys(comandaData).length > 0) {
+      await ComandaModel.update(req.params.id, comandaData);
     }
     res.json({ success: true });
   } catch (err) {

@@ -9,6 +9,7 @@ const CustomerModel = require(path.join(__dirname, '../models/customer'));
 const ProductModel = require(path.join(__dirname, '../models/product'));
 const CozinhaItem = require(path.join(__dirname, '../models/cozinha_item'));
 const StockService = require(path.join(__dirname, './stockService'));
+const { db } = require(path.join(__dirname, '../config/knex'));
 
 const WS_URL = process.env.LEPAPON_WS_URL || 'wss://lepapon.com.br/ws/';
 const TOKEN = process.env.LEPAPON_WS_TOKEN || 'SEU_TOKEN_AQUI';
@@ -24,6 +25,18 @@ async function sendPratosToKitchen(items, comandaId) {
   } catch (error) {
     console.error('[WS][COZINHA][ERROR]', { error: error.message, comandaId });
   }
+}
+
+async function appendItemsToComanda(comandaId, items, reopenAt = null) {
+  await db.transaction(async (trx) => {
+    if (reopenAt) {
+      await ComandaModel.update(comandaId, { status: 'open', opened_at: reopenAt }, trx);
+    }
+    await ComandaModel.addItems(comandaId, items, trx);
+    await StockService.processComanda({ items, comandaId, userId: null, trx });
+    await CozinhaItem.manageCozinhaItems(comandaId, items, null, trx, { notify: false });
+  });
+  CozinhaItem.notifyRefresh();
 }
 
 function createWebSocketClient() {
@@ -85,44 +98,13 @@ function createWebSocketClient() {
         if (recentComanda.status === 'open') {
           // Se aberta, só adiciona os itens
           comandaId = recentComanda.id;
-          await ComandaModel.addItems(comandaId, items);
-          
-          // Descontar estoque imediatamente
-          try {
-            await StockService.processComanda({
-              items: items,
-              comandaId: comandaId,
-              userId: null
-            });
-            console.log(`[WS][STOCK] Estoque descontado para comanda ${comandaId}`);
-          } catch (stockError) {
-            console.error('[WS][STOCK][ERROR]', { error: stockError.message, comandaId });
-          }
-          
-          // Enviar pratos para cozinha
-          await sendPratosToKitchen(items, comandaId);
+          await appendItemsToComanda(comandaId, items);
           console.log(`[WS] Itens adicionados à comanda aberta existente para telefone ${sessionId} (comandaId: ${comandaId})`);
           return;
         } else if (recentComanda.status === 'closed') {
           // Se fechada, mas updated_at < 10h, reabrir e adicionar itens
           comandaId = recentComanda.id;
-          await ComandaModel.update(comandaId, { status: 'open', opened_at: opened_at });
-          await ComandaModel.addItems(comandaId, items);
-          
-          // Descontar estoque imediatamente
-          try {
-            await StockService.processComanda({
-              items: items,
-              comandaId: comandaId,
-              userId: null
-            });
-            console.log(`[WS][STOCK] Estoque descontado para comanda reaberta ${comandaId}`);
-          } catch (stockError) {
-            console.error('[WS][STOCK][ERROR]', { error: stockError.message, comandaId });
-          }
-          
-          // Enviar pratos para cozinha
-          await sendPratosToKitchen(items, comandaId);
+          await appendItemsToComanda(comandaId, items, opened_at);
           console.log(`[WS] Comanda reaberta e itens adicionados para telefone ${sessionId} (comandaId: ${comandaId})`);
           return;
         }
@@ -139,23 +121,13 @@ function createWebSocketClient() {
         opened_at,
         notes
       };
-      const [createdId] = await ComandaModel.create(comandaPayload);
-      await ComandaModel.addItems(comandaId, items);
-      
-      // Descontar estoque imediatamente
-      try {
-        await StockService.processComanda({
-          items: items,
-          comandaId: comandaId,
-          userId: null
-        });
-        console.log(`[WS][STOCK] Estoque descontado para nova comanda ${comandaId}`);
-      } catch (stockError) {
-        console.error('[WS][STOCK][ERROR]', { error: stockError.message, comandaId });
-      }
-      
-      // Enviar pratos para cozinha
-      await sendPratosToKitchen(items, comandaId);
+      await db.transaction(async (trx) => {
+        await ComandaModel.create(comandaPayload, trx);
+        await ComandaModel.addItems(comandaId, items, trx);
+        await StockService.processComanda({ items, comandaId, userId: null, trx });
+        await CozinhaItem.manageCozinhaItems(comandaId, items, null, trx, { notify: false });
+      });
+      CozinhaItem.notifyRefresh();
       console.log(`[WS] Nova comanda criada para telefone ${sessionId} (comandaId: ${comandaId})`);
     } catch (err) {
       console.error('[WS] Erro ao criar comanda via new_order:', err.message, err.stack);

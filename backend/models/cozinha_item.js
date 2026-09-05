@@ -1,6 +1,17 @@
 const { db } = require('../config/knex');
 const ProductModel = require('./product');
 
+const KITCHEN_CATEGORIES = ['porção', 'porcao', 'picado', 'preparado', 'fracionado'];
+
+function needsKitchenPreparation(product) {
+  if (!product) return false;
+  if (['insumo', 'insumo_bebida', 'revenda', 'drink'].includes(product.type)) return false;
+  if (product.type === 'prato') return true;
+
+  const category = (product.category || '').toLowerCase();
+  return KITCHEN_CATEGORIES.some(value => category.includes(value)) || product.unit === 'frd';
+}
+
 // Notificações em tempo real (com fallback se Socket.IO não estiver disponível)
 let notifyKitchen = null;
 try {
@@ -17,8 +28,36 @@ try {
 }
 
 const CozinhaItem = {
+  notifyRefresh() {
+    if (notifyKitchen) notifyKitchen.refreshItems();
+  },
+
   async create(data) {
-    const [id] = await db('cozinha_items').insert(data).returning('id');
+    const product = await ProductModel.getById(data.product_id);
+    if (!needsKitchenPreparation(product)) {
+      throw new Error('Produto não requer preparo na cozinha');
+    }
+
+    const item = {
+      ...data,
+      quantidade: data.quantidade,
+      status: data.status || 'pending',
+      prioridade: data.prioridade || 'normal'
+    };
+    const [id] = await db('cozinha_items').insert(item).returning('id');
+    const createdItem = await db('cozinha_items')
+      .leftJoin('products', 'cozinha_items.product_id', 'products.id')
+      .leftJoin('comandas', 'cozinha_items.comanda_id', 'comandas.id')
+      .where('cozinha_items.id', id)
+      .select(
+        'cozinha_items.*',
+        'products.name as product_name',
+        'products.type as product_type',
+        'comandas.customer_name as comanda_customer_name'
+      )
+      .first();
+
+    if (notifyKitchen) notifyKitchen.newItem(createdItem);
     return id;
   },
 
@@ -40,87 +79,19 @@ const CozinhaItem = {
    * @param {Array} newItems - Array de itens: [{productId, quantity, notes, observation}]
    * @param {string} globalNotes - Observações globais do pedido (usado quando item.notes for vazio)
    */
-  async manageCozinhaItems(comandaId, newItems = [], globalNotes = null) {
+  async manageCozinhaItems(comandaId, newItems = [], globalNotes = null, trx = db, options = {}) {
+    const query = trx;
+    const shouldNotify = options.notify !== false;
     console.log('[COZINHA_ITEM][MANAGE] Starting kitchen management for comanda', comandaId, 'with', newItems.length, 'items');
     
     // 1. Buscar itens atuais na cozinha para esta comanda
-    const currentItems = await db('cozinha_items')
+    const currentItems = await query('cozinha_items')
       .where({ comanda_id: comandaId })
       .select('id', 'product_id', 'quantidade', 'observacao', 'status');
     
     console.log('[COZINHA_ITEM][MANAGE] Current items in kitchen:', currentItems.length);
     
-    // 2. Função para determinar se produto precisa de preparo na cozinha
-    const needsKitchenPreparation = (product) => {
-      if (!product) return false;
-      
-      // PRIMEIRO: Verificar tipos que NUNCA vão para cozinha (correção principal)
-      if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda') {
-        // Log de debug para produtos incorretamente categorizados
-        if (product.category) {
-          const categoryLower = product.category.toLowerCase();
-          const kitchenCategories = ['porção', 'porcao', 'picado', 'preparado', 'fracionado'];
-          const hasKitchenCategory = kitchenCategories.some(cat => categoryLower.includes(cat));
-          
-          if (hasKitchenCategory || product.unit === 'frd') {
-            console.warn(`[COZINHA_ITEM][FILTER][BLOCKED] Produto tipo '${product.type}' com categoria/unidade de cozinha BLOQUEADO:`, {
-              id: product.id,
-              name: product.name,
-              type: product.type,
-              category: product.category,
-              unit: product.unit,
-              reason: 'Insumos/revenda não devem ir para cozinha'
-            });
-          }
-        }
-        return false; // ✅ Força insumos/revenda a NÃO irem para cozinha
-      }
-      
-      // SEGUNDO: Tipos que sempre vão para cozinha
-      if (product.type === 'prato') {
-        return true;
-      }
-      
-      // Drinks não vão para cozinha (apenas pratos)
-      if (product.type === 'drink') {
-        console.log(`[COZINHA_ITEM][FILTER][BLOCKED] Drink NÃO enviado para cozinha:`, {
-          id: product.id,
-          name: product.name,
-          type: product.type,
-          reason: 'Drinks não precisam de preparo na cozinha'
-        });
-        return false;
-      }
-      
-      // TERCEIRO: Categorias especiais (apenas para tipos não definidos acima)
-      const kitchenCategories = ['porção', 'porcao', 'picado', 'preparado', 'fracionado'];
-      const categoryLower = (product.category || '').toLowerCase();
-      if (kitchenCategories.some(cat => categoryLower.includes(cat))) {
-        console.log(`[COZINHA_ITEM][FILTER][CATEGORY] Produto enviado para cozinha por categoria:`, {
-          id: product.id,
-          name: product.name,
-          type: product.type,
-          category: product.category,
-          matchedCategory: kitchenCategories.find(cat => categoryLower.includes(cat))
-        });
-        return true;
-      }
-      
-      // QUARTO: Unidades que indicam preparo fracionado (apenas para tipos não definidos acima)
-      if (product.unit === 'frd') {
-        console.log(`[COZINHA_ITEM][FILTER][UNIT] Produto enviado para cozinha por unidade fracionada:`, {
-          id: product.id,
-          name: product.name,
-          type: product.type,
-          unit: product.unit
-        });
-        return true;
-      }
-      
-      return false;
-    };
-    
-    // 3. Filtrar produtos que precisam de preparo na cozinha
+    // 2. Filtrar produtos que precisam de preparo na cozinha
     const pratosItems = [];
     for (const item of newItems) {
       const productId = item.productId || item.product_id;
@@ -147,7 +118,7 @@ const CozinhaItem = {
       observacao: item.observacao || 'sem obs'
     })));
     
-    // 3. Função para criar chave única baseada em produto + observação
+    // 3. Criar chave única baseada em produto + observação
     const createItemKey = (productId, observacao) => {
       return `${productId}||${observacao || 'sem_obs'}`;
     };
@@ -156,13 +127,24 @@ const CozinhaItem = {
     const currentMap = new Map();
     currentItems.forEach(item => {
       const key = createItemKey(item.product_id, item.observacao);
-      currentMap.set(key, item);
+      const existing = currentMap.get(key);
+      if (existing) {
+        existing.quantidade += Number(item.quantidade) || 0;
+        existing.duplicateIds.push(item.id);
+      } else {
+        currentMap.set(key, { ...item, duplicateIds: [] });
+      }
     });
     
     const newMap = new Map();
     pratosItems.forEach(item => {
       const key = createItemKey(item.product_id, item.observacao);
-      newMap.set(key, item);
+      const existing = newMap.get(key);
+      if (existing) {
+        existing.quantidade += Number(item.quantidade) || 0;
+      } else {
+        newMap.set(key, { ...item, quantidade: Number(item.quantidade) || 0 });
+      }
     });
     
     const operations = {
@@ -195,6 +177,9 @@ const CozinhaItem = {
             observacao: newItem.observacao || newItem.observation || globalNotes || null
           });
         }
+        if (currentItem.duplicateIds.length > 0) {
+          operations.toDelete.push(...currentItem.duplicateIds);
+        }
       }
     }
     
@@ -217,27 +202,22 @@ const CozinhaItem = {
     const results = { inserted: 0, updated: 0, deleted: 0 };
     
     if (operations.toInsert.length > 0) {
-      const result = await db('cozinha_items').insert(operations.toInsert);
-      const firstInsertId = result[0]; // MySQL retorna [insertId, affectedRows]
-      const count = operations.toInsert.length;
+      const insertedIds = [];
+      for (const item of operations.toInsert) {
+        const [insertedId] = await query('cozinha_items').insert(item);
+        insertedIds.push(insertedId);
+      }
       
-      // Calcular IDs sequenciais corretos (MySQL AUTO_INCREMENT é sequencial)
-      const insertedIds = Array.from(
-        { length: count }, 
-        (_, i) => firstInsertId + i
-      );
-      
-      results.inserted = count;
+      results.inserted = insertedIds.length;
       console.log('[COZINHA_ITEM][INSERT]', { 
-        firstId: firstInsertId, 
-        count, 
-        calculatedIds: insertedIds 
+        count: insertedIds.length,
+        insertedIds
       });
       
       // Notificar sobre novos itens
-      if (notifyKitchen && insertedIds.length > 0) {
+      if (shouldNotify && notifyKitchen && insertedIds.length > 0) {
         // Buscar os itens recém inseridos com informações detalhadas
-        const newItems = await db('cozinha_items')
+        const newItems = await query('cozinha_items')
           .leftJoin('products', 'cozinha_items.product_id', 'products.id')
           .leftJoin('comandas', 'cozinha_items.comanda_id', 'comandas.id')
           .whereIn('cozinha_items.id', insertedIds)
@@ -274,12 +254,12 @@ const CozinhaItem = {
       
       // Notificar sobre atualizações
       if (notifyKitchen && operations.toUpdate.length > 0) {
-        notifyKitchen.refreshItems();
+        if (shouldNotify) notifyKitchen.refreshItems();
       }
     }
     
     if (operations.toDelete.length > 0) {
-      await db('cozinha_items').whereIn('id', operations.toDelete).del();
+      await query('cozinha_items').whereIn('id', operations.toDelete).del();
       results.deleted = operations.toDelete.length;
     }
     
