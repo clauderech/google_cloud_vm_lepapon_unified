@@ -21,6 +21,9 @@ ORDER BY TABLE_NAME;
 -- Tabela: products
 DESCRIBE products;
 
+-- Papéis independentes: NULL mantém compatibilidade com produtos legados.
+-- is_sellable controla catálogos/vendas; is_ingredient controla receitas/produção.
+
 -- Tabela: stock_movements (CRÍTICA PARA PRODUÇÃO)
 DESCRIBE stock_movements;
 

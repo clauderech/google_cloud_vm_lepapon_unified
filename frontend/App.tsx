@@ -79,6 +79,11 @@ import {
 
 // Define PaymentMethod type if not imported from types
 type PaymentMethod = 'cash' | 'card' | 'pix' | 'credit';
+
+const LEGACY_SELLABLE_TYPES = new Set(['prato', 'drink', 'revenda', 'sorvete', 'destilado']);
+const LEGACY_INGREDIENT_TYPES = new Set(['insumo', 'insumo_bebida', 'destilado']);
+const isProductSellable = (product: Partial<Product>) => product.isSellable ?? LEGACY_SELLABLE_TYPES.has(product.type || '');
+const isProductIngredient = (product: Partial<Product>) => product.isIngredient ?? LEGACY_INGREDIENT_TYPES.has(product.type || '');
 import { generateBusinessInsight, suggestRestockOrder } from './services/geminiService';
 import { storageService, calculateMaxProduciableFor } from './services/storage';
 import FileUploadModal from './components/FileUploadModal';
@@ -277,6 +282,8 @@ const App = () => {
 
   // --- Helper: Calculate Max Possible Stock for a Recipe Product ---
   const calculateMaxProduciable = (product: Product, allProducts: Product[]): number => {
+    if (isProductIngredient(product) && isProductSellable(product)) return product.stock;
+    if (isProductIngredient(product) && (!product.recipe || product.recipe.length === 0)) return product.stock;
     if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda' || product.type === 'destilado') return product.stock;
     if (product.type === 'sorvete' && (!product.recipe || product.recipe.length === 0)) return product.stock;
     if (!product.recipe || product.recipe.length === 0) return 0;
@@ -1847,6 +1854,8 @@ const App = () => {
             unit: editProd.unit || 'un',
             category: editProd.category || '',
             recipe: editProd.recipe || [],
+            isSellable: editProd.isSellable ?? isProductSellable(editProd),
+            isIngredient: editProd.isIngredient ?? isProductIngredient(editProd),
             is_active: editProd.is_active ? true : false,
           } as Product;
           console.log('[EDIT PRODUTO] Enviando para o DB:', updated);
@@ -1897,6 +1906,8 @@ const App = () => {
         ...newProd,
         id: generateId(),
         type: mode,
+        isSellable: newProd.isSellable ?? LEGACY_SELLABLE_TYPES.has(mode),
+        isIngredient: newProd.isIngredient ?? LEGACY_INGREDIENT_TYPES.has(mode),
         stock: (mode === 'prato' || mode === 'drink' || (mode === 'sorvete' && !!newProd.recipe?.length)) ? 0 : (newProd.stock || 0),
         price: Number(newProd.price || 0),
         cost: Number(newProd.cost || 0),
@@ -2009,6 +2020,14 @@ const App = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4 landscape:grid-cols-2 landscape:gap-2">
               <input placeholder="Nome" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.name || ''} onChange={e => setNewProd({...newProd, name: e.target.value})} />
               <input placeholder="Categoria" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={newProd.category || ''} onChange={e => setNewProd({...newProd, category: e.target.value})} />
+              <label className="flex items-center gap-2 text-gray-700 font-medium">
+                <input type="checkbox" checked={newProd.isSellable ?? LEGACY_SELLABLE_TYPES.has(mode)} onChange={e => setNewProd({...newProd, isSellable: e.target.checked})} />
+                Vendável
+              </label>
+              <label className="flex items-center gap-2 text-gray-700 font-medium">
+                <input type="checkbox" checked={newProd.isIngredient ?? LEGACY_INGREDIENT_TYPES.has(mode)} onChange={e => setNewProd({...newProd, isIngredient: e.target.checked})} />
+                Ingrediente
+              </label>
               
               {(mode === 'insumo' || mode === 'insumo_bebida' || mode === 'revenda' || mode === 'sorvete' || mode === 'destilado') && (
                 <>
@@ -2038,7 +2057,7 @@ const App = () => {
             </div>
 
             {/* Receita para Pratos, Drinks, Sorvetes e Insumos categoria "casa" */}
-            {(mode === 'prato' || mode === 'drink' || mode === 'sorvete' || (mode === 'insumo' && newProd.category === 'casa')) && (
+            {(mode === 'prato' || mode === 'drink' || mode === 'sorvete' || (isProductIngredient(newProd) && newProd.category === 'casa')) && (
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4">
                 <h4 className="font-bold text-gray-800 mb-2">
                   {mode === 'insumo' ? 'Receita de Produção (Insumo Caseiro)' : 'Ficha Técnica (Receita)'}
@@ -2058,7 +2077,7 @@ const App = () => {
                     }}
                   >
                     <option value="">Adicionar Insumo...</option>
-                    {state.products.filter(p => p.type === 'insumo' || p.type === 'insumo_bebida' || p.type === 'destilado').map(p => (
+                    {state.products.filter(isProductIngredient).map(p => (
                       <option key={p.id} value={p.id}>{p.name} ({p.unit})</option>
                     ))}
                   </select>
@@ -2240,6 +2259,14 @@ const App = () => {
                                     <input type="checkbox" id="isActiveEdit" checked={!!editProd.is_active} onChange={e => setEditProd({...editProd, is_active: e.target.checked})} className="mr-2" />
                                     <label htmlFor="isActiveEdit" className="font-bold text-gray-700">Produto Ativo</label>
                                   </div>
+                                  <label className="flex items-center gap-2 text-gray-700 font-medium">
+                                    <input type="checkbox" checked={editProd.isSellable ?? isProductSellable(editProd)} onChange={e => setEditProd({...editProd, isSellable: e.target.checked})} />
+                                    Vendável
+                                  </label>
+                                  <label className="flex items-center gap-2 text-gray-700 font-medium">
+                                    <input type="checkbox" checked={editProd.isIngredient ?? isProductIngredient(editProd)} onChange={e => setEditProd({...editProd, isIngredient: e.target.checked})} />
+                                    Ingrediente
+                                  </label>
                                   <input placeholder="Nome" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={editProd.name || ''} onChange={e => setEditProd({...editProd, name: e.target.value})} />
                                   <input placeholder="Categoria" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={editProd.category || ''} onChange={e => setEditProd({...editProd, category: e.target.value})} />
                                   <select className="border border-gray-400 p-2 rounded text-black bg-white" value={editMode} onChange={e => setEditMode(e.target.value as any)}>
@@ -2263,7 +2290,7 @@ const App = () => {
                                   </select>
                                   </div>
                                   {/* Receita para Pratos, Drinks, Sorvetes e Insumos categoria "casa" */}
-                                  {(editMode === 'prato' || editMode === 'drink' || editMode === 'sorvete' || (editMode === 'insumo' && editProd.category === 'casa')) && (
+                                  {(editMode === 'prato' || editMode === 'drink' || editMode === 'sorvete' || (isProductIngredient(editProd) && editProd.category === 'casa')) && (
                                     <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4">
                                     <h4 className="font-bold text-gray-800 mb-2">
                                       {editMode === 'insumo' ? 'Receita de Produção (Insumo Caseiro)' : 'Ficha Técnica (Receita)'}
@@ -2283,7 +2310,7 @@ const App = () => {
                                         }}
                                       >
                                         <option value="">Adicionar Insumo...</option>
-                                        {state.products.filter(p => p.type === 'insumo' || p.type === 'insumo_bebida' || p.type === 'destilado').map(p => (
+                                        {state.products.filter(isProductIngredient).map(p => (
                                           <option key={p.id} value={p.id}>{p.name} ({p.unit})</option>
                                         ))}
                                       </select>

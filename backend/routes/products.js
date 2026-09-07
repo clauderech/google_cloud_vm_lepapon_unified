@@ -2,6 +2,7 @@
 const express = require('express');
 const ProductModel = require('../models/product');
 const StockService = require('../services/stockService');
+const { isIngredient, isSellable } = require('../services/productRoles');
 const { requireAdmin, requireOperador } = require('../middleware/roleAuth');
 const { requireAuth, validateApiKey } = require('../middleware/authUnified');
 const router = express.Router();
@@ -40,7 +41,7 @@ router.get('/revendas', requireAuth, async (req, res) => {
   try {
     const products = await ProductModel.list();
     const revendas = products
-      .filter(p => p.type === 'revenda')
+      .filter(isSellable)
       .map(p => ({ id: p.id, name: p.name }));
     res.json(revendas);
   } catch (err) {
@@ -52,11 +53,10 @@ router.get('/revendas', requireAuth, async (req, res) => {
 router.get('/simple', requireAuth, async (req, res) => {
   try {
     const { db } = require('../config/knex');
-    const products = await db('products')
-      .select('id', 'name', 'price', 'stock')
-      .where('is_active', 1)
-      .whereIn('type', ['prato', 'revenda', 'sorvete', 'destilado'])
-      .orderBy('name', 'asc');
+    const products = (await ProductModel.list())
+      .filter(isSellable)
+      .map(({ id, name, price, stock }) => ({ id, name, price, stock }))
+      .sort((a, b) => a.name.localeCompare(b.name));
     
     res.json(products);
   } catch (err) {
@@ -88,10 +88,12 @@ router.get('/cervejas', requireAuth, async (req, res) => {
 router.get('/catalog', requireAuth, async (req, res) => {
   try {
     const { db } = require('../config/knex');
-    const products = await db('products')
-      .select('id', 'name', 'price', 'stock', 'type')
-      .whereIn('type', ['revenda', 'sorvete', 'drink', 'prato', 'destilado'])
-      .orderBy('name', 'asc');
+    const products = (await ProductModel.list())
+      .filter(isSellable)
+      .map(({ id, name, price, stock, type, is_sellable, is_ingredient }) => ({
+        id, name, price, stock, type, is_sellable, is_ingredient
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
 
     res.json(products);
   } catch (err) {
@@ -113,11 +115,12 @@ router.get('/android', validateApiKey, async (req, res) => {
 
     console.log('[PRODUCT][ANDROID][LIST]');
 
-    const products = await db('products')
-      .select('id', 'name', 'type', 'price', 'cost', 'stock')
-      .where('is_active', 1)
-      .whereIn('type', ['insumo', 'insumo_bebida', 'revenda', 'sorvete'])
-      .orderBy('name', 'asc');
+    const products = (await ProductModel.list())
+      .filter(product => isSellable(product) || isIngredient(product))
+      .map(({ id, name, type, price, cost, stock, is_sellable, is_ingredient }) => ({
+        id, name, type, price, cost, stock, is_sellable, is_ingredient
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
 
     console.log('[PRODUCT][ANDROID][LIST][SUCCESS]', { count: products.length });
 
@@ -149,7 +152,7 @@ const LEPAPON_REMOTE_TOKEN = process.env.LEPAPON_REMOTE_TOKEN || ''; // opcional
 const sendProductsToLepapon = async (req, res) => {
   try {
     const products = await ProductModel.list();
-    const relevantProducts = products.filter(p => ['prato', 'revenda', 'sorvete'].includes(p.type));
+    const relevantProducts = products.filter(isSellable);
 
     const filtered = await Promise.all(
       relevantProducts.map(async (p) => {
@@ -232,7 +235,7 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
     const result = await ProductModel.create(req.body);
     const createdProductId = req.body.id || result[0];
     
-    if (req.body.stock !== undefined && ['prato', 'revenda', 'sorvete'].includes(req.body.type)) {
+    if (req.body.stock !== undefined && isSellable(req.body)) {
       try {
         await StockService.syncProductStockToLepapon(createdProductId);
       } catch (syncErr) {
@@ -290,7 +293,7 @@ router.put('/:id', requireAuth, requireOperador, async (req, res) => {
         reason: 'Atualização de produto',
         userId: req.body.userId || null
       });
-    } else if (req.body.type && req.body.type !== existingProduct.type && ['prato', 'revenda', 'sorvete'].includes(req.body.type)) {
+    } else if (req.body.type && req.body.type !== existingProduct.type && isSellable({ ...existingProduct, ...req.body })) {
       await StockService.syncProductStockToLepapon(req.params.id);
     }
 

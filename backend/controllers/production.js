@@ -1,5 +1,6 @@
 const ProductModel = require('../models/product');
 const StockService = require('../services/stockService');
+const { isIngredient } = require('../services/productRoles');
 
 /**
  * Controller para produção de insumos caseiros
@@ -27,7 +28,7 @@ const ProductionController = {
       const availableProductions = allProducts.filter(product => {
         console.log('[PRODUCTION][AVAILABLE][STEP2] Filtering product:', product.id, product.name);
         // Deve ser insumo
-        const isInsumo = product.type === 'insumo' || product.type === 'insumo_bebida';
+        const isInsumo = isIngredient(product);
         
         // Deve estar ativo
         const isActive = product.is_active === 1;
@@ -193,7 +194,7 @@ const ProductionController = {
         });
       }
       
-      if (product.type !== 'insumo' && product.type !== 'insumo_bebida') {
+      if (!isIngredient(product)) {
         return res.status(400).json({
           success: false,
           message: 'Apenas insumos podem ser produzidos'

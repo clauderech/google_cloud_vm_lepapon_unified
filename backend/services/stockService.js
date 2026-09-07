@@ -1,6 +1,7 @@
 const axios = require('axios');
 const ProductModel = require('../models/product');
 const StockMovementModel = require('../models/stockMovement');
+const { isIngredient, isSellable } = require('./productRoles');
 
 const LEPAPON_REMOTE_URL = process.env.LEPAPON_REMOTE_URL || 'https://lepapon.com.br/atualiza-prod';
 const LEPAPON_REMOTE_STOCK_URL = process.env.LEPAPON_REMOTE_STOCK_URL || 'http://lepapon-unified.local/produtos';
@@ -95,13 +96,14 @@ class StockService {
 
         const productType = product.type;
 
-        if (movementType === 'purchase' && ['insumo', 'insumo_bebida', 'revenda', 'sorvete'].includes(productType)) {
+        if (movementType === 'purchase' && (isIngredient(product) || isSellable(product))) {
           await this.sendStockToLepapon(productId, newStock);
         }
 
-        if (productType === 'revenda' || productType === 'prato' || productType === 'sorvete') {
+        if (isSellable(product)) {
           await this.syncProductStockToLepapon(productId);
-          } else if (productType === 'insumo' || productType === 'insumo_bebida' || productType === 'destilado') {
+        }
+        if (isIngredient(product)) {
           await this.syncRecipeProductsAffectedByIngredient(productId);
         }
       } catch (syncError) {
@@ -225,7 +227,7 @@ class StockService {
 
   async syncAllRelevantProductsToLepapon(options = {}) {
     const products = await ProductModel.list();
-    const relevantProducts = products.filter(p => ['prato', 'revenda'].includes(p.type));
+    const relevantProducts = products.filter(isSellable);
 
     const payload = await Promise.all(
       relevantProducts.map(async (p) => {
@@ -246,7 +248,11 @@ class StockService {
   async calculateLepaponStock(product) {
     if (!product) return 0;
 
-    if (product.type === 'revenda') {
+    if (isSellable(product) && isIngredient(product)) {
+      return Math.max(0, Math.floor(parseFloat(product.stock) || 0));
+    }
+
+    if (product.type === 'revenda' || (isSellable(product) && !product.recipe?.length)) {
       return Math.max(0, Math.floor(parseFloat(product.stock) || 0));
     }
 
@@ -277,7 +283,7 @@ class StockService {
       return;
     }
 
-    if (!['prato', 'revenda', 'sorvete'].includes(product.type)) {
+    if (!isSellable(product)) {
       return;
     }
 
@@ -288,7 +294,7 @@ class StockService {
   async syncRecipeProductsAffectedByIngredient(ingredientId) {
     const products = await ProductModel.list();
     const affected = products.filter(product =>
-      (product.type === 'prato' || product.type === 'drink' || product.type === 'sorvete') &&
+      isSellable(product) &&
       Array.isArray(product.recipe) &&
       product.recipe.some(item => item.ingredientId === ingredientId)
     );
@@ -321,8 +327,7 @@ class StockService {
 
     const hasRecipe = Array.isArray(product.recipe) && product.recipe.length > 0;
 
-    if (((product.type === 'prato' || product.type === 'drink' || product.type === 'sorvete') && hasRecipe) || 
-      ((product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'destilado') && hasRecipe)) {
+    if (hasRecipe && !(isSellable(product) && isIngredient(product))) {
       // Produto com receita - deduz ingredientes (pratos, drinks e insumos caseiros)
       const recipe = typeof product.recipe === 'string' ? JSON.parse(product.recipe) : product.recipe;
       
@@ -341,10 +346,7 @@ class StockService {
         
         movements.push(movement);
       }
-    } else if (((product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'destilado') && !product.recipe) ||
-           product.type === 'revenda' || 
-           product.type === 'sorvete' || 
-               (product.type === 'drink' && !product.recipe)) {
+    } else if (isSellable(product) || (isIngredient(product) && !hasRecipe)) {
       // Produto simples - deduz diretamente (insumos básicos, revenda, drinks simples)
       const movement = await this.updateStock({
         productId: productId,
@@ -384,7 +386,7 @@ class StockService {
     }
 
     // Verificar se é um insumo com receita
-    if (product.type !== 'insumo' && product.type !== 'insumo_bebida') {
+    if (!isIngredient(product)) {
       throw new Error(`Produto ${product.name} não é um insumo. Apenas insumos podem ser produzidos.`);
     }
 
@@ -581,8 +583,7 @@ class StockService {
 
         const hasRecipe = Array.isArray(product.recipe) && product.recipe.length > 0;
 
-        if (((product.type === 'prato' || product.type === 'drink' || product.type === 'sorvete') && hasRecipe) || 
-          ((product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'destilado') && hasRecipe)) {
+        if (hasRecipe && !(isSellable(product) && isIngredient(product))) {
         // Produto com receita - deduz ingredientes (pratos, drinks e insumos caseiros)
         const recipe = typeof product.recipe === 'string' ? JSON.parse(product.recipe) : product.recipe;
         
@@ -603,10 +604,7 @@ class StockService {
           
           movements.push(movement);
         }
-      } else if (((product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'destilado') && !product.recipe) ||
-             product.type === 'revenda' || 
-             product.type === 'sorvete' || 
-                 (product.type === 'drink' && !product.recipe)) {
+        } else if (isSellable(product) || (isIngredient(product) && !hasRecipe)) {
         // Produto simples - deduz diretamente (insumos básicos, revenda, drinks simples)
         const movement = await this.updateStock({
           productId: productId,
@@ -662,8 +660,7 @@ class StockService {
 
         const hasRecipe = Array.isArray(product.recipe) && product.recipe.length > 0;
 
-        if (((product.type === 'prato' || product.type === 'drink' || product.type === 'sorvete') && hasRecipe) || 
-          ((product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'destilado') && hasRecipe)) {
+        if (hasRecipe && !(isSellable(product) && isIngredient(product))) {
         // Produto com receita - reverte ingredientes (pratos, drinks e insumos caseiros)
         const recipe = typeof product.recipe === 'string' ? JSON.parse(product.recipe) : product.recipe;
         
@@ -684,10 +681,7 @@ class StockService {
           
           movements.push(movement);
         }
-      } else if (((product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'destilado') && !product.recipe) ||
-             product.type === 'revenda' || 
-             product.type === 'sorvete' || 
-                 (product.type === 'drink' && !product.recipe)) {
+        } else if (isSellable(product) || (isIngredient(product) && !hasRecipe)) {
         // Produto simples - reverte diretamente
         const movement = await this.updateStock({
           productId: productId,
@@ -752,13 +746,7 @@ class StockService {
     return products.filter(product => {
       const stock = parseFloat(product.stock) || 0;
       const minStock = parseFloat(product.min_stock) || 0;
-      return stock <= minStock && (
-        product.type === 'insumo' ||
-        product.type === 'insumo_bebida' ||
-        product.type === 'insumo-bebida' ||
-        product.type === 'revenda' ||
-        product.type === 'sorvete'
-      ) && product.is_active === 1;
+      return stock <= minStock && (isIngredient(product) || isSellable(product)) && product.is_active === 1;
     }).map(product => ({
       productId: product.id,
       productName: product.name,

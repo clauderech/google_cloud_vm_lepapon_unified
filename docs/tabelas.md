@@ -6,6 +6,8 @@
 | id          | varchar(50)                                   | PRI   |                      |
 | name        | varchar(255)                                  |       |                      |
 | type        | enum('insumo','insumo_bebida','prato','drink','revenda','sorvete') |       |                      |
+| is_sellable | tinyint(1)                                    |       | NULL para produtos legados; indica disponibilidade para venda |
+| is_ingredient | tinyint(1)                                  |       | NULL para produtos legados; indica uso em receitas/produção |
 | price       | decimal(10,2)                                 |       |                      |
 | cost        | decimal(10,2)                                 |       |                      |
 | stock       | decimal(10,3)                                 |       |                      |
@@ -20,6 +22,8 @@
 | is_active   | tinyint(1)                                    |       |                      |
 | created_at  | timestamp                                     |       |                      |
 | updated_at  | timestamp                                     |       |                      |
+
+`is_sellable` e `is_ingredient` são papéis independentes. Quando `NULL`, o backend mantém o comportamento legado derivado de `type`. Produtos híbridos podem ter ambos como `1`; sua venda baixa o estoque do próprio produto, enquanto seu uso em outra receita baixa o estoque normalmente.
 
 ## suppliers
 | Campo      | Tipo         | Chave | Observações           |

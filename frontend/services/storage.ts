@@ -36,7 +36,11 @@ function withAuthHeaders(headers: Record<string, string> = {}): Record<string, s
 export function calculateMaxProduciableFor(productId: string, allProducts: Product[]): number {
   const product = allProducts.find(p => p.id === productId);
   if (!product) return 0;
-  if (product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'revenda' || product.type === 'destilado') {
+  const isLegacyIngredient = product.type === 'insumo' || product.type === 'insumo_bebida' || product.type === 'destilado';
+  const isLegacySellable = product.type === 'prato' || product.type === 'drink' || product.type === 'revenda' || product.type === 'sorvete' || product.type === 'destilado';
+  const isIngredient = product.isIngredient ?? isLegacyIngredient;
+  const isSellable = product.isSellable ?? isLegacySellable;
+  if ((isIngredient && isSellable) || (isIngredient && (!product.recipe || product.recipe.length === 0))) {
     return Number(product.stock) || 0;
   }
   if (product.type === 'sorvete' && (!product.recipe || product.recipe.length === 0)) {
@@ -65,6 +69,8 @@ export const storageService = {
           id: product.id,
           name: product.name,
           type: product.type,
+          is_sellable: product.isSellable ?? null,
+          is_ingredient: product.isIngredient ?? null,
           price: product.price,
           cost: product.cost,
           stock: product.stock,
@@ -394,6 +400,8 @@ export const storageService = {
         id: product.id,
         name: product.name,
         type: product.type,
+        is_sellable: product.isSellable ?? null,
+        is_ingredient: product.isIngredient ?? null,
         price: product.price,
         cost: product.cost,
         stock: product.stock,
@@ -557,6 +565,8 @@ function mapProductFromDB(p: any): Product {
     id: p.id,
     name: p.name,
     type: p.type,
+    isSellable: p.is_sellable === null || p.is_sellable === undefined ? null : Boolean(p.is_sellable),
+    isIngredient: p.is_ingredient === null || p.is_ingredient === undefined ? null : Boolean(p.is_ingredient),
     price: parseFloat(p.price),
     cost: parseFloat(p.cost),
     stock: parseFloat(p.stock),

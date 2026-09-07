@@ -47,6 +47,8 @@ export interface Product {
   id: string;
   name: string;
   type: 'insumo' | 'insumo_bebida' | 'prato' | 'drink' | 'revenda' | 'sorvete' | 'destilado';
+  isSellable?: boolean | null;
+  isIngredient?: boolean | null;
   price: number;
   cost: number;
   stock: number;

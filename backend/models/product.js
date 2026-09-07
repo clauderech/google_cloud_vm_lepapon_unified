@@ -36,6 +36,14 @@ const ProductModel = {
         toSave.package_quantity = Number(toSave.packageQuantity ?? 1);
         delete toSave.packageQuantity;
       }
+      if (Object.prototype.hasOwnProperty.call(toSave, 'isSellable')) {
+        toSave.is_sellable = toSave.isSellable === null ? null : Boolean(toSave.isSellable);
+        delete toSave.isSellable;
+      }
+      if (Object.prototype.hasOwnProperty.call(toSave, 'isIngredient')) {
+        toSave.is_ingredient = toSave.isIngredient === null ? null : Boolean(toSave.isIngredient);
+        delete toSave.isIngredient;
+      }
       if (toSave.recipe) toSave.recipe = JSON.stringify(toSave.recipe);
       
       const result = await db('products').insert(toSave);
@@ -70,6 +78,14 @@ const ProductModel = {
       if (Object.prototype.hasOwnProperty.call(toSave, 'packageQuantity')) {
         toSave.package_quantity = Number(toSave.packageQuantity ?? 1);
         delete toSave.packageQuantity;
+      }
+      if (Object.prototype.hasOwnProperty.call(toSave, 'isSellable')) {
+        toSave.is_sellable = toSave.isSellable === null ? null : Boolean(toSave.isSellable);
+        delete toSave.isSellable;
+      }
+      if (Object.prototype.hasOwnProperty.call(toSave, 'isIngredient')) {
+        toSave.is_ingredient = toSave.isIngredient === null ? null : Boolean(toSave.isIngredient);
+        delete toSave.isIngredient;
       }
       if (toSave.recipe) toSave.recipe = JSON.stringify(toSave.recipe);
       
