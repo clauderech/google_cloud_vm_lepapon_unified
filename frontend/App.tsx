@@ -2418,7 +2418,7 @@ const App = () => {
              <label className="block text-xs font-bold text-gray-700 mb-1">Insumo</label>
              <select className="w-full border border-gray-400 p-2 rounded-lg text-black bg-white font-medium" value={newItemId} onChange={e => setNewItemId(e.target.value)}>
                <option value="">Selecione...</option>
-               {state.products.filter(p => p.type === 'insumo' || p.type === 'revenda' || p.type === 'sorvete').map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+               {state.products.filter(p => p.type === 'insumo' || p.type === 'revenda' || p.type === 'sorvete' || p.type === 'destilado').map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
              </select>
            </div>
            <div className="w-24">
@@ -2503,7 +2503,7 @@ const App = () => {
       if (!selectedSupplier) return;
       setIsLoading(true);
       try {
-        const text = await suggestRestockOrder(state.products.filter(p => p.type === 'insumo' || p.type === 'insumo_bebida' || p.type === 'revenda' || p.type === 'sorvete'), selectedSupplier);
+        const text = await suggestRestockOrder(state.products.filter(p => p.type === 'insumo' || p.type === 'insumo_bebida' || p.type === 'revenda' || p.type === 'sorvete' || p.type === 'destilado'), selectedSupplier);
         setAiSuggestion(text);
       } catch (error) {
         console.error('Erro ao gerar sugestão:', error);
@@ -2513,9 +2513,9 @@ const App = () => {
       }
     };
 
-    // Filter 'insumo', 'insumo_bebida', 'revenda' and 'sorvete' for purchasing - optimized with useMemo
+    // Filter purchaseable products for purchasing - optimized with useMemo
     const availableProducts = useMemo(() => 
-      state.products.filter(p => p.supplierId === selectedSupplier && (p.type === 'insumo' || p.type === 'insumo_bebida' || p.type === 'revenda' || p.type === 'sorvete')),
+      state.products.filter(p => p.supplierId === selectedSupplier && (p.type === 'insumo' || p.type === 'insumo_bebida' || p.type === 'revenda' || p.type === 'sorvete' || p.type === 'destilado')),
       [state.products, selectedSupplier]
     );
 
