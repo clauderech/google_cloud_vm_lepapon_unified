@@ -988,6 +988,7 @@ const App = () => {
     // Comanda State
     const [selectedComandaId, setSelectedComandaId] = useState<string | null>(null);
     const [newCustomerName, setNewCustomerName] = useState('');
+    const [isUpdatingComandaItems, setIsUpdatingComandaItems] = useState(false);
     
     // Customer Selection and Loyalty
     const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
@@ -1160,6 +1161,38 @@ const App = () => {
         updateComanda(selectedComandaId, cart);
         alert("Comanda atualizada!");
         setSelectedComandaId(null); // Go back to list
+      }
+    };
+
+    const handleComandaQuantityChange = async (productId: string, change: number) => {
+      if (!selectedComandaId || isUpdatingComandaItems) return;
+
+      const updatedItems = cart.flatMap(item => {
+        if (item.productId !== productId) return [item];
+        const quantity = item.quantity + change;
+        return quantity < 1 ? [] : [{ ...item, quantity }];
+      });
+
+      setIsUpdatingComandaItems(true);
+      try {
+        await storageService.updateComanda(selectedComandaId, updatedItems);
+        setCart(updatedItems);
+        setState(prev => ({
+          ...prev,
+          activeComandas: prev.activeComandas.map(comanda => comanda.id === selectedComandaId
+            ? {
+                ...comanda,
+                items: updatedItems,
+                total: updatedItems.reduce((total, item) => total + item.quantity * item.unitPrice, 0)
+              }
+            : comanda
+          )
+        }));
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Erro desconhecido';
+        alert('Erro ao atualizar quantidade da comanda: ' + message);
+      } finally {
+        setIsUpdatingComandaItems(false);
       }
     };
 
@@ -1647,11 +1680,37 @@ const App = () => {
                             <p className="font-bold text-gray-900 text-sm">{item.productName}</p>
                             <p className="text-xs text-gray-700 font-medium">R$ {item.unitPrice.toFixed(2)} x {item.quantity}</p>
                           </div>
-                          <div className="text-right">
-                            <p className="font-bold text-gray-900 mb-1">R$ {(item.quantity * item.unitPrice).toFixed(2)}</p>
-                            <button onClick={() => removeFromCart(item.productId)} className="text-red-500 hover:text-red-700 text-xs font-bold">
-                              Remover
-                            </button>
+                          <div className="flex items-center gap-3">
+                            {activeTab === 'comandas' && selectedComandaId ? (
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleComandaQuantityChange(item.productId, -1)}
+                                  disabled={isUpdatingComandaItems}
+                                  className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                                  aria-label={`Diminuir quantidade de ${item.productName}`}
+                                  title="Diminuir quantidade"
+                                >
+                                  <Minus className="h-4 w-4" />
+                                </button>
+                                <span className="min-w-6 text-center font-semibold text-gray-900">{item.quantity}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleComandaQuantityChange(item.productId, 1)}
+                                  disabled={isUpdatingComandaItems}
+                                  className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                                  aria-label={`Aumentar quantidade de ${item.productName}`}
+                                  title="Aumentar quantidade"
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </button>
+                              </div>
+                            ) : (
+                              <button onClick={() => removeFromCart(item.productId)} className="text-red-500 hover:text-red-700 text-xs font-bold">
+                                Remover
+                              </button>
+                            )}
+                            <p className="min-w-24 text-right font-bold text-gray-900">R$ {(item.quantity * item.unitPrice).toFixed(2)}</p>
                           </div>
                         </div>
                       ))
@@ -1729,13 +1788,14 @@ const App = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={handleSaveComanda}
+                    disabled={isUpdatingComandaItems}
                     className="bg-gray-100 hover:bg-gray-200 text-gray-800 py-3 rounded-xl font-bold transition-all border border-gray-300"
                   >
                     Salvar Pedido
                   </button>
                   <button
                     onClick={handleCloseComanda}
-                    disabled={cart.length === 0}
+                    disabled={cart.length === 0 || isUpdatingComandaItems}
                     className="bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-green-200 disabled:opacity-50 transition-all"
                   >
                     Fechar Conta
