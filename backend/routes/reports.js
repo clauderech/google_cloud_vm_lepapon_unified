@@ -135,6 +135,21 @@ function validateMonthlyReportQuery(query) {
   return { valid: true, startDate, endDateExclusive };
 }
 
+function dateKey(value) {
+  if (value instanceof Date) {
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    const day = String(value.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  return String(value || '').slice(0, 10);
+}
+
+function paymentMethodKey(method) {
+  if (method === 'crediario' || method === 'credito') return 'credit';
+  return method || 'other';
+}
+
 /**
  * ============================================
  * ROTAS ANDROID - Autenticação via API Key
@@ -219,6 +234,215 @@ router.get('/monthly', requireAuth, requireOperador, async (req, res) => {
     });
     res.status(500).json({
       error: 'Erro ao gerar relatório mensal',
+      details: err.message
+    });
+  }
+});
+
+router.get('/financial-dashboard', requireAuth, requireOperador, async (req, res) => {
+  try {
+    const days = Number(req.query.days);
+    if (!Number.isInteger(days) || days < 1 || days > 90) {
+      return res.status(400).json({
+        error: 'Parâmetros inválidos',
+        details: 'Informe days como inteiro entre 1 e 90.'
+      });
+    }
+
+    const today = new Date();
+    const todayKey = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, '0'),
+      String(today.getDate()).padStart(2, '0')
+    ].join('-');
+    const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    start.setDate(start.getDate() - days + 1);
+    const startKey = [
+      start.getFullYear(),
+      String(start.getMonth() + 1).padStart(2, '0'),
+      String(start.getDate()).padStart(2, '0')
+    ].join('-');
+    const endExclusive = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+    const endExclusiveKey = [
+      endExclusive.getFullYear(),
+      String(endExclusive.getMonth() + 1).padStart(2, '0'),
+      String(endExclusive.getDate()).padStart(2, '0')
+    ].join('-');
+    const startDateTime = `${startKey} 00:00:00`;
+    const endDateTimeExclusive = `${endExclusiveKey} 00:00:00`;
+
+    const [sales, creditPurchases, stockPurchases, receipts, currentRegister] = await Promise.all([
+      db('sales')
+        .select('id', 'date', 'total', 'payment_method')
+        .where('date', '>=', startDateTime)
+        .where('date', '<', endDateTimeExclusive),
+      db('monthly_purchases')
+        .select('purchase_date', 'amount', 'items_json')
+        .where('purchase_date', '>=', startDateTime)
+        .where('purchase_date', '<', endDateTimeExclusive),
+      db('purchases')
+        .select('date', 'total')
+        .where('date', '>=', startDateTime)
+        .where('date', '<', endDateTimeExclusive)
+        .whereNot('status', 'cancelled'),
+      db('monthly_payments')
+        .select('payment_date', 'amount', 'payment_method')
+        .where('payment_date', '>=', startKey)
+        .where('payment_date', '<', endExclusiveKey),
+      db('cash_registers').whereNull('closed_at').orderBy('opened_at', 'desc').first()
+    ]);
+
+    const salesIds = sales.map(sale => sale.id);
+    const soldItems = salesIds.length
+      ? await db('sale_items')
+        .whereIn('sale_id', salesIds)
+        .select('sale_id', 'quantity')
+      : [];
+    const itemsBySaleId = new Map();
+    for (const item of soldItems) {
+      itemsBySaleId.set(
+        item.sale_id,
+        (itemsBySaleId.get(item.sale_id) || 0) + (Number(item.quantity) || 0)
+      );
+    }
+
+    const daily = new Map();
+    const getDay = key => {
+      if (!daily.has(key)) {
+        daily.set(key, {
+          date: key,
+          totalSales: 0,
+          totalPurchases: 0,
+          netBalance: 0,
+          salesCount: 0
+        });
+      }
+      return daily.get(key);
+    };
+    for (let offset = 0; offset < days; offset += 1) {
+      const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + offset);
+      getDay([
+        date.getFullYear(),
+        String(date.getMonth() + 1).padStart(2, '0'),
+        String(date.getDate()).padStart(2, '0')
+      ].join('-'));
+    }
+
+    const todayMethods = { cash: 0, card: 0, pix: 0, credit: 0 };
+    const todaySales = [];
+    let todayCreditItemsSold = 0;
+    for (const sale of sales) {
+      const key = dateKey(sale.date);
+      const amount = Number(sale.total) || 0;
+      const day = getDay(key);
+      day.totalSales += amount;
+      day.salesCount += 1;
+      if (key === todayKey) {
+        const method = paymentMethodKey(sale.payment_method);
+        if (Object.prototype.hasOwnProperty.call(todayMethods, method)) {
+          todayMethods[method] += amount;
+        }
+        todaySales.push(sale);
+      }
+    }
+    for (const purchase of creditPurchases) {
+      const day = getDay(dateKey(purchase.purchase_date));
+      day.totalSales += Number(purchase.amount) || 0;
+      day.salesCount += 1;
+      if (dateKey(purchase.purchase_date) === todayKey) {
+        todayMethods.credit += Number(purchase.amount) || 0;
+        if (purchase.items_json) {
+          try {
+            const items = typeof purchase.items_json === 'string'
+              ? JSON.parse(purchase.items_json)
+              : purchase.items_json;
+            if (Array.isArray(items)) {
+              todayCreditItemsSold += items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+            }
+          } catch (error) {
+            console.warn('[REPORTS][FINANCIAL_DASHBOARD][INVALID_CREDIT_ITEMS]', {
+              error: error.message
+            });
+          }
+        }
+      }
+    }
+    for (const purchase of stockPurchases) {
+      getDay(dateKey(purchase.date)).totalPurchases += Number(purchase.total) || 0;
+    }
+    for (const day of daily.values()) {
+      day.netBalance = day.totalSales - day.totalPurchases;
+    }
+
+    const todaySummary = daily.get(todayKey) || {
+      date: todayKey,
+      totalSales: 0,
+      totalPurchases: 0,
+      netBalance: 0,
+      salesCount: 0
+    };
+    const todaySaleIds = todaySales.map(sale => sale.id);
+    const todaySaleIdSet = new Set(todaySaleIds);
+    const todayItemsSold = soldItems.reduce((sum, item) =>
+      todaySaleIdSet.has(item.sale_id) ? sum + (Number(item.quantity) || 0) : sum, 0) + todayCreditItemsSold;
+    const todayReceipts = receipts
+      .filter(receipt => dateKey(receipt.payment_date) === todayKey)
+      .reduce((sum, receipt) => sum + (Number(receipt.amount) || 0), 0);
+    let cashRegister = null;
+    if (currentRegister) {
+      const movements = await db('cash_movements')
+        .where({ cash_register_id: currentRegister.id })
+        .select('type', 'amount', 'payment_method');
+      const movementBalance = movements.reduce((balance, movement) => {
+        const amount = Number(movement.amount) || 0;
+        if (movement.payment_method && movement.payment_method !== 'cash') return balance;
+        return balance + (movement.type === 'entrada' ? amount : movement.type === 'saida' ? -amount : 0);
+      }, 0);
+      const cashReceiptsSinceOpening = await db('monthly_payments')
+        .where('payment_method', 'cash')
+        .where('payment_date', '>=', dateKey(currentRegister.opened_at))
+        .sum({ total: 'amount' })
+        .first();
+      cashRegister = {
+        status: 'open',
+        initialAmount: Number(currentRegister.initial_amount) || 0,
+        expectedAmount: (Number(currentRegister.initial_amount) || 0) + movementBalance + (Number(cashReceiptsSinceOpening?.total) || 0)
+      };
+    }
+
+    const period = [...daily.values()].reduce((summary, day) => ({
+      totalSales: summary.totalSales + day.totalSales,
+      totalPurchases: summary.totalPurchases + day.totalPurchases,
+      netBalance: summary.netBalance + day.netBalance,
+      salesCount: summary.salesCount + day.salesCount
+    }), { totalSales: 0, totalPurchases: 0, netBalance: 0, salesCount: 0 });
+    period.receiptsTotal = receipts.reduce((sum, receipt) => sum + (Number(receipt.amount) || 0), 0);
+
+    res.json({
+      period,
+      daily: [...daily.values()].sort((a, b) => a.date.localeCompare(b.date)),
+      today: {
+        ...todaySummary,
+        averageTicket: todaySummary.salesCount
+          ? todaySummary.totalSales / todaySummary.salesCount
+          : 0,
+        itemsSold: todayItemsSold,
+        receiptsTotal: todayReceipts,
+        salesCash: todayMethods.cash,
+        salesCard: todayMethods.card,
+        salesPix: todayMethods.pix,
+        salesCredit: todayMethods.credit
+      },
+      cashRegister
+    });
+  } catch (err) {
+    console.error('[REPORTS][FINANCIAL_DASHBOARD][ERROR]', {
+      days: req.query.days,
+      error: err.message,
+      stack: err.stack
+    });
+    res.status(500).json({
+      error: 'Erro ao carregar dashboard financeiro',
       details: err.message
     });
   }

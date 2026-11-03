@@ -8,6 +8,42 @@ import { getAuthToken } from './authService';
 
 const API_URL = 'http://lepapon-unified.local/api';
 
+export interface FinancialDashboardData {
+  period: {
+    totalSales: number;
+    totalPurchases: number;
+    netBalance: number;
+    salesCount: number;
+    receiptsTotal: number;
+  };
+  daily: {
+    date: string;
+    totalSales: number;
+    totalPurchases: number;
+    netBalance: number;
+    salesCount: number;
+  }[];
+  today: {
+    date: string;
+    totalSales: number;
+    totalPurchases: number;
+    netBalance: number;
+    salesCount: number;
+    averageTicket: number;
+    itemsSold: number;
+    receiptsTotal: number;
+    salesCash: number;
+    salesCard: number;
+    salesPix: number;
+    salesCredit: number;
+  };
+  cashRegister: {
+    status: 'open';
+    initialAmount: number;
+    expectedAmount: number;
+  } | null;
+}
+
 function withAuthHeaders(headers: Record<string, string> = {}): Record<string, string> {
   const token = getAuthToken();
   if (!token) return headers;
@@ -18,6 +54,17 @@ function withAuthHeaders(headers: Record<string, string> = {}): Record<string, s
 }
 
 export const financialService = {
+  async getFinancialDashboard(days: 7 | 30): Promise<FinancialDashboardData> {
+    const response = await fetch(`${API_URL}/reports/financial-dashboard?days=${days}`, {
+      headers: withAuthHeaders()
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.details || error.error || 'Erro ao carregar dashboard financeiro');
+    }
+    return response.json();
+  },
+
   // =========================================
   // ATIVOS DIÁRIOS
   // =========================================
