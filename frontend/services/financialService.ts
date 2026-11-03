@@ -139,11 +139,22 @@ export const financialService = {
   },
 
   async getBestSellersReport(): Promise<any[]> {
-    const response = await fetch(`${API_URL}/reports/best-sellers`, {
+    const response = await fetch(`${API_URL}/reports/sales-by-product`, {
       headers: withAuthHeaders()
     });
     if (!response.ok) throw new Error('Erro ao buscar produtos mais vendidos');
-    return response.json();
+    const sales = await response.json();
+    return sales.map((item: {
+      product_id: string;
+      product_name: string;
+      total_quantity: number | string;
+      total_value: number | string;
+    }) => ({
+      productId: item.product_id,
+      productName: item.product_name,
+      totalQuantity: Number(item.total_quantity) || 0,
+      totalRevenue: Number(item.total_value) || 0
+    }));
   },
 
   async getProfitabilityReport(): Promise<any[]> {
