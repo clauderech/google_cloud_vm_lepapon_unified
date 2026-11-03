@@ -40,23 +40,6 @@ function validateSalesByProductQuery(query) {
     };
   }
 
-  function validateMonthlyReportQuery(query) {
-    const month = Number(query.month);
-    const year = Number(query.year);
-
-    if (!Number.isInteger(month) || month < 1 || month > 12) {
-      return { valid: false, error: 'Parâmetro month inválido. Informe um mês de 1 a 12.' };
-    }
-    if (!Number.isInteger(year) || year < 2000 || year > 9999) {
-      return { valid: false, error: 'Parâmetro year inválido.' };
-    }
-
-    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-    const nextMonth = new Date(Date.UTC(year, month, 1));
-    const endDateExclusive = nextMonth.toISOString().slice(0, 10);
-    return { valid: true, startDate, endDateExclusive };
-  }
-
   const endDate = end_date ? parseIsoDateOnly(end_date) : null;
   if (end_date && !endDate) {
     return {
@@ -97,6 +80,23 @@ function validateSalesByProductQuery(query) {
     endDate,
     limit: parsedLimit
   };
+}
+
+function validateMonthlyReportQuery(query) {
+  const month = Number(query.month);
+  const year = Number(query.year);
+
+  if (!Number.isInteger(month) || month < 1 || month > 12) {
+    return { valid: false, error: 'Parâmetro month inválido. Informe um mês de 1 a 12.' };
+  }
+  if (!Number.isInteger(year) || year < 2000 || year > 9999) {
+    return { valid: false, error: 'Parâmetro year inválido.' };
+  }
+
+  const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+  const nextMonth = new Date(Date.UTC(year, month, 1));
+  const endDateExclusive = nextMonth.toISOString().slice(0, 10);
+  return { valid: true, startDate, endDateExclusive };
 }
 
 /**
