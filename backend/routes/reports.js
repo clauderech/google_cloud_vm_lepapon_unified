@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 const StockService = require('../services/stockService');
 const { db } = require('../config/knex');
+const { requireAuth, validateApiKey } = require('../middleware/authUnified');
 const { requireOperador } = require('../middleware/roleAuth');
-const { validateApiKey } = require('../middleware/authUnified');
 
 console.log('[REPORTS][ROUTES] Reports routes loaded successfully');
 
@@ -134,7 +134,7 @@ router.get('/android/low-stock', validateApiKey, async (req, res) => {
   }
 });
 
-router.get('/monthly', requireOperador, async (req, res) => {
+router.get('/monthly', requireAuth, requireOperador, async (req, res) => {
   try {
     const validation = validateMonthlyReportQuery(req.query);
     if (!validation.valid) {
@@ -332,7 +332,7 @@ router.get('/android/sales-by-product', validateApiKey, async (req, res) => {
  * Rota para relatório de produtos com estoque baixo
  * GET /api/reports/low-stock
  */
-router.get('/low-stock', requireOperador, async (req, res) => {
+router.get('/low-stock', requireAuth, requireOperador, async (req, res) => {
   try {
     console.log('[REPORTS][LOW_STOCK][REQUEST]');
     
@@ -359,7 +359,7 @@ router.get('/low-stock', requireOperador, async (req, res) => {
  * Rota para estatísticas gerais de estoque
  * GET /api/reports/stock-stats
  */
-router.get('/stock-stats', requireOperador, async (req, res) => {
+router.get('/stock-stats', requireAuth, requireOperador, async (req, res) => {
   try {
     console.log('[REPORTS][STOCK_STATS][REQUEST]');
     
@@ -387,7 +387,7 @@ router.get('/stock-stats', requireOperador, async (req, res) => {
  * Rota para histórico de movimentações de um produto
  * GET /api/reports/stock-movements/:productId
  */
-router.get('/stock-movements/:productId', requireOperador, async (req, res) => {
+router.get('/stock-movements/:productId', requireAuth, requireOperador, async (req, res) => {
   try {
     const { productId } = req.params;
     const { limit, movement_type } = req.query;
@@ -422,7 +422,7 @@ router.get('/stock-movements/:productId', requireOperador, async (req, res) => {
  * Rota para relatório de vendas por produto
  * GET /api/reports/sales-by-product
  */
-router.get('/sales-by-product', requireOperador, async (req, res) => {
+router.get('/sales-by-product', requireAuth, requireOperador, async (req, res) => {
   try {
     const validation = validateSalesByProductQuery(req.query);
     if (!validation.valid) {
@@ -483,7 +483,7 @@ router.get('/sales-by-product', requireOperador, async (req, res) => {
   }
 });
 
-router.get('/sales-by-period', requireOperador, async (req, res) => {
+router.get('/sales-by-period', requireAuth, requireOperador, async (req, res) => {
   try {
     const validation = validateSalesByProductQuery(req.query);
     if (!validation.valid) {
