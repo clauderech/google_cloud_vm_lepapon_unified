@@ -170,7 +170,10 @@ export const financialService = {
     const response = await fetch(`${API_URL}/reports/sales-by-period?${params}`, {
       headers: withAuthHeaders()
     });
-    if (!response.ok) throw new Error('Erro ao buscar vendas do período');
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.details || error.message || error.error || 'Erro ao buscar vendas do período');
+    }
     return response.json();
   },
 

@@ -635,7 +635,7 @@ router.get('/sales-by-period', requireAuth, requireOperador, async (req, res) =>
         'customers.sobrenome as customer_surname'
       )
       .where('monthly_payments.payment_date', '>=', startDate)
-      .where('monthly_payments.payment_date', '<', endDateExclusive.slice(0, 10))
+      .where('monthly_payments.payment_date', '<=', endDate)
       .orderBy('monthly_payments.payment_date', 'desc');
 
     const outstandingCreditResult = await db('monthly_accounts')
