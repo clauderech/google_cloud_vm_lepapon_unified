@@ -123,25 +123,33 @@ export const financialService = {
   },
 
   async getLowStockReport(): Promise<any[]> {
-    const response = await fetch(`${API_URL}/reports/low-stock`);
+    const response = await fetch(`${API_URL}/reports/low-stock`, {
+      headers: withAuthHeaders()
+    });
     if (!response.ok) throw new Error('Erro ao buscar produtos com estoque baixo');
     return response.json();
   },
 
   async getProductionCapacityReport(): Promise<any[]> {
-    const response = await fetch(`${API_URL}/reports/production-capacity`);
+    const response = await fetch(`${API_URL}/reports/production-capacity`, {
+      headers: withAuthHeaders()
+    });
     if (!response.ok) throw new Error('Erro ao calcular capacidade de produção');
     return response.json();
   },
 
   async getBestSellersReport(): Promise<any[]> {
-    const response = await fetch(`${API_URL}/reports/best-sellers`);
+    const response = await fetch(`${API_URL}/reports/best-sellers`, {
+      headers: withAuthHeaders()
+    });
     if (!response.ok) throw new Error('Erro ao buscar produtos mais vendidos');
     return response.json();
   },
 
   async getProfitabilityReport(): Promise<any[]> {
-    const response = await fetch(`${API_URL}/reports/profitability`);
+    const response = await fetch(`${API_URL}/reports/profitability`, {
+      headers: withAuthHeaders()
+    });
     if (!response.ok) throw new Error('Erro ao calcular lucratividade');
     return response.json();
   },
