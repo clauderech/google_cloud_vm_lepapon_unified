@@ -84,6 +84,40 @@ function validateSalesByProductQuery(query) {
   };
 }
 
+function validateSalesByPeriodQuery(query) {
+  const parseDateTime = value => {
+    if (typeof value !== 'string') return null;
+    const match = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})$/.exec(value);
+    if (!match || !parseIsoDateOnly(match[1])) return null;
+
+    const hours = Number(match[2]);
+    const minutes = Number(match[3]);
+    if (hours > 23 || minutes > 59) return null;
+
+    return {
+      date: match[1],
+      dateTime: `${match[1]} ${match[2]}:${match[3]}:00`
+    };
+  };
+
+  const start = parseDateTime(query.start_date);
+  const end = parseDateTime(query.end_date);
+  if (!start || !end) {
+    return {
+      valid: false,
+      error: 'Informe start_date e end_date válidos no formato YYYY-MM-DDTHH:mm.'
+    };
+  }
+  if (start.dateTime > end.dateTime) {
+    return {
+      valid: false,
+      error: 'Parâmetro inválido: start_date não pode ser posterior a end_date.'
+    };
+  }
+
+  return { valid: true, start, end };
+}
+
 function validateMonthlyReportQuery(query) {
   const month = Number(query.month);
   const year = Number(query.year);
@@ -585,7 +619,7 @@ router.get('/sales-by-product', requireAuth, requireOperador, async (req, res) =
 
 router.get('/sales-by-period', requireAuth, requireOperador, async (req, res) => {
   try {
-    const validation = validateSalesByProductQuery(req.query);
+    const validation = validateSalesByPeriodQuery(req.query);
     if (!validation.valid) {
       return res.status(400).json({
         error: 'Parâmetros inválidos',
@@ -593,30 +627,20 @@ router.get('/sales-by-period', requireAuth, requireOperador, async (req, res) =>
       });
     }
 
-    const { startDate, endDate } = validation;
-    if (!startDate || !endDate) {
-      return res.status(400).json({
-        error: 'Parâmetros inválidos',
-        details: 'Informe start_date e end_date no formato YYYY-MM-DD.'
-      });
-    }
-
-    const startDateTime = `${startDate} 00:00:00`;
-    const endDateExclusive = new Date(`${endDate}T00:00:00Z`);
-    endDateExclusive.setUTCDate(endDateExclusive.getUTCDate() + 1);
-    const endDateTimeExclusive = `${endDateExclusive.toISOString().slice(0, 10)} 00:00:00`;
+    const { start, end } = validation;
+    const endDateTimeInclusive = `${end.dateTime.slice(0, 16)}:59`;
     const comandas = await db('comandas')
       .select('id', 'customer_id', 'customer_name', 'closed_at', 'payment_method', 'total')
       .where('status', 'closed')
       .whereNotNull('closed_at')
-      .where('closed_at', '>=', startDateTime)
-      .where('closed_at', '<', endDateTimeExclusive)
+      .where('closed_at', '>=', start.dateTime)
+      .where('closed_at', '<=', endDateTimeInclusive)
       .orderBy('closed_at', 'desc');
 
     const sales = await db('sales')
       .select('id', 'date', 'total', 'payment_method', 'customer_name', 'customer_id')
-      .where('date', '>=', startDateTime)
-      .where('date', '<', endDateTimeExclusive)
+      .where('date', '>=', start.dateTime)
+      .where('date', '<=', endDateTimeInclusive)
       .orderBy('date', 'desc');
 
     const receipts = await db('monthly_payments')
@@ -634,8 +658,8 @@ router.get('/sales-by-period', requireAuth, requireOperador, async (req, res) =>
         'customers.nome as customer_name',
         'customers.sobrenome as customer_surname'
       )
-      .where('monthly_payments.payment_date', '>=', startDate)
-      .where('monthly_payments.payment_date', '<=', endDate)
+      .where('monthly_payments.payment_date', '>=', start.date)
+      .where('monthly_payments.payment_date', '<=', end.date)
       .orderBy('monthly_payments.payment_date', 'desc');
 
     const outstandingCreditResult = await db('monthly_accounts')

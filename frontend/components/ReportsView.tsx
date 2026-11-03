@@ -67,13 +67,16 @@ export const ReportsView: React.FC = () => {
   const [periodFilters, setPeriodFilters] = useState(() => {
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-    const toDateInput = (date: Date) => {
+    firstDay.setHours(0, 0, 0, 0);
+    const toDateTimeInput = (date: Date) => {
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
     };
-    return { startDate: toDateInput(firstDay), endDate: toDateInput(now) };
+    return { startDate: toDateTimeInput(firstDay), endDate: toDateTimeInput(now) };
   });
 
   const loadReport = async (type: ReportType) => {
@@ -163,7 +166,7 @@ export const ReportsView: React.FC = () => {
         break;
 
       case 'salesByPeriod':
-        filename = `vendas_${periodFilters.startDate}_${periodFilters.endDate}.csv`;
+        filename = `vendas_${periodFilters.startDate.replace(/\D/g, '')}_${periodFilters.endDate.replace(/\D/g, '')}.csv`;
         csv = 'Tipo,Data,Comanda/Conta,Cliente,Pagamento,Total,Recibo,Recebido por,Observações\n';
         reportData.sales.forEach((sale: PeriodSale) => {
           csv += [
@@ -335,18 +338,18 @@ export const ReportsView: React.FC = () => {
         <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
           <div className="flex flex-wrap items-end gap-4">
             <label className="flex flex-col gap-1 text-sm font-semibold text-gray-700">
-              Data inicial
+              Data e hora inicial
               <input
-                type="date"
+                type="datetime-local"
                 value={periodFilters.startDate}
                 onChange={(event) => setPeriodFilters({ ...periodFilters, startDate: event.target.value })}
                 className="p-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
               />
             </label>
             <label className="flex flex-col gap-1 text-sm font-semibold text-gray-700">
-              Data final
+              Data e hora final
               <input
-                type="date"
+                type="datetime-local"
                 value={periodFilters.endDate}
                 onChange={(event) => setPeriodFilters({ ...periodFilters, endDate: event.target.value })}
                 className="p-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
@@ -361,7 +364,7 @@ export const ReportsView: React.FC = () => {
             </button>
           </div>
           {periodFilters.startDate > periodFilters.endDate && (
-            <p className="mt-2 text-sm text-red-600">A data inicial não pode ser posterior à data final.</p>
+            <p className="mt-2 text-sm text-red-600">A data e hora inicial não podem ser posteriores às finais.</p>
           )}
         </div>
       )}
@@ -632,7 +635,7 @@ export const ReportsView: React.FC = () => {
                   <div>
                     <h3 className="text-xl font-bold text-gray-900">Vendas por período</h3>
                     <p className="text-sm text-gray-600">
-                      {new Date(`${periodFilters.startDate}T00:00:00`).toLocaleDateString('pt-BR')} a {new Date(`${periodFilters.endDate}T00:00:00`).toLocaleDateString('pt-BR')}
+                      {new Date(periodFilters.startDate).toLocaleString('pt-BR')} a {new Date(periodFilters.endDate).toLocaleString('pt-BR')}
                     </p>
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -661,7 +664,7 @@ export const ReportsView: React.FC = () => {
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
                         <h4 className="text-lg font-bold text-gray-900">Contas recebidas</h4>
-                        <p className="text-xs text-gray-500">Pagamentos de contas a prazo recebidos no período, separados das vendas para evitar duplicidade.</p>
+                        <p className="text-xs text-gray-500">Pagamentos de contas a prazo separados das vendas. O sistema registra recebimentos por data, sem horário.</p>
                       </div>
                       <p className="font-bold text-gray-700">
                         {periodReceipts.length} recebimentos · {financialService.formatCurrency(receiptsTotal)}
