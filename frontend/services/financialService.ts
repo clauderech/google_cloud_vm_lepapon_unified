@@ -141,6 +141,15 @@ export const financialService = {
     return response.json();
   },
 
+  async getSalesByPeriod(startDate: string, endDate: string): Promise<any[]> {
+    const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
+    const response = await fetch(`${API_URL}/reports/sales-by-period?${params}`, {
+      headers: withAuthHeaders()
+    });
+    if (!response.ok) throw new Error('Erro ao buscar vendas do período');
+    return response.json();
+  },
+
   // =========================================
   // UTILITÁRIOS
   // =========================================

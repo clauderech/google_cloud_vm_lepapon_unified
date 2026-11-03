@@ -412,4 +412,176 @@ router.get('/sales-by-product', requireOperador, async (req, res) => {
   }
 });
 
+router.get('/sales-by-period', requireOperador, async (req, res) => {
+  try {
+    const validation = validateSalesByProductQuery(req.query);
+    if (!validation.valid) {
+      return res.status(400).json({
+        error: 'Parâmetros inválidos',
+        details: validation.error
+      });
+    }
+
+    const { startDate, endDate } = validation;
+    if (!startDate || !endDate) {
+      return res.status(400).json({
+        error: 'Parâmetros inválidos',
+        details: 'Informe start_date e end_date no formato YYYY-MM-DD.'
+      });
+    }
+
+    const startDateTime = `${startDate} 00:00:00`;
+    const endDateExclusive = new Date(`${endDate}T00:00:00Z`);
+    endDateExclusive.setUTCDate(endDateExclusive.getUTCDate() + 1);
+    const endDateTimeExclusive = `${endDateExclusive.toISOString().slice(0, 10)} 00:00:00`;
+    const comandas = await db('comandas')
+      .select('id', 'customer_id', 'customer_name', 'closed_at', 'payment_method', 'total')
+      .where('status', 'closed')
+      .whereNotNull('closed_at')
+      .where('closed_at', '>=', startDateTime)
+      .where('closed_at', '<', endDateTimeExclusive)
+      .orderBy('closed_at', 'desc');
+
+    const sales = await db('sales')
+      .select('id', 'date', 'total', 'payment_method', 'customer_name', 'customer_id')
+      .where('date', '>=', startDateTime)
+      .where('date', '<', endDateTimeExclusive)
+      .orderBy('date', 'desc');
+
+    const receipts = await db('monthly_payments')
+      .join('monthly_accounts', 'monthly_payments.monthly_account_id', 'monthly_accounts.id')
+      .join('customers', 'monthly_accounts.customer_id', 'customers.id')
+      .select(
+        'monthly_payments.id',
+        'monthly_payments.monthly_account_id',
+        'monthly_payments.payment_date',
+        'monthly_payments.amount',
+        'monthly_payments.payment_method',
+        'monthly_payments.receipt_number',
+        'monthly_payments.received_by',
+        'monthly_payments.notes',
+        'customers.nome as customer_name',
+        'customers.sobrenome as customer_surname'
+      )
+      .where('monthly_payments.payment_date', '>=', startDate)
+      .where('monthly_payments.payment_date', '<', endDateExclusive.slice(0, 10))
+      .orderBy('monthly_payments.payment_date', 'desc');
+
+    const outstandingCreditResult = await db('monthly_accounts')
+      .whereNot('status', 'cancelled')
+      .where('balance', '>', 0)
+      .sum({ total: 'balance' })
+      .count({ accountCount: '*' })
+      .first();
+
+    const comandaIds = comandas.map(comanda => comanda.id);
+    const comandaItems = comandaIds.length
+      ? await db('comanda_items')
+        .whereIn('comanda_id', comandaIds)
+        .select('comanda_id', 'product_name', 'quantity', 'unit_price', 'notes')
+      : [];
+    const saleIds = sales.map(sale => sale.id);
+    const saleItems = saleIds.length
+      ? await db('sale_items')
+        .whereIn('sale_id', saleIds)
+        .select('sale_id', 'product_name', 'quantity', 'unit_price', 'notes')
+      : [];
+
+    const itemsByComandaId = new Map();
+    for (const item of comandaItems) {
+      const items = itemsByComandaId.get(item.comanda_id) || [];
+      items.push({
+        productName: item.product_name,
+        quantity: Number(item.quantity),
+        unitPrice: Number(item.unit_price),
+        notes: item.notes || ''
+      });
+      itemsByComandaId.set(item.comanda_id, items);
+    }
+
+    const itemsBySaleId = new Map();
+    for (const item of saleItems) {
+      const items = itemsBySaleId.get(item.sale_id) || [];
+      items.push({
+        productName: item.product_name,
+        quantity: Number(item.quantity),
+        unitPrice: Number(item.unit_price),
+        notes: item.notes || ''
+      });
+      itemsBySaleId.set(item.sale_id, items);
+    }
+
+    const normalizePaymentMethod = method =>
+      method === 'crediario' || method === 'credito' ? 'credit' : method;
+    const matchedSaleIds = new Set();
+    const comandaReports = comandas.map(comanda => {
+      const comandaTime = new Date(comanda.closed_at).getTime();
+      const matchingSale = sales.find(sale => {
+        if (matchedSaleIds.has(sale.id)) return false;
+        if (Number(sale.total) !== Number(comanda.total)) return false;
+        if (normalizePaymentMethod(sale.payment_method) !== normalizePaymentMethod(comanda.payment_method)) return false;
+        if (sale.customer_id && comanda.customer_id && String(sale.customer_id) !== String(comanda.customer_id)) return false;
+        const saleTime = new Date(sale.date).getTime();
+        return Number.isFinite(comandaTime) && Number.isFinite(saleTime) && Math.abs(saleTime - comandaTime) <= 5000;
+      });
+
+      if (matchingSale) matchedSaleIds.add(matchingSale.id);
+      return {
+        id: `comanda-${comanda.id}`,
+        comandaId: String(comanda.id),
+        date: comanda.closed_at,
+        customerName: comanda.customer_name || 'Cliente não identificado',
+        paymentMethod: comanda.payment_method || 'não informado',
+        total: Number(comanda.total) || 0,
+        items: itemsByComandaId.get(comanda.id) || []
+      };
+    });
+
+    const standaloneSales = sales
+      .filter(sale => !matchedSaleIds.has(sale.id))
+      .map(sale => ({
+        id: `sale-${sale.id}`,
+        comandaId: null,
+        date: sale.date,
+        customerName: sale.customer_name || 'Venda direta',
+        paymentMethod: sale.payment_method || 'não informado',
+        total: Number(sale.total) || 0,
+        items: itemsBySaleId.get(sale.id) || []
+      }));
+
+    const salesReport = [...comandaReports, ...standaloneSales].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+    const receiptsReport = receipts.map(receipt => ({
+      id: `receipt-${receipt.id}`,
+      accountId: String(receipt.monthly_account_id),
+      date: receipt.payment_date,
+      customerName: [receipt.customer_name, receipt.customer_surname].filter(Boolean).join(' '),
+      paymentMethod: receipt.payment_method,
+      total: Number(receipt.amount) || 0,
+      receiptNumber: receipt.receipt_number,
+      receivedBy: receipt.received_by,
+      notes: receipt.notes
+    }));
+
+    res.json({
+      sales: salesReport,
+      receipts: receiptsReport,
+      outstandingCredit: {
+        total: Number(outstandingCreditResult?.total) || 0,
+        accountCount: Number(outstandingCreditResult?.accountCount) || 0
+      }
+    });
+  } catch (err) {
+    console.error('[REPORTS][SALES_BY_PERIOD][ERROR]', {
+      error: err.message,
+      stack: err.stack
+    });
+    res.status(500).json({
+      error: 'Erro ao gerar relatório de vendas do período',
+      details: err.message
+    });
+  }
+});
+
 module.exports = router;
