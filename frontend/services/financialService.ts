@@ -112,8 +112,13 @@ export const financialService = {
   // =========================================
   
   async getMonthlyReport(month: number, year: number): Promise<any> {
-    const response = await fetch(`${API_URL}/reports/monthly?month=${month}&year=${year}`);
-    if (!response.ok) throw new Error('Erro ao gerar relatório mensal');
+    const response = await fetch(`${API_URL}/reports/monthly?month=${month}&year=${year}`, {
+      headers: withAuthHeaders()
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.details || error.error || 'Erro ao gerar relatório mensal');
+    }
     return response.json();
   },
 

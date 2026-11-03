@@ -40,6 +40,23 @@ function validateSalesByProductQuery(query) {
     };
   }
 
+  function validateMonthlyReportQuery(query) {
+    const month = Number(query.month);
+    const year = Number(query.year);
+
+    if (!Number.isInteger(month) || month < 1 || month > 12) {
+      return { valid: false, error: 'Parâmetro month inválido. Informe um mês de 1 a 12.' };
+    }
+    if (!Number.isInteger(year) || year < 2000 || year > 9999) {
+      return { valid: false, error: 'Parâmetro year inválido.' };
+    }
+
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const nextMonth = new Date(Date.UTC(year, month, 1));
+    const endDateExclusive = nextMonth.toISOString().slice(0, 10);
+    return { valid: true, startDate, endDateExclusive };
+  }
+
   const endDate = end_date ? parseIsoDateOnly(end_date) : null;
   if (end_date && !endDate) {
     return {
@@ -113,6 +130,60 @@ router.get('/android/low-stock', validateApiKey, async (req, res) => {
     res.status(500).json({ 
       error: 'Erro ao gerar relatório de estoque baixo', 
       message: err.message 
+    });
+  }
+});
+
+router.get('/monthly', requireOperador, async (req, res) => {
+  try {
+    const validation = validateMonthlyReportQuery(req.query);
+    if (!validation.valid) {
+      return res.status(400).json({
+        error: 'Parâmetros inválidos',
+        details: validation.error
+      });
+    }
+
+    const { startDate, endDateExclusive } = validation;
+    const [sales, creditPurchases, purchases] = await Promise.all([
+      db('sales')
+        .where('date', '>=', startDate)
+        .where('date', '<', endDateExclusive)
+        .sum({ total: 'total' })
+        .count({ count: '*' })
+        .first(),
+      db('monthly_purchases')
+        .where('purchase_date', '>=', startDate)
+        .where('purchase_date', '<', endDateExclusive)
+        .sum({ total: 'amount' })
+        .count({ count: '*' })
+        .first(),
+      db('purchases')
+        .where('date', '>=', startDate)
+        .where('date', '<', endDateExclusive)
+        .whereNot('status', 'cancelled')
+        .sum({ total: 'total' })
+        .first()
+    ]);
+
+    const totalSales = (Number(sales?.total) || 0) + (Number(creditPurchases?.total) || 0);
+    const totalExpenses = Number(purchases?.total) || 0;
+    res.json({
+      totalSales,
+      salesCount: (Number(sales?.count) || 0) + (Number(creditPurchases?.count) || 0),
+      totalExpenses,
+      netProfit: totalSales - totalExpenses
+    });
+  } catch (err) {
+    console.error('[REPORTS][MONTHLY][ERROR]', {
+      month: req.query.month,
+      year: req.query.year,
+      error: err.message,
+      stack: err.stack
+    });
+    res.status(500).json({
+      error: 'Erro ao gerar relatório mensal',
+      details: err.message
     });
   }
 });

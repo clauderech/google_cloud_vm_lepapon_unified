@@ -388,18 +388,18 @@ export const ReportsView: React.FC = () => {
                     <p className="text-xs text-blue-600 mt-1">{reportData.salesCount || 0} vendas</p>
                   </div>
                   <div className="bg-red-50 p-6 rounded-lg border border-red-200">
-                    <p className="text-sm text-red-700 font-bold mb-2">Total de Despesas</p>
+                    <p className="text-sm text-red-700 font-bold mb-2">Compras no período</p>
                     <p className="text-3xl font-black text-red-900">
                       {financialService.formatCurrency(reportData.totalExpenses || 0)}
                     </p>
-                    <p className="text-xs text-red-600 mt-1">Operacional + Compras</p>
+                    <p className="text-xs text-red-600 mt-1">Compras registradas</p>
                   </div>
                   <div className={`p-6 rounded-lg border-2 ${
                     (reportData.netProfit || 0) >= 0 
                       ? 'bg-green-50 border-green-300' 
                       : 'bg-orange-50 border-orange-300'
                   }`}>
-                    <p className="text-sm font-bold mb-2">Lucro Líquido</p>
+                    <p className="text-sm font-bold mb-2">Vendas menos compras</p>
                     <p className={`text-3xl font-black ${
                       (reportData.netProfit || 0) >= 0 ? 'text-green-900' : 'text-orange-900'
                     }`}>
