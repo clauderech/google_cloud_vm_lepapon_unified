@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const StockService = require('../services/stockService');
 const ProductModel = require('../models/product');
-const { isSellable } = require('../services/productRoles');
+const { isIngredient, isSellable } = require('../services/productRoles');
 const { db } = require('../config/knex');
 const { requireAuth, validateApiKey } = require('../middleware/authUnified');
 const { requireOperador } = require('../middleware/roleAuth');
@@ -452,6 +452,67 @@ router.get('/profitability', requireAuth, requireOperador, async (req, res) => {
     });
     res.status(500).json({
       error: 'Erro ao calcular lucratividade',
+      details: err.message
+    });
+  }
+});
+
+router.get('/production-capacity', requireAuth, requireOperador, async (req, res) => {
+  try {
+    const products = await ProductModel.list();
+    const sellableProducts = products.filter(isSellable);
+    const capacity = sellableProducts.map(product => {
+      const recipe = Array.isArray(product.recipe) ? product.recipe : [];
+      if (recipe.length === 0) {
+        return {
+          productId: product.id,
+          productName: product.name,
+          maxProducible: Number(product.stock) || 0,
+          limitingIngredients: 'Estoque atual'
+        };
+      }
+
+      const ingredientCapacities = recipe.map(recipeItem => {
+        const ingredient = products.find(candidate => candidate.id === recipeItem.ingredientId);
+        const required = Number(recipeItem.quantity);
+        if (!ingredient || !isIngredient(ingredient) || !Number.isFinite(required) || required <= 0) {
+          return {
+            name: ingredient?.name || recipeItem.ingredientId,
+            capacity: 0,
+            valid: false
+          };
+        }
+        return {
+          name: ingredient.name,
+          capacity: Math.floor((Number(ingredient.stock) || 0) / required),
+          valid: true
+        };
+      });
+
+      const maxProducible = ingredientCapacities.length
+        ? Math.min(...ingredientCapacities.map(ingredient => ingredient.capacity))
+        : 0;
+      const limitingIngredients = ingredientCapacities
+        .filter(ingredient => !ingredient.valid || ingredient.capacity === maxProducible)
+        .map(ingredient => ingredient.name)
+        .join(', ');
+
+      return {
+        productId: product.id,
+        productName: product.name,
+        maxProducible,
+        limitingIngredients: limitingIngredients || 'Todos os ingredientes disponíveis'
+      };
+    });
+
+    res.json(capacity);
+  } catch (err) {
+    console.error('[REPORTS][PRODUCTION_CAPACITY][ERROR]', {
+      error: err.message,
+      stack: err.stack
+    });
+    res.status(500).json({
+      error: 'Erro ao calcular capacidade de produção',
       details: err.message
     });
   }
