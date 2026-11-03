@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const StockService = require('../services/stockService');
+const ProductModel = require('../models/product');
+const { isSellable } = require('../services/productRoles');
 const { db } = require('../config/knex');
 const { requireAuth, validateApiKey } = require('../middleware/authUnified');
 const { requireOperador } = require('../middleware/roleAuth');
@@ -414,6 +416,43 @@ router.get('/stock-movements/:productId', requireAuth, requireOperador, async (r
     res.status(500).json({ 
       error: 'Erro ao buscar movimentações do produto', 
       details: err.message 
+    });
+  }
+});
+
+router.get('/profitability', requireAuth, requireOperador, async (req, res) => {
+  try {
+    const products = await ProductModel.list();
+    const profitability = products
+      .filter(isSellable)
+      .map(product => {
+        const cost = Number(product.cost) || 0;
+        const price = Number(product.price) || 0;
+        const unitProfit = price - cost;
+        const profitMargin = price > 0
+          ? Number(((unitProfit / price) * 100).toFixed(2))
+          : 0;
+
+        return {
+          productId: product.id,
+          productName: product.name,
+          cost,
+          price,
+          unitProfit,
+          profitMargin
+        };
+      })
+      .sort((a, b) => a.productName.localeCompare(b.productName));
+
+    res.json(profitability);
+  } catch (err) {
+    console.error('[REPORTS][PROFITABILITY][ERROR]', {
+      error: err.message,
+      stack: err.stack
+    });
+    res.status(500).json({
+      error: 'Erro ao calcular lucratividade',
+      details: err.message
     });
   }
 });
