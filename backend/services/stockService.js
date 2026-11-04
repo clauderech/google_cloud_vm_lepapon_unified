@@ -496,7 +496,7 @@ class StockService {
    * Calcula o preço de venda considerando lucro e custo operacional como
    * percentuais do preço final.
    * @param {number|string} cost - Custo total do produto
-   * @returns {number} Preço de venda arredondado para centavos
+   * @returns {number} Preço de venda arredondado para múltiplos de R$ 0,50
    */
   calculateSalePrice(cost) {
     const parsedCost = Number(cost);
@@ -518,7 +518,8 @@ class StockService {
     }
 
     const remainingRate = 1 - (profitMarginPercent + operatingCostPercent) / 100;
-    return Number((parsedCost / remainingRate).toFixed(2));
+    const salePrice = parsedCost / remainingRate;
+    return Math.ceil(salePrice * 2) / 2;
   }
 
   /**
