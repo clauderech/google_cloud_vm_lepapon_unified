@@ -432,6 +432,23 @@ export const storageService = {
       errors: result.errors || []
     };
   },
+
+  async syncCatalogPrices(): Promise<{ updatedCount: number; unmatchedIds: string[] }> {
+    const response = await fetch(`${API_URL}/products/sync-catalog-prices`, {
+      method: 'POST',
+      headers: withAuthHeaders({ 'Content-Type': 'application/json' })
+    });
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(result.details || result.error || 'Erro ao atualizar preços do catálogo');
+    }
+
+    return {
+      updatedCount: result.updatedCount || 0,
+      unmatchedIds: result.unmatchedIds || []
+    };
+  },
   
   async saveProduct(product: Product): Promise<{ productId: string }> {
     if (USE_API) {

@@ -269,6 +269,16 @@ const App = () => {
             updatedProducts: salePrices.data.length
           });
         }
+
+        try {
+          const catalogSync = await storageService.syncCatalogPrices();
+          console.log('[APP][CATALOG_PRICE_SYNC][SUCCESS]', {
+            updatedProducts: catalogSync.updatedCount,
+            unmatchedIds: catalogSync.unmatchedIds
+          });
+        } catch (syncError) {
+          console.error('[APP][CATALOG_PRICE_SYNC][ERROR]', syncError);
+        }
       })
       .catch(error => {
         console.error('[APP][PRODUCT_PRICE_INITIALIZATION][ERROR]', error);

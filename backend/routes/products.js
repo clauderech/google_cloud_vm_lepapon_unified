@@ -3,6 +3,7 @@ const express = require('express');
 const ProductModel = require('../models/product');
 const StockService = require('../services/stockService');
 const { isIngredient, isSellable } = require('../services/productRoles');
+const { updateCatalogPricesFromProducts } = require('../services/catalogCsvService');
 const { requireAdmin, requireOperador } = require('../middleware/roleAuth');
 const { requireAuth, validateApiKey } = require('../middleware/authUnified');
 const router = express.Router();
@@ -281,6 +282,30 @@ router.post('/recalculate-sale-prices', requireAuth, requireOperador, async (req
     });
     res.status(500).json({
       error: 'Erro ao recalcular preços de venda',
+      details: err.message
+    });
+  }
+});
+
+// Atualizar os preços do CSV do catálogo com os preços atuais da tabela products
+router.post('/sync-catalog-prices', requireAuth, requireOperador, async (req, res) => {
+  try {
+    const result = await updateCatalogPricesFromProducts();
+    if (result.unmatchedIds.length > 0) {
+      console.warn('[PRODUCT][SYNC_CATALOG_PRICES][UNMATCHED_IDS]', result.unmatchedIds);
+    }
+
+    res.json({
+      success: true,
+      ...result
+    });
+  } catch (err) {
+    console.error('[PRODUCT][SYNC_CATALOG_PRICES][ERROR]', {
+      error: err.message,
+      stack: err.stack
+    });
+    res.status(500).json({
+      error: 'Erro ao atualizar preços do catálogo',
       details: err.message
     });
   }
