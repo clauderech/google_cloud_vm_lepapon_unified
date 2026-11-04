@@ -500,14 +500,24 @@ class StockService {
    */
   calculateSalePrice(cost) {
     const parsedCost = Number(cost);
-    const profitMargin = 0.3;
-    const operatingCostRate = 0.12;
-    const remainingRate = 1 - profitMargin - operatingCostRate;
+    const profitMarginPercent = Number(process.env.SALE_PROFIT_MARGIN_PERCENT ?? 39);
+    const operatingCostPercent = Number(process.env.SALE_OPERATIONAL_COST_PERCENT ?? 12);
 
     if (!Number.isFinite(parsedCost) || parsedCost < 0) {
       throw new TypeError('O custo deve ser um número válido e não negativo.');
     }
 
+    if (
+      !Number.isFinite(profitMarginPercent) ||
+      !Number.isFinite(operatingCostPercent) ||
+      profitMarginPercent < 0 ||
+      operatingCostPercent < 0 ||
+      profitMarginPercent + operatingCostPercent >= 100
+    ) {
+      throw new TypeError('As margens devem ser percentuais válidos cuja soma seja menor que 100%.');
+    }
+
+    const remainingRate = 1 - (profitMarginPercent + operatingCostPercent) / 100;
     return Number((parsedCost / remainingRate).toFixed(2));
   }
 
