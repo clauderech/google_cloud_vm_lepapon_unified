@@ -207,6 +207,121 @@ const sendProductsToLepapon = async (req, res) => {
 
 router.post('/send-to-lepapon', requireAuth, sendProductsToLepapon);
 
+// Recalcular custos de todos os produtos ativos que possuem receita
+router.post('/recalculate-recipe-costs', requireAuth, requireOperador, async (req, res) => {
+  try {
+    const products = await ProductModel.list();
+    const productsWithRecipe = products.filter(
+      product => Array.isArray(product.recipe) && product.recipe.length > 0
+    );
+    const data = [];
+    const errors = [];
+
+    for (const product of productsWithRecipe) {
+      try {
+        const cost = await StockService.calculateRecipeCost(product.recipe);
+        await ProductModel.update(product.id, { cost });
+        data.push({ productId: product.id, cost });
+      } catch (err) {
+        console.error('[PRODUCT][RECALCULATE_RECIPE_COSTS][PRODUCT_ERROR]', {
+          productId: product.id,
+          error: err.message
+        });
+        errors.push({ productId: product.id, error: err.message });
+      }
+    }
+
+    res.json({
+      success: errors.length === 0,
+      data,
+      errors
+    });
+  } catch (err) {
+    console.error('[PRODUCT][RECALCULATE_RECIPE_COSTS][ERROR]', {
+      error: err.message,
+      stack: err.stack
+    });
+    res.status(500).json({
+      error: 'Erro ao recalcular custos das receitas',
+      details: err.message
+    });
+  }
+});
+
+// Recalcular e salvar o preço de venda de todos os produtos ativos
+router.post('/recalculate-sale-prices', requireAuth, requireOperador, async (req, res) => {
+  try {
+    const products = await ProductModel.list();
+    const data = [];
+    const errors = [];
+
+    for (const product of products) {
+      try {
+        const price = StockService.calculateSalePrice(product.cost);
+        await ProductModel.update(product.id, { price });
+        data.push({ productId: product.id, price });
+      } catch (err) {
+        console.error('[PRODUCT][RECALCULATE_SALE_PRICES][PRODUCT_ERROR]', {
+          productId: product.id,
+          error: err.message
+        });
+        errors.push({ productId: product.id, error: err.message });
+      }
+    }
+
+    res.json({
+      success: errors.length === 0,
+      data,
+      errors
+    });
+  } catch (err) {
+    console.error('[PRODUCT][RECALCULATE_SALE_PRICES][ERROR]', {
+      error: err.message,
+      stack: err.stack
+    });
+    res.status(500).json({
+      error: 'Erro ao recalcular preços de venda',
+      details: err.message
+    });
+  }
+});
+
+// Recalcular e salvar custo usando os custos atuais dos ingredientes no banco
+router.post('/:id/calculate-cost', requireAuth, requireOperador, async (req, res) => {
+  try {
+    const product = await ProductModel.getById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ error: 'Produto não encontrado' });
+    }
+
+    if (!Array.isArray(product.recipe) || product.recipe.length === 0) {
+      return res.status(400).json({ error: 'Produto não possui receita definida' });
+    }
+
+    const cost = await StockService.calculateRecipeCost(product.recipe);
+    await ProductModel.update(product.id, { cost });
+
+    res.json({
+      success: true,
+      data: {
+        productId: product.id,
+        productName: product.name,
+        cost
+      }
+    });
+  } catch (err) {
+    console.error('[PRODUCT][CALCULATE_COST][ERROR]', {
+      productId: req.params.id,
+      error: err.message,
+      stack: err.stack
+    });
+    res.status(500).json({
+      error: 'Erro ao calcular custo do produto',
+      details: err.message
+    });
+  }
+});
+
 // Buscar produto por ID
 router.get('/:id', requireAuth, async (req, res) => {
   try {

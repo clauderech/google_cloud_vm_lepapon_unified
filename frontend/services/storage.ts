@@ -392,6 +392,46 @@ export const storageService = {
       return state.products;
     }
   },
+
+  async recalculateRecipeCosts(): Promise<{
+    data: Array<{ productId: string; cost: number }>;
+    errors: Array<{ productId: string; error: string }>;
+  }> {
+    const response = await fetch(`${API_URL}/products/recalculate-recipe-costs`, {
+      method: 'POST',
+      headers: withAuthHeaders({ 'Content-Type': 'application/json' })
+    });
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(result.details || result.error || 'Erro ao recalcular custos das receitas');
+    }
+
+    return {
+      data: result.data || [],
+      errors: result.errors || []
+    };
+  },
+
+  async recalculateSalePrices(): Promise<{
+    data: Array<{ productId: string; price: number }>;
+    errors: Array<{ productId: string; error: string }>;
+  }> {
+    const response = await fetch(`${API_URL}/products/recalculate-sale-prices`, {
+      method: 'POST',
+      headers: withAuthHeaders({ 'Content-Type': 'application/json' })
+    });
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(result.details || result.error || 'Erro ao recalcular preços de venda');
+    }
+
+    return {
+      data: result.data || [],
+      errors: result.errors || []
+    };
+  },
   
   async saveProduct(product: Product): Promise<{ productId: string }> {
     if (USE_API) {

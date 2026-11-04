@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 
 const USE_API = process.env.NODE_ENV === 'production'; // Toggle para usar API ou mock local
 
@@ -199,6 +199,7 @@ const App = () => {
     shoppingList: [],
     activeComandas: []
   });
+  const recipeCostRecalculationStarted = useRef(false);
 
   // --- ID Generator: timestamp + random base-36 (collision-proof) ---
   const generateId = (): string => {
@@ -221,6 +222,58 @@ const App = () => {
     };
     init();
   }, []);
+
+  useEffect(() => {
+    if (
+      loading ||
+      !isAuthenticated ||
+      !token ||
+      !user ||
+      !['admin', 'operador'].includes(user.role) ||
+      recipeCostRecalculationStarted.current
+    ) {
+      return;
+    }
+
+    recipeCostRecalculationStarted.current = true;
+    void storageService.recalculateRecipeCosts()
+      .then(async ({ data, errors }) => {
+        const salePrices = await storageService.recalculateSalePrices();
+        const updatedCosts = new Map(data.map(item => [item.productId, item.cost]));
+        const updatedPrices = new Map(salePrices.data.map(item => [item.productId, item.price]));
+        setState(current => ({
+          ...current,
+          products: current.products.map(product => {
+            const cost = updatedCosts.get(product.id);
+            const price = updatedPrices.get(product.id);
+            return {
+              ...product,
+              ...(cost === undefined ? {} : { cost }),
+              ...(price === undefined ? {} : { price })
+            };
+          })
+        }));
+
+        if (errors.length > 0) {
+          console.error('[APP][RECIPE_COST_RECALCULATION][PARTIAL_FAILURE]', errors);
+        } else {
+          console.log('[APP][RECIPE_COST_RECALCULATION][SUCCESS]', {
+            updatedProducts: data.length
+          });
+        }
+
+        if (salePrices.errors.length > 0) {
+          console.error('[APP][SALE_PRICE_RECALCULATION][PARTIAL_FAILURE]', salePrices.errors);
+        } else {
+          console.log('[APP][SALE_PRICE_RECALCULATION][SUCCESS]', {
+            updatedProducts: salePrices.data.length
+          });
+        }
+      })
+      .catch(error => {
+        console.error('[APP][PRODUCT_PRICE_INITIALIZATION][ERROR]', error);
+      });
+  }, [loading, isAuthenticated, token, user]);
 
   // --- Keyboard Shortcuts ---
   useEffect(() => {
@@ -2902,5 +2955,3 @@ const App = () => {
 };
 
 export default App;
-
-

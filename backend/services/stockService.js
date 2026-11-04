@@ -458,6 +458,60 @@ class StockService {
   }
 
   /**
+   * Calcula o custo total dos ingredientes de uma receita.
+   * @param {Array|String} recipe - Ingredientes e quantidades da receita
+   * @returns {Promise<number>} Custo total da receita
+   */
+  async calculateRecipeCost(recipe) {
+    const parsedRecipe = typeof recipe === 'string' ? JSON.parse(recipe) : recipe;
+    if (!Array.isArray(parsedRecipe)) {
+      throw new TypeError('A receita deve ser uma lista de ingredientes.');
+    }
+
+    let totalCost = 0;
+
+    for (const recipeItem of parsedRecipe) {
+      const quantity = Number(recipeItem.quantity);
+      if (!recipeItem.ingredientId || !Number.isFinite(quantity) || quantity < 0) {
+        throw new Error('Ingrediente ou quantidade inválida na receita.');
+      }
+
+      const ingredient = await ProductModel.getById(recipeItem.ingredientId);
+      if (!ingredient) {
+        throw new Error(`Ingrediente não encontrado: ${recipeItem.ingredientId}`);
+      }
+
+      const ingredientCost = Number(ingredient.cost);
+      if (!Number.isFinite(ingredientCost) || ingredientCost < 0) {
+        throw new Error(`Custo inválido para o ingrediente: ${recipeItem.ingredientId}`);
+      }
+
+      totalCost += ingredientCost * quantity;
+    }
+
+    return totalCost;
+  }
+
+  /**
+   * Calcula o preço de venda considerando lucro e custo operacional como
+   * percentuais do preço final.
+   * @param {number|string} cost - Custo total do produto
+   * @returns {number} Preço de venda arredondado para centavos
+   */
+  calculateSalePrice(cost) {
+    const parsedCost = Number(cost);
+    const profitMargin = 0.3;
+    const operatingCostRate = 0.12;
+    const remainingRate = 1 - profitMargin - operatingCostRate;
+
+    if (!Number.isFinite(parsedCost) || parsedCost < 0) {
+      throw new TypeError('O custo deve ser um número válido e não negativo.');
+    }
+
+    return Number((parsedCost / remainingRate).toFixed(2));
+  }
+
+  /**
    * Atualiza o custo do produto baseado no custo dos ingredientes da receita
    * @param {string} productId - ID do produto
    * @returns {Promise<void>}
@@ -466,16 +520,7 @@ class StockService {
     const product = await ProductModel.getById(productId);
     if (!product || !product.recipe) return;
     
-    const recipe = typeof product.recipe === 'string' ? JSON.parse(product.recipe) : product.recipe;
-    let totalCost = 0;
-    
-    for (const recipeItem of recipe) {
-      const ingredient = await ProductModel.getById(recipeItem.ingredientId);
-      if (ingredient) {
-        const ingredientCost = parseFloat(ingredient.cost) || 0;
-        totalCost += ingredientCost * recipeItem.quantity;
-      }
-    }
+    const totalCost = await this.calculateRecipeCost(product.recipe);
     
     if (totalCost > 0) {
       await ProductModel.update(productId, { cost: totalCost });
