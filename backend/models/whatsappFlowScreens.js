@@ -7,7 +7,7 @@
 
 /**
  * Mapeamento de categorias com seus product_retailer_ids
- * Sincronizado com o JSON do Flow Meta e o catálogo em files/csvs/catalog_products_2026-01-05.csv
+ * Sincronizado com o JSON do Flow Meta e o catálogo em ../includes/catalog_products_2026-01-05.csv
  */
 const CATEGORY_PRODUCTS = {
   xis: {

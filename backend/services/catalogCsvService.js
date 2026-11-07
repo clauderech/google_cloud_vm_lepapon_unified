@@ -6,7 +6,7 @@ const { db } = require('../config/knex');
 
 const CATALOG_CSV_PATH = path.resolve(
   __dirname,
-  '../../docs/catalog_products_2026-01-05.csv'
+  '../../../includes/catalog_products_2026-01-05.csv'
 );
 
 function parseCsv(content) {
