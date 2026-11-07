@@ -2377,10 +2377,10 @@ const App = () => {
                                 </div>
                                 <div className="flex-1 overflow-y-auto px-8">
                                   <div className="grid grid-cols-2 gap-4 mb-4">
-                                  <div className="flex items-center col-span-2">
-                                    <input type="checkbox" id="isActiveEdit" checked={!!editProd.is_active} onChange={e => setEditProd({...editProd, is_active: e.target.checked})} className="mr-2" />
-                                    <label htmlFor="isActiveEdit" className="font-bold text-gray-700">Produto Ativo</label>
-                                  </div>
+                                  <label htmlFor="isActiveEdit" className="flex items-center col-span-2 gap-2 font-bold text-gray-700">
+                                    <input type="checkbox" id="isActiveEdit" checked={!!editProd.is_active} onChange={e => setEditProd({...editProd, is_active: e.target.checked})} />
+                                    Produto Ativo
+                                  </label>
                                   <label className="flex items-center gap-2 text-gray-700 font-medium">
                                     <input type="checkbox" checked={editProd.isSellable ?? isProductSellable(editProd)} onChange={e => setEditProd({...editProd, isSellable: e.target.checked})} />
                                     Vendável
@@ -2389,27 +2389,57 @@ const App = () => {
                                     <input type="checkbox" checked={editProd.isIngredient ?? isProductIngredient(editProd)} onChange={e => setEditProd({...editProd, isIngredient: e.target.checked})} />
                                     Ingrediente
                                   </label>
-                                  <input placeholder="Nome" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={editProd.name || ''} onChange={e => setEditProd({...editProd, name: e.target.value})} />
-                                  <input placeholder="Categoria" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={editProd.category || ''} onChange={e => setEditProd({...editProd, category: e.target.value})} />
-                                  <select className="border border-gray-400 p-2 rounded text-black bg-white" value={editMode} onChange={e => setEditMode(e.target.value as any)}>
-                                    <option value="insumo">Insumo</option>
-                                    <option value="insumo_bebida">Insumo Bebida</option>
-                                    <option value="revenda">Revenda</option>
-                                    <option value="sorvete">Sorvete</option>
-                                    <option value="destilado">Destilado (Fracionado)</option>
-                                    <option value="prato">Prato</option>
-                                    <option value="drink">Drink</option>
-                                  </select>
-                                  <input placeholder="Unidade" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={editProd.unit || ''} onChange={e => setEditProd({...editProd, unit: e.target.value as any})} />
-                                  <input type="number" placeholder="Preço de Venda" className="border border-gray-400 p-2 rounded font-bold text-black bg-white placeholder-gray-600" value={editProd.price || ''} onChange={e => setEditProd({...editProd, price: Number(e.target.value)})} />
-                                  <input type="number" placeholder="Custo de Compra" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={editProd.cost || ''} onChange={e => setEditProd({...editProd, cost: Number(e.target.value)})} />
-                                  <input type="number" placeholder="Quantidade por Embalagem" min="1" step="1" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={editProd.packageQuantity ?? 1} onChange={e => setEditProd({...editProd, packageQuantity: Number(e.target.value) || 1})} />
-                                  <input type="number" placeholder="Estoque" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={editProd.stock || ''} onChange={e => setEditProd({...editProd, stock: Number(e.target.value)})} />
-                                  <input type="number" placeholder="Estoque Mínimo" className="border border-gray-400 p-2 rounded text-black bg-white placeholder-gray-600" value={editProd.minStock || ''} onChange={e => setEditProd({...editProd, minStock: Number(e.target.value)})} />
-                                  <select className="border border-gray-400 p-2 rounded text-black bg-white" value={editProd.supplierId || ''} onChange={e => setEditProd({...editProd, supplierId: e.target.value})}>
-                                    <option value="">Fornecedor</option>
-                                    {state.suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                  </select>
+                                  <label htmlFor="edit-product-name" className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+                                    Nome
+                                    <input id="edit-product-name" className="w-full border border-gray-400 p-2 rounded text-black bg-white" value={editProd.name || ''} onChange={e => setEditProd({...editProd, name: e.target.value})} />
+                                  </label>
+                                  <label htmlFor="edit-product-category" className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+                                    Categoria
+                                    <input id="edit-product-category" className="w-full border border-gray-400 p-2 rounded text-black bg-white" value={editProd.category || ''} onChange={e => setEditProd({...editProd, category: e.target.value})} />
+                                  </label>
+                                  <label htmlFor="edit-product-type" className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+                                    Tipo
+                                    <select id="edit-product-type" className="w-full border border-gray-400 p-2 rounded text-black bg-white" value={editMode} onChange={e => setEditMode(e.target.value as any)}>
+                                      <option value="insumo">Insumo</option>
+                                      <option value="insumo_bebida">Insumo Bebida</option>
+                                      <option value="revenda">Revenda</option>
+                                      <option value="sorvete">Sorvete</option>
+                                      <option value="destilado">Destilado (Fracionado)</option>
+                                      <option value="prato">Prato</option>
+                                      <option value="drink">Drink</option>
+                                    </select>
+                                  </label>
+                                  <label htmlFor="edit-product-unit" className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+                                    Unidade
+                                    <input id="edit-product-unit" className="w-full border border-gray-400 p-2 rounded text-black bg-white" value={editProd.unit || ''} onChange={e => setEditProd({...editProd, unit: e.target.value as any})} />
+                                  </label>
+                                  <label htmlFor="edit-product-price" className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+                                    Preço de Venda
+                                    <input id="edit-product-price" type="number" className="w-full border border-gray-400 p-2 rounded font-bold text-black bg-white" value={editProd.price || ''} onChange={e => setEditProd({...editProd, price: Number(e.target.value)})} />
+                                  </label>
+                                  <label htmlFor="edit-product-cost" className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+                                    Custo de Compra
+                                    <input id="edit-product-cost" type="number" className="w-full border border-gray-400 p-2 rounded text-black bg-white" value={editProd.cost || ''} onChange={e => setEditProd({...editProd, cost: Number(e.target.value)})} />
+                                  </label>
+                                  <label htmlFor="edit-product-package-quantity" className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+                                    Quantidade por Embalagem
+                                    <input id="edit-product-package-quantity" type="number" min="1" step="1" className="w-full border border-gray-400 p-2 rounded text-black bg-white" value={editProd.packageQuantity ?? 1} onChange={e => setEditProd({...editProd, packageQuantity: Number(e.target.value) || 1})} />
+                                  </label>
+                                  <label htmlFor="edit-product-stock" className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+                                    Estoque
+                                    <input id="edit-product-stock" type="number" className="w-full border border-gray-400 p-2 rounded text-black bg-white" value={editProd.stock || ''} onChange={e => setEditProd({...editProd, stock: Number(e.target.value)})} />
+                                  </label>
+                                  <label htmlFor="edit-product-min-stock" className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+                                    Estoque Mínimo
+                                    <input id="edit-product-min-stock" type="number" className="w-full border border-gray-400 p-2 rounded text-black bg-white" value={editProd.minStock || ''} onChange={e => setEditProd({...editProd, minStock: Number(e.target.value)})} />
+                                  </label>
+                                  <label htmlFor="edit-product-supplier" className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+                                    Fornecedor
+                                    <select id="edit-product-supplier" className="w-full border border-gray-400 p-2 rounded text-black bg-white" value={editProd.supplierId || ''} onChange={e => setEditProd({...editProd, supplierId: e.target.value})}>
+                                      <option value="">Selecione um fornecedor</option>
+                                      {state.suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                    </select>
+                                  </label>
                                   </div>
                                   {/* Receita para Pratos, Drinks, Sorvetes e Insumos categoria "casa" */}
                                   {(editMode === 'prato' || editMode === 'drink' || editMode === 'sorvete' || (isProductIngredient(editProd) && editProd.category === 'casa')) && (
@@ -2417,8 +2447,10 @@ const App = () => {
                                     <h4 className="font-bold text-gray-800 mb-2">
                                       {editMode === 'insumo' ? 'Receita de Produção (Insumo Caseiro)' : 'Ficha Técnica (Receita)'}
                                     </h4>
-                                    <div className="flex gap-2 mb-2">
+                                    <label htmlFor="edit-product-recipe-ingredient" className="flex flex-col gap-1 text-sm font-medium text-gray-700 mb-2">
+                                      Adicionar insumo à receita
                                       <select 
+                                        id="edit-product-recipe-ingredient"
                                         className="flex-1 border border-gray-400 p-2 rounded text-black bg-white"
                                         value={''}
                                         onChange={e => {
@@ -2436,20 +2468,23 @@ const App = () => {
                                           <option key={p.id} value={p.id}>{p.name} ({p.unit})</option>
                                         ))}
                                       </select>
-                                    </div>
+                                    </label>
                                     <div className="space-y-1 max-h-48 overflow-y-auto">
                                       {editProd.recipe?.map((item, idx) => {
                                         const ingName = state.products.find(p => p.id === item.ingredientId)?.name;
                                         return (
                                           <div key={idx} className="flex justify-between items-center text-sm bg-white p-2 rounded border text-gray-800 font-medium">
                                             <span>{ingName}</span>
-                                            <input type="number" className="w-20 border border-gray-300 rounded px-2 py-1 text-right font-mono font-bold bg-white" value={item.quantity} min={0} onChange={e => {
+                                            <label className="flex items-center gap-1">
+                                              <span className="sr-only">Quantidade de {ingName || 'ingrediente'}</span>
+                                              <input type="number" aria-label={`Quantidade de ${ingName || 'ingrediente'}`} className="w-20 border border-gray-300 rounded px-2 py-1 text-right font-mono font-bold bg-white" value={item.quantity} min={0} onChange={e => {
                                               const qty = Number(e.target.value);
                                               setEditProd(prev => ({
                                                 ...prev!,
                                                 recipe: prev?.recipe?.map((r, i) => i === idx ? { ...r, quantity: qty } : r)
                                               }));
-                                            }} />
+                                              }} />
+                                            </label>
                                             <button className="text-red-500 px-2" onClick={() => setEditProd(prev => ({
                                               ...prev!,
                                               recipe: prev?.recipe?.filter((_, i) => i !== idx)
